@@ -1,17 +1,19 @@
-import express from "express";
-import cors from "cors";
+// src/server.ts
+import app from "./app";
+import { env } from "./config/env";
 
-const app = express();
-
-app.use(cors());
-app.use(express.json());
-
-app.get("/health", (req, res) => {
-  res.json({ status: "ok" });
+const server = app.listen(env.PORT, () => {
+  console.log(`🚀 Server running on port ${env.PORT} (${env.NODE_ENV})`);
 });
 
-const PORT = process.env.SERVER_PORT || 3000;
+const shutdown = (signal: string) => {
+  console.log(`🛑 Received ${signal}. Shutting down...`);
 
-app.listen(PORT, () => {
-  console.log(`🚀 Backend running on http://localhost:${PORT}`);
-});
+  server.close(() => {
+    console.log("✅ HTTP server closed");
+    process.exit(0);
+  });
+};
+
+process.on("SIGINT", shutdown);
+process.on("SIGTERM", shutdown);
