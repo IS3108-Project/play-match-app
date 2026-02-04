@@ -42,17 +42,17 @@ The frontend will start on `http://localhost:5173`.
 
 ### Backend
 
-| Command | Description |
-|---------|-------------|
+| Command       | Description                              |
+| ------------- | ---------------------------------------- |
 | `npm run dev` | Start development server with hot reload |
 
 ### Frontend
 
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start development server |
-| `npm run build` | Build for production |
-| `npm run lint` | Run ESLint |
+| Command           | Description              |
+| ----------------- | ------------------------ |
+| `npm run dev`     | Start development server |
+| `npm run build`   | Build for production     |
+| `npm run lint`    | Run ESLint               |
 | `npm run preview` | Preview production build |
 
 ## Tech Stack
