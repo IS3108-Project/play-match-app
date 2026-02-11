@@ -1,49 +1,45 @@
 import { betterAuth } from "better-auth";
-import { genericOAuth } from "better-auth/plugins";
+import { customSession, genericOAuth } from "better-auth/plugins";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { env } from "./env";
 import { prisma } from "./prisma";
+import { Resend } from "resend";
+import ForgotPasswordEmail from "../email/forgot-password-email";
+
+const resend = new Resend(env.RESEND_API_KEY);
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
-  plugins: [
-    genericOAuth({
-      config: [
-        {
-          providerId: "strava",
-          clientId: env.STRAVA_CLIENT_ID,
-          clientSecret: env.STRAVA_CLIENT_SECRET,
-          authorizationUrl: "https://www.strava.com/oauth/authorize",
-          tokenUrl: "https://www.strava.com/oauth/token",
-          userInfoUrl: "https://www.strava.com/api/v3/athlete",
-          scopes: ["activity:read_all, activity:write"],
-          getUserInfo: async (tokens) => {
-            const response = await fetch(
-              "https://www.strava.com/api/v3/athlete",
-              {
-                headers: {
-                  Authorization: `Bearer ${tokens.accessToken}`,
-                },
-              },
-            );
-            const profile = await response.json();
-
-            const now = new Date();
-
-            return {
-              id: profile.id.toString(),
-              image: profile.profile,
-              name: `${profile.firstName} ${profile.lastName}`,
-              emailVerified: false,
-              createdAt: now,
-              updatedAt: now,
-            };
-          },
-        },
-      ],
-    }),
-  ],
+  emailAndPassword: {
+    enabled: true,
+    sendResetPassword: async ({ user, url }) => {
+      resend.emails.send({
+        from: "onboarding@resend.dev",
+        to: user.email,
+        subject: "Reset your password",
+        react: ForgotPasswordEmail({
+          username: user.name,
+          resetUrl: url,
+          email: user.email,
+        }),
+      });
+    },
+  },
+  socialProviders: {
+    google: {
+      clientId: env.GOOGLE_CLIENT_ID,
+      clientSecret: env.GOOGLE_CLIENT_SECRET,
+    },
+  },
+  user: {
+    additionalFields: {
+      role: {
+        type: ["USER", "ADMIN"],
+        input: false,
+      },
+    },
+  },
   trustedOrigins: ["http://localhost:5173"],
 });
