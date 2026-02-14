@@ -7,9 +7,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Zap, CheckCircle, ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Spinner } from "@/components/ui/spinner";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import { ThemeToggle } from "@/components/navbar/ThemeToggle";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const onboarding = (authClient as any).onboarding;
 
 const SPORTS = [
@@ -64,19 +63,19 @@ export default function OnboardingPage() {
 
   const toggleSport = (sport: string) => {
     setSelectedSports((prev) =>
-      prev.includes(sport) ? prev.filter((s) => s !== sport) : [...prev, sport]
+      prev.includes(sport) ? prev.filter((s) => s !== sport) : [...prev, sport],
     );
   };
 
   const toggleTime = (time: string) => {
     setSelectedTimes((prev) =>
-      prev.includes(time) ? prev.filter((t) => t !== time) : [...prev, time]
+      prev.includes(time) ? prev.filter((t) => t !== time) : [...prev, time],
     );
   };
 
   const toggleArea = (area: string) => {
     setSelectedAreas((prev) =>
-      prev.includes(area) ? prev.filter((a) => a !== area) : [...prev, area]
+      prev.includes(area) ? prev.filter((a) => a !== area) : [...prev, area],
     );
   };
 
@@ -155,11 +154,10 @@ export default function OnboardingPage() {
             </div>
             <h1 className="mb-4 text-4xl font-bold">You're In!</h1>
             <p className="text-primary-foreground/70">
-              Now let's tailor the experience
-              to your interests so you find the right squad.
+              Now let's tailor the experience to your interests so you find the
+              right squad.
             </p>
           </div>
-
         </div>
 
         {/* Right Panel - Card */}
@@ -185,7 +183,7 @@ export default function OnboardingPage() {
                           "flex items-center justify-between rounded-lg border px-4 py-3 text-left text-sm transition-colors",
                           selectedSports.includes(sport)
                             ? "border-primary bg-primary/10 text-primary"
-                            : "border-border hover:border-primary/50"
+                            : "border-border hover:border-primary/50",
                         )}
                       >
                         {sport}
@@ -223,7 +221,7 @@ export default function OnboardingPage() {
                           "rounded-lg border px-4 py-3 text-left text-sm capitalize transition-colors",
                           selectedSkill === level
                             ? "border-primary bg-primary/10 text-primary"
-                            : "border-border hover:border-primary/50"
+                            : "border-border hover:border-primary/50",
                         )}
                       >
                         {level}
@@ -258,7 +256,7 @@ export default function OnboardingPage() {
                           "flex items-center justify-between rounded-lg border px-4 py-3 text-left text-sm transition-colors",
                           selectedTimes.includes(time)
                             ? "border-primary bg-primary/10 text-primary"
-                            : "border-border hover:border-primary/50"
+                            : "border-border hover:border-primary/50",
                         )}
                       >
                         {time}
@@ -296,7 +294,7 @@ export default function OnboardingPage() {
                           "flex items-center justify-between rounded-lg border px-4 py-3 text-left text-sm transition-colors",
                           selectedAreas.includes(area)
                             ? "border-primary bg-primary/10 text-primary"
-                            : "border-border hover:border-primary/50"
+                            : "border-border hover:border-primary/50",
                         )}
                       >
                         {area}

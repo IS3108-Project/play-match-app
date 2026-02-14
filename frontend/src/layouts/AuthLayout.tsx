@@ -2,7 +2,7 @@
 import { Navigate, Outlet } from "react-router";
 import { authClient } from "@/lib/client-auth";
 import { Spinner } from "@/components/ui/spinner";
-import { ThemeToggle } from "@/components/ThemeToggle";
+import { ThemeToggle } from "@/components/navbar/ThemeToggle";
 
 export default function AuthLayout() {
   const { data: session, isPending } = authClient.useSession();

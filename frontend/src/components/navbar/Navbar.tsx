@@ -26,7 +26,8 @@ export default function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const { isAdmin } = useRole();
+  const { isAdmin, session } = useRole();
+  const user = session?.user;
   const { theme, setTheme } = useTheme();
 
   const handleSignOut = async () => {
@@ -79,12 +80,12 @@ export default function Navbar() {
         <DropdownMenu>
           <DropdownMenuTrigger className="flex items-center gap-2 outline-none">
             <Avatar className="h-8 w-8">
-              <AvatarImage src="/avatar.jpg" alt="Jordan" />
+              <AvatarImage src={user?.image ?? undefined} alt={user?.name ?? "User"} />
               <AvatarFallback className="bg-purple-500 text-white">
-                J
+                {user?.name?.charAt(0).toUpperCase() ?? "U"}
               </AvatarFallback>
             </Avatar>
-            <span className="text-sm font-medium">Jordan</span>
+            <span className="text-sm font-medium">{user?.name ?? "User"}</span>
             <ChevronDown className="h-4 w-4 text-muted-foreground" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
