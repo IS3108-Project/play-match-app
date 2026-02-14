@@ -3,6 +3,8 @@ import { authClient } from "@/lib/client-auth";
 import { Spinner } from "@/components/ui/spinner";
 import Navbar from "@/components/navbar/Navbar";
 
+// This file acts like a guard. If normal USER goes to /users (an admin page),
+// Redirect them back to the / page
 export default function AdminLayout() {
   const { data: session, isPending } = authClient.useSession();
 

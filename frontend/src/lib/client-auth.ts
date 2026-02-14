@@ -1,5 +1,15 @@
 import { createAuthClient } from "better-auth/react";
 import { inferAdditionalFields } from "better-auth/client/plugins";
+import type { BetterAuthClientPlugin } from "better-auth/client";
+import { onboardingClient } from "@better-auth-extended/onboarding/client";
+
+const onboarding = onboardingClient({
+  onOnboardingRedirect: () => {
+    if (window.location.pathname !== "/onboarding") {
+      window.location.href = "/onboarding";
+    }
+  },
+}) as unknown as BetterAuthClientPlugin;
 
 export const authClient = createAuthClient({
   baseURL: "http://localhost:3000",
@@ -12,7 +22,11 @@ export const authClient = createAuthClient({
         role: {
           type: "string",
         },
+        shouldOnboard: {
+          type: "boolean",
+        },
       },
     }),
+    onboarding,
   ],
 });

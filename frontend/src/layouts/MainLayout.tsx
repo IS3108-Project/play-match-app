@@ -19,9 +19,9 @@ export default function MainLayout() {
     return <Navigate to="/login" replace />;
   }
 
-  // Redirect admins to admin dashboard
-  if (session.user.role === "ADMIN") {
-    return <Navigate to="/admin" replace />;
+  // Redirect to onboarding if user hasn't completed it
+  if (session.user?.shouldOnboard) {
+    return <Navigate to="/onboarding" replace />;
   }
 
   return (

@@ -6,11 +6,12 @@ import ForgotPasswordPage from "@/pages/auth/ForgotPasswordPage";
 import LoginPage from "@/pages/auth/LoginPage";
 import RegisterPage from "@/pages/auth/RegisterPage";
 import ResetPasswordPage from "@/pages/auth/ResetPasswordPage";
+import OnboardingPage from "@/pages/onboarding/OnboardingPage";
 import UsersPage from "@/pages/admin/UsersPage";
 import { createBrowserRouter } from "react-router";
 
 export const router = createBrowserRouter([
-  // Auth routes - NO navbar
+  // Auth routes (For users who have yet to log in) - NO navbar
   {
     element: <AuthLayout />,
     children: [
@@ -20,6 +21,9 @@ export const router = createBrowserRouter([
       { path: "/reset-password", element: <ResetPasswordPage /> },
     ],
   },
+
+  // Onboarding route - NO navbar, requires auth
+  { path: "/onboarding", element: <OnboardingPage /> },
 
   // Main USER ROLE routes - WITH navbar
   {

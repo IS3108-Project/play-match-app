@@ -13,6 +13,7 @@ import {
 import { ChevronDown, Monitor, Moon, Sun } from "lucide-react";
 import logo from "@/assets/logo.svg";
 import { useTheme } from "@/hooks/useTheme";
+import { useRole } from "@/hooks/useRole";
 import { authClient } from "@/lib/client-auth";
 
 const navLinks = [
@@ -25,6 +26,7 @@ export default function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
 
+  const { isAdmin } = useRole();
   const { theme, setTheme } = useTheme();
 
   const handleSignOut = async () => {
@@ -37,6 +39,11 @@ export default function Navbar() {
     });
   };
 
+  // Build nav links dynamically based on role
+  const allNavLinks = isAdmin
+    ? [...navLinks, { name: "Users", href: "/admin" }]
+    : navLinks;
+
   return (
     <header className="border-b bg-background">
       <nav className="container mx-auto flex h-14 items-center justify-between px-4">
@@ -47,7 +54,7 @@ export default function Navbar() {
 
         {/* Nav Links */}
         <ul className="flex items-center gap-8">
-          {navLinks.map((link) => {
+          {allNavLinks.map((link) => {
             const isActive = location.pathname === link.href;
             return (
               <li key={link.href}>

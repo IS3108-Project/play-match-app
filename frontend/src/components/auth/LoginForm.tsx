@@ -45,7 +45,7 @@ export function LoginForm() {
         },
         {
           onSuccess() {
-            navigate("/explore");
+            navigate("/");
           },
           onError(ctx) {
             toast.error(ctx.error.message);
