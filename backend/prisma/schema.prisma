@@ -19,17 +19,25 @@ enum UserRole {
 }
 
 model User {
-  id            String    @id
+  id            String   @id
   name          String
   email         String
-  emailVerified Boolean   @default(false)
+  emailVerified Boolean  @default(false)
   image         String?
-  role          UserRole  @default(USER)
+  role          UserRole @default(USER)
 
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  sessions      Session[]
-  accounts      Account[]
+  sportInterests String[]
+  skillLevel     String?
+  preferredTimes String[]
+  preferredAreas String[]
+
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  sessions       Session[]
+  accounts       Account[]
+
+  shouldOnboard  Boolean   @default(true)
+  completedSteps String?
 
   @@unique([email])
   @@map("user")

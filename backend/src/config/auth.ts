@@ -1,6 +1,10 @@
 import { betterAuth } from "better-auth";
-import { customSession, genericOAuth } from "better-auth/plugins";
 import { prismaAdapter } from "better-auth/adapters/prisma";
+import {
+  onboarding,
+  createOnboardingStep,
+} from "@better-auth-extended/onboarding";
+import { z } from "zod";
 import { env } from "./env";
 import { prisma } from "./prisma";
 import { Resend } from "resend";
@@ -39,7 +43,75 @@ export const auth = betterAuth({
         type: ["USER", "ADMIN"],
         input: false,
       },
+      shouldOnboard: {
+        type: "boolean",
+        input: false,
+      },
     },
   },
+  plugins: [
+    // @ts-expect-error
+    onboarding({
+      steps: {
+        sportInterests: createOnboardingStep({
+          input: z.object({
+            sportInterests: z
+              .array(z.string())
+              .min(1, "Select at least one sport"),
+          }),
+          async handler(ctx) {
+            await prisma.user.update({
+              where: { id: ctx.context.session!.user.id },
+              data: { sportInterests: ctx.body.sportInterests },
+            });
+          },
+          required: true,
+          once: true,
+        }),
+        skillLevel: createOnboardingStep({
+          input: z.object({
+            skillLevel: z.enum(["beginner", "intermediate", "advanced"]),
+          }),
+          async handler(ctx) {
+            await prisma.user.update({
+              where: { id: ctx.context.session!.user.id },
+              data: { skillLevel: ctx.body.skillLevel },
+            });
+          },
+          required: true,
+          once: true,
+        }),
+        preferredTimes: createOnboardingStep({
+          input: z.object({
+            preferredTimes: z.array(z.string()).optional(),
+          }),
+          async handler(ctx) {
+            await prisma.user.update({
+              where: { id: ctx.context.session!.user.id },
+              data: { preferredTimes: ctx.body.preferredTimes ?? [] },
+            });
+          },
+          required: false,
+          once: false,
+        }),
+        preferredAreas: createOnboardingStep({
+          input: z.object({
+            preferredAreas: z
+              .array(z.enum(["North", "South", "East", "West", "Central"]))
+              .optional(),
+          }),
+          async handler(ctx) {
+            await prisma.user.update({
+              where: { id: ctx.context.session!.user.id },
+              data: { preferredAreas: ctx.body.preferredAreas ?? [] },
+            });
+          },
+          required: false,
+          once: false,
+        }),
+      },
+      completionStep: "preferredAreas",
+    }),
+  ],
   trustedOrigins: ["http://localhost:5173"],
 });
