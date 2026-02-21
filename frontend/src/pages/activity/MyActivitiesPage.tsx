@@ -49,7 +49,7 @@ export default function MyActivitiesPage() {
                 <div className="flex items-start gap-3">
                     <Bell className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
                     <p className="text-sm">
-                        <span className="font-mediun">
+                        <span className="font-medium">
                             Reminder
                         </span>: Confirm your attendance 30 minutes before the meeting time.
                     </p>
