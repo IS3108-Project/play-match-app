@@ -25,9 +25,9 @@ export default function MainLayout() {
   }
 
   return (
-    <>
+    <div className="mt-16">
       <Navbar />
       <Outlet />
-    </>
+    </div>
   );
 }

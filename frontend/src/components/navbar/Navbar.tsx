@@ -46,15 +46,15 @@ export default function Navbar() {
     : navLinks;
 
   return (
-    <header className="border-b bg-background">
-      <nav className="container mx-auto flex h-14 items-center justify-between px-4">
-        {/* Logo */}
-        <Link to="/" className="hidden items-center md:flex">
-          <img src={logo} alt="PlayMatch" className="h-6" />
+    <header className="fixed inset-x-0 top-3 z-50 px-3">
+      <nav className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between rounded-2xl border bg-background/90 px-3 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/70 sm:px-4">
+        {/* Left: logo (optional on mobile) */}
+        <Link to="/" className="hidden md:flex items-center">
+          <img src={logo} alt="PlayMatch" className="h-6 w-auto" />
         </Link>
 
         {/* Nav Links */}
-        <ul className="flex items-center gap-8">
+        <ul className="flex items-center gap-8 justify-between">
           {allNavLinks.map((link) => {
             const isActive = location.pathname === link.href;
             return (
@@ -66,10 +66,6 @@ export default function Navbar() {
                   }`}
                 >
                   {link.name}
-                  {/* Orange underline for active */}
-                  {isActive && (
-                    <span className="absolute bottom-0 left-0 h-0.5 w-full bg-primary" />
-                  )}
                 </Link>
               </li>
             );
@@ -81,12 +77,12 @@ export default function Navbar() {
           <DropdownMenuTrigger className="flex items-center gap-2 outline-none">
             <Avatar className="h-8 w-8">
               <AvatarImage src={user?.image ?? undefined} alt={user?.name ?? "User"} />
-              <AvatarFallback className="bg-purple-500 text-white">
+              <AvatarFallback className="bg-primary text-white">
                 {user?.name?.charAt(0).toUpperCase() ?? "U"}
               </AvatarFallback>
             </Avatar>
-            <span className="text-sm font-medium">{user?.name ?? "User"}</span>
-            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+            <span className="hidden text-sm font-medium sm:inline">{user?.name ?? "User"}</span>
+            <ChevronDown className="hidden h-4 w-4 text-muted-foreground sm:block" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem asChild>
