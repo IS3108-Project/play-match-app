@@ -1,0 +1,38 @@
+[
+    {
+      "activityTitle": "Morning Jog at MacRitchie!",
+      "location": "MacRitchie Reservoir",
+      "date": "Saturday, Feb 8, 2026",
+      "joined": 12,
+      "slotsLeft": 8,
+      "activityType": "running",
+      "imageSrc": "/assets/default-activity-image/running.png"
+    },
+    {
+      "activityTitle": "Sunset Yoga in the Park",
+      "location": "East Coast Park",
+      "date": "Sunday, Feb 9, 2026",
+      "joined": 15,
+      "slotsLeft": 5,
+      "activityType": "yoga",
+      "imageSrc": "/assets/default-activity-image/yoga.png"
+    },
+    {
+      "activityTitle": "Casual Badminton Doubles",
+      "location": "Yio Chu Kang Sports Hall",
+      "date": "Monday, Feb 10, 2026",
+      "joined": 10,
+      "slotsLeft": 6,
+      "activityType": "badminton",
+      "imageSrc": "/assets/default-activity-image/badminton.png"
+    },
+    {
+      "activityTitle": "Community Basketball Scrimmage",
+      "location": "Bishan Active Park",
+      "date": "Tuesday, Feb 11, 2026",
+      "joined": 14,
+      "slotsLeft": 2,
+      "activityType": "basketball",
+      "imageSrc": "/assets/default-activity-image/basketball.png"
+    }
+  ]
