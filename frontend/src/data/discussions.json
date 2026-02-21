@@ -1,0 +1,46 @@
+[
+    {
+      "id": "MQ==",
+      "title": "Favorite running routes in SG?",
+      "authorName": "Matthew Wong",
+      "authorAvatar": "https://i.pravatar.cc/80?img=12",
+      "groupName": "Runners in Singapore",
+      "content": "What are your favorite running routes in Singapore? Looking for some new places to explore!",
+      "likes": 24,
+      "replies": 3,
+      "timeAgo": "2h ago"
+    },
+    {
+      "id": "Mg==",
+      "title": "Tips for post-workout recovery?",
+      "authorName": "Karen Lim",
+      "authorAvatar": "https://i.pravatar.cc/80?img=47",
+      "groupName": "Gym Beginners Hub",
+      "content": "I'm quite sore after my workouts. Any tips for better recovery?",
+      "likes": 18,
+      "replies": 2,
+      "timeAgo": "4h ago"
+    },
+    {
+      "id": "Mw==",
+      "title": "Best badminton courts in the west?",
+      "authorName": "Ryan Tan",
+      "authorAvatar": "https://i.pravatar.cc/80?img=31",
+      "groupName": "Weekend Badminton",
+      "content": "Any recommendations for affordable courts around Jurong or Clementi?",
+      "likes": 15,
+      "replies": 2,
+      "timeAgo": "6h ago"
+    },
+    {
+      "id": "NA==",
+      "title": "Yoga mat recommendations for beginners",
+      "authorName": "Alicia Goh",
+      "authorAvatar": "https://i.pravatar.cc/80?img=25",
+      "groupName": "Yoga Enthusiasts",
+      "content": "Looking for a non-slip mat that isn't too expensive. What do you use?",
+      "likes": 21,
+      "replies": 2,
+      "timeAgo": "8h ago"
+    }
+  ]

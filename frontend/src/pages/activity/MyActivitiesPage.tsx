@@ -2,7 +2,6 @@
 import * as React from "react"
 import { parse, isValid, startOfDay } from "date-fns"
 import ActivityCard from "@/components/ActivityCard"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { CustomTabs, CustomTabsList, CustomTabsTrigger } from "@/components/ui/custom-tabs"
 import { Bell } from "lucide-react"
 

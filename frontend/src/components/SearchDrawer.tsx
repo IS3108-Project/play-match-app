@@ -63,7 +63,7 @@ export default function SearchDrawer({ activityInput, onActivityInputChange, sel
     >
         <DrawerTrigger asChild>
             <ButtonGroup className="w-full my-4">
-                <Input placeholder="Start your Search" />
+                <Input placeholder="Start your search" />
                 <Button variant="outline" aria-label="Search">
                     <SearchIcon />
                 </Button>
