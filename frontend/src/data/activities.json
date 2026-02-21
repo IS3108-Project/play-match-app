@@ -7,7 +7,10 @@
       "slotsLeft": 8,
       "activityType": "running",
       "status": "ended",
-      "imageSrc": "/assets/default-activity-image/running.png"
+      "imageSrc": "/assets/default-activity-image/running.png",
+      "distanceKm": 3,
+      "skill": "beginner",
+      "rating": 4.5
     },
     {
       "activityTitle": "Sunset Yoga in the Park",
@@ -17,7 +20,10 @@
       "slotsLeft": 5,
       "activityType": "yoga",
       "status": "ended",
-      "imageSrc": "/assets/default-activity-image/yoga.png"
+      "imageSrc": "/assets/default-activity-image/yoga.png",
+      "distanceKm": 6,
+      "skill": "beginner",
+      "rating": 4.8
     },
     {
       "activityTitle": "Casual Badminton Doubles",
@@ -27,7 +33,10 @@
       "slotsLeft": 6,
       "activityType": "badminton",
       "status": "joined",
-      "imageSrc": "/assets/default-activity-image/badminton.png"
+      "imageSrc": "/assets/default-activity-image/badminton.png",
+      "distanceKm": 8,
+      "skill": "intermediate",
+      "rating": 4.3
     },
     {
       "activityTitle": "Community Basketball Scrimmage",
@@ -37,6 +46,9 @@
       "slotsLeft": 2,
       "activityType": "basketball",
       "status": "joined",
-      "imageSrc": "/assets/default-activity-image/basketball.png"
+      "imageSrc": "/assets/default-activity-image/basketball.png",
+      "distanceKm": 11,
+      "skill": "advanced",
+      "rating": 4.7
     }
   ]
