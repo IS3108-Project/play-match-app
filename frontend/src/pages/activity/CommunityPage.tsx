@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import GroupCard from "@/components/GroupCard"
 import FeaturedGroupCard from "@/components/FeaturedGroupCard"
+import DiscussionCard from "@/components/DiscussionCard"
 
 import groups from "@/data/groups.json"
 import discussions from "@/data/discussions.json"
@@ -126,9 +127,17 @@ export default function CommunityPage() {
                     </div>
                 </div>
             ) : (
-                <div className="grid gap-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-left text-lg font-semibold">Community Discussions</h3>
+                        <Button type="button" className="bg-primary text-primary-foreground">
+                            <PlusIcon className="size-4" /> 
+                            New Post
+                        </Button>
+                    </div>
                     {filteredDiscussions.map((discussion) => (
-                        <DiscussionCardPlaceholder key={discussion.id} discussion={discussion} />
+                        // <DiscussionCardPlaceholder key={discussion.id} discussion={discussion} />
+                        <DiscussionCard key={discussion.id} discussion={discussion} />
                     ))}
                 </div>
             )}
