@@ -108,7 +108,7 @@ export default function SearchDrawer({ activityInput, onActivityInputChange, sel
                                         variant="outline"
                                         data-empty={!date}
                                         value={date ? format(date, "PPP") : undefined}
-                                        className="data-[empty=true]:text-muted-foreground w-[212px] justify-between text-left font-normal w-full"
+                                        className="data-[empty=true]:text-muted-foreground justify-between text-left font-normal w-full"
                                     >
                                         {date ? format(date, "PPP") : <span>Pick a date</span>}
                                         <ChevronDownIcon data-icon="inline-end" />
@@ -120,7 +120,7 @@ export default function SearchDrawer({ activityInput, onActivityInputChange, sel
                             </Popover>
                         </AccordionContent>
                     </AccordionItem>
-                    <AccordionItem value="location" className="last:border-b-1">
+                    <AccordionItem value="location" className="last:border-b">
                         <AccordionTrigger value={selectedRegions.length ? selectedRegions.join(", ") : undefined}>
                             Where?
                         </AccordionTrigger>

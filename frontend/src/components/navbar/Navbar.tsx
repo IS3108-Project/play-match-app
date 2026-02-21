@@ -47,7 +47,7 @@ export default function Navbar() {
 
   return (
     <header className="fixed inset-x-0 top-3 z-50 px-3">
-      <nav className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between rounded-2xl border bg-background/90 px-3 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/70 sm:px-4">
+      <nav className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between rounded-2xl border bg-background/90 px-3 shadow-sm backdrop-blur supports-backdrop-filter:bg-background/70 sm:px-4">
         {/* Left: logo (optional on mobile) */}
         <Link to="/" className="hidden md:flex items-center">
           <img src={logo} alt="PlayMatch" className="h-6 w-auto" />

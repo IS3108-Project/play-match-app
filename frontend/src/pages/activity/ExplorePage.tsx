@@ -37,7 +37,10 @@ export default function ExplorePage() {
         {activities.map((activity) => (
           <ActivityCard
             key={`${activity.activityTitle}-${activity.date}`}
-            activity={activity}
+            activity={{
+              ...activity,
+              status: activity.status as "joined" | "confirmed" | "cancelled" | "pending" | "ended" | "not-joined"
+            }}
           />
         ))}
       </div>

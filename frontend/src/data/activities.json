@@ -6,6 +6,7 @@
       "joined": 12,
       "slotsLeft": 8,
       "activityType": "running",
+      "status": "ended",
       "imageSrc": "/assets/default-activity-image/running.png"
     },
     {
@@ -15,24 +16,27 @@
       "joined": 15,
       "slotsLeft": 5,
       "activityType": "yoga",
+      "status": "ended",
       "imageSrc": "/assets/default-activity-image/yoga.png"
     },
     {
       "activityTitle": "Casual Badminton Doubles",
       "location": "Yio Chu Kang Sports Hall",
-      "date": "Monday, Feb 10, 2026",
+      "date": "Monday, Feb 10, 2027",
       "joined": 10,
       "slotsLeft": 6,
       "activityType": "badminton",
+      "status": "joined",
       "imageSrc": "/assets/default-activity-image/badminton.png"
     },
     {
       "activityTitle": "Community Basketball Scrimmage",
       "location": "Bishan Active Park",
-      "date": "Tuesday, Feb 11, 2026",
+      "date": "Tuesday, Feb 11, 2027",
       "joined": 14,
       "slotsLeft": 2,
       "activityType": "basketball",
+      "status": "joined",
       "imageSrc": "/assets/default-activity-image/basketball.png"
     }
   ]
