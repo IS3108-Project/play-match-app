@@ -1,0 +1,92 @@
+[
+    {
+      "id": "MQ==",
+      "discussionId": "MQ==",
+      "authorName": "Daniel Koh",
+      "authorAvatar": "https://i.pravatar.cc/80?img=20",
+      "content": "I like Marina Barrage loop for evening runs. Flat and scenic!",
+      "likes": 6,
+      "timeAgo": "1h ago",
+      "parentCommentId": null
+    },
+    {
+      "id": "Mg==",
+      "discussionId": "MQ==",
+      "authorName": "Nora Ong",
+      "authorAvatar": "https://i.pravatar.cc/80?img=14",
+      "content": "Punggol Waterway is great too, especially early morning.",
+      "likes": 4,
+      "timeAgo": "58m ago",
+      "parentCommentId": null
+    },
+    {
+      "id": "Mw==",
+      "discussionId": "MQ==",
+      "authorName": "Matthew Wong",
+      "authorAvatar": "https://i.pravatar.cc/80?img=12",
+      "content": "Thanks! I'll try Marina this weekend.",
+      "likes": 2,
+      "timeAgo": "45m ago",
+      "parentCommentId": "MQ=="
+    },
+    {
+      "id": "NA==",
+      "discussionId": "Mg==",
+      "authorName": "Ivy Tan",
+      "authorAvatar": "https://i.pravatar.cc/80?img=29",
+      "content": "Hydration + light stretching helped me a lot.",
+      "likes": 5,
+      "timeAgo": "3h ago",
+      "parentCommentId": null
+    },
+    {
+      "id": "NQ==",
+      "discussionId": "Mg==",
+      "authorName": "Karen Lim",
+      "authorAvatar": "https://i.pravatar.cc/80?img=47",
+      "content": "Got it, will add stretching after sessions.",
+      "likes": 1,
+      "timeAgo": "2h ago",
+      "parentCommentId": "NA=="
+    },
+    {
+      "id": "Ng==",
+      "discussionId": "Mw==",
+      "authorName": "Marcus Lim",
+      "authorAvatar": "https://i.pravatar.cc/80?img=41",
+      "content": "Jurong East Sports Hall has decent weekday slots.",
+      "likes": 3,
+      "timeAgo": "5h ago",
+      "parentCommentId": null
+    },
+    {
+      "id": "Nw==",
+      "discussionId": "Mw==",
+      "authorName": "Ryan Tan",
+      "authorAvatar": "https://i.pravatar.cc/80?img=31",
+      "content": "Nice, I’ll check availability there.",
+      "likes": 1,
+      "timeAgo": "4h ago",
+      "parentCommentId": "Ng=="
+    },
+    {
+      "id": "OA==",
+      "discussionId": "NA==",
+      "authorName": "Serene Chua",
+      "authorAvatar": "https://i.pravatar.cc/80?img=35",
+      "content": "Manduka is pricey but durable. Decathlon is good budget option.",
+      "likes": 7,
+      "timeAgo": "7h ago",
+      "parentCommentId": null
+    },
+    {
+      "id": "OQ==",
+      "discussionId": "NA==",
+      "authorName": "Alicia Goh",
+      "authorAvatar": "https://i.pravatar.cc/80?img=25",
+      "content": "Awesome, thanks for both options!",
+      "likes": 2,
+      "timeAgo": "6h ago",
+      "parentCommentId": "OA=="
+    }
+  ]

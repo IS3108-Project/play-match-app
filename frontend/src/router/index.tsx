@@ -3,6 +3,7 @@ import MainLayout from "@/layouts/MainLayout";
 import AdminLayout from "@/layouts/AdminLayout";
 import ExplorePage from "@/pages/activity/ExplorePage";
 import MyActivitiesPage from "@/pages/activity/MyActivitiesPage";
+import CommunityPage from "@/pages/activity/CommunityPage";
 import ForgotPasswordPage from "@/pages/auth/ForgotPasswordPage";
 import LoginPage from "@/pages/auth/LoginPage";
 import RegisterPage from "@/pages/auth/RegisterPage";
@@ -34,6 +35,7 @@ export const router = createBrowserRouter([
       { index: true, element: <ExplorePage /> },
       { path: "explore", element: <ExplorePage /> },
       { path: "my-activities", element: <MyActivitiesPage /> },
+      { path: "community", element: <CommunityPage /> },
     ],
   },
 
