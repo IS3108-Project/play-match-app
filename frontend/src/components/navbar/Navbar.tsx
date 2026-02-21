@@ -49,7 +49,7 @@ export default function Navbar() {
     <header className="border-b bg-background">
       <nav className="container mx-auto flex h-14 items-center justify-between px-4">
         {/* Logo */}
-        <Link to="/" className="flex items-center">
+        <Link to="/" className="hidden items-center md:flex">
           <img src={logo} alt="PlayMatch" className="h-6" />
         </Link>
 
