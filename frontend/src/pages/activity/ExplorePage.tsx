@@ -2,6 +2,7 @@
 import * as React from "react"
 import SearchDrawer from "@/components/SearchDrawer"
 import ActivityCard from "@/components/ActivityCard"
+import logo from "@/assets/logo.svg"
 
 // TODO: Use actual activity info from the database
 import activities from "@/data/activities.json"
@@ -52,10 +53,13 @@ export default function ExplorePage() {
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Header */}
+      <div className="mb-4 flex justify-center md:hidden">
+        <img src={logo} alt="PlayMatch" className="h-10 w-auto" />
+      </div>
       <div className="mb-8 text-center">
         <h1 className="text-3xl font-bold">Find Your Activity</h1>
         <p className="mt-2 text-muted-foreground">
-          Join local activities organized by the community
+    Join local activities organized by the community
         </p>
       </div>
 

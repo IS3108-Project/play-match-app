@@ -105,8 +105,8 @@ export default function CommunityPage() {
             </CustomTabs>
 
             {activeTab === "groups" ? (
-                <div className="grid gap-4 md:grid-cols-2">
-                    <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-4 w-full items-stretch">
+                    <div className="flex items-center justify-between w-full">
                         <h3 className="text-left text-lg font-semibold">My Groups</h3>
                         <Button type="button" className="bg-primary text-primary-foreground">
                             <PlusIcon className="size-4" /> 
@@ -127,7 +127,7 @@ export default function CommunityPage() {
                     </div>
                 </div>
             ) : (
-                <div className="grid gap-4 md:grid-cols-2">
+                <div className="flex flex-col gap-4 w-full items-stretch">
                     <div className="flex items-center justify-between">
                         <h3 className="text-left text-lg font-semibold">Community Discussions</h3>
                         <Button type="button" className="bg-primary text-primary-foreground">
