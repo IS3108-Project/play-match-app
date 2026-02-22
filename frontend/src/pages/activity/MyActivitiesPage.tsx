@@ -4,6 +4,7 @@ import { parse, isValid, startOfDay } from "date-fns"
 import ActivityCard from "@/components/ActivityCard"
 import { CustomTabs, CustomTabsList, CustomTabsTrigger } from "@/components/ui/custom-tabs"
 import { Bell, PlusIcon } from "lucide-react"
+import logo from "@/assets/logo.svg"
 
 // TODO: Use actual activity info from the database
 import activities from "@/data/activities.json"
@@ -43,6 +44,9 @@ export default function MyActivitiesPage() {
     return (
         <div className="container mx-auto px-4 py-8">
             <div className="mb-8 text-center">
+                <div className="mb-4 flex justify-center md:hidden">
+                    <img src={logo} alt="PlayMatch" className="h-10 w-auto" />
+                </div>
                 <h1 className="text-3xl font-bold">My Activities</h1>
             </div>
 

@@ -10,7 +10,9 @@ import { Button } from "@/components/ui/button"
 import GroupCard from "@/components/GroupCard"
 import FeaturedGroupCard from "@/components/FeaturedGroupCard"
 import DiscussionCard from "@/components/DiscussionCard"
+import logo from "@/assets/logo.svg"
 
+// TODO: Use actual group and discussion info from the database
 import groups from "@/data/groups.json"
 import discussions from "@/data/discussions.json"
 
@@ -70,6 +72,9 @@ export default function CommunityPage() {
     return (
         <div className="container mx-auto px-4 py-8">
             <div className="mb-8 text-center">
+                <div className="mb-4 flex justify-center md:hidden">
+                    <img src={logo} alt="PlayMatch" className="h-10 w-auto" />
+                </div>
                 <h1 className="text-3xl font-bold">Community</h1>
                 <p className="mt-2 text-muted-foreground">
                     Join groups, chat, and engage with the PlayMatch community.
@@ -110,7 +115,7 @@ export default function CommunityPage() {
                         <h3 className="text-left text-lg font-semibold">My Groups</h3>
                         {/* TODO: Implement create group button */}
                         <Button type="button" className="bg-primary text-primary-foreground">
-                            <PlusIcon className="size-4" /> 
+                            <PlusIcon className="size-4" />
                             Create Group
                         </Button>
                     </div>
@@ -133,7 +138,7 @@ export default function CommunityPage() {
                         <h3 className="text-left text-lg font-semibold">Community Discussions</h3>
                         {/* TODO: Implement new post button */}
                         <Button type="button" className="bg-primary text-primary-foreground">
-                            <PlusIcon className="size-4" /> 
+                            <PlusIcon className="size-4" />
                             New Post
                         </Button>
                     </div>
