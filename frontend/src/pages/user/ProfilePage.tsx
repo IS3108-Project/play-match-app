@@ -46,7 +46,7 @@ export default function ProfilePage() {
     return (
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-8">
             {/* Edit Profile Drawer */}
-            <div className="absolute right-4 top-20">
+            <div className="relative z-60 self-end">
                 <EditProfileDrawer
                     defaultValues={{
                         name: u?.name ?? "",

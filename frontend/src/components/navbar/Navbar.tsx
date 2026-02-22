@@ -10,7 +10,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown, Monitor, Moon, Sun } from "lucide-react";
+import { ChevronDown, Monitor, Moon, Sun, UserRound, Settings, LogOut } from "lucide-react";
 import logo from "@/assets/logo.svg";
 import { useTheme } from "@/hooks/useTheme";
 import { useRole } from "@/hooks/useRole";
@@ -18,7 +18,7 @@ import { authClient } from "@/lib/client-auth";
 
 const navLinks = [
   { name: "Explore", href: "/" },
-  { name: "My Activities", href: "/my-activities" },
+  { name: "Activities", href: "/my-activities" },
   { name: "Community", href: "/community" },
 ];
 
@@ -47,23 +47,22 @@ export default function Navbar() {
 
   return (
     <header className="fixed inset-x-0 top-3 z-50 px-3">
-      <nav className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between rounded-2xl border bg-background/90 px-3 shadow-sm backdrop-blur supports-backdrop-filter:bg-background/70 sm:px-4">
+      <nav className="mx-auto flex h-14 w-full max-w-5xl items-center justify-around min-[426px]:justify-between rounded-2xl border bg-background/90 px-3 shadow-sm backdrop-blur supports-backdrop-filter:bg-background/70 sm:px-4">
         {/* Left: logo (optional on mobile) */}
         <Link to="/" className="hidden md:flex items-center">
           <img src={logo} alt="PlayMatch" className="h-6 w-auto" />
         </Link>
 
         {/* Nav Links */}
-        <ul className="flex items-center gap-8 justify-between">
+        <ul className="flex items-center gap-4 justify-between">
           {allNavLinks.map((link) => {
             const isActive = location.pathname === link.href;
             return (
               <li key={link.href}>
                 <Link
                   to={link.href}
-                  className={`relative py-4 text-sm font-medium transition-colors hover:text-primary ${
-                    isActive ? "text-primary" : "text-muted-foreground"
-                  }`}
+                  className={`relative py-4 text-sm font-medium transition-colors hover:text-primary ${isActive ? "text-primary" : "text-muted-foreground"
+                    }`}
                 >
                   {link.name}
                 </Link>
@@ -84,12 +83,14 @@ export default function Navbar() {
             <span className="hidden text-sm font-medium sm:inline">{user?.name ?? "User"}</span>
             <ChevronDown className="hidden h-4 w-4 text-muted-foreground sm:block" />
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem asChild>
-              <Link to="/profile">Profile</Link>
+          <DropdownMenuContent align="end" className="z-70">
+            <DropdownMenuItem onClick={() => navigate("/profile")}>
+              <UserRound className="mr-2 h-4 w-4" />
+              Profile
             </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link to="/settings">Settings</Link>
+            <DropdownMenuItem onClick={() => navigate("/settings")}>
+              <Settings className="mr-2 h-4 w-4" />
+              Settings
             </DropdownMenuItem>
 
             <DropdownMenuSeparator />
@@ -125,6 +126,7 @@ export default function Navbar() {
               onClick={handleSignOut}
               className="text-destructive"
             >
+              <LogOut className="mr-2 h-4 w-4" />
               Log out
             </DropdownMenuItem>
           </DropdownMenuContent>

@@ -50,18 +50,6 @@ export default function MyActivitiesPage() {
                 <h1 className="text-3xl font-bold">My Activities</h1>
             </div>
 
-            {/* Notification */}
-            <div className="mx-auto mb-6 w-full max-w-3xl rounded-xl bg-accent/30 px-4 py-3 text-accent-foreground">
-                <div className="flex items-start gap-3">
-                    <Bell className="mt-0.5 h-4 w-4 shrink-0’" />
-                    <p className="text-sm">
-                        <span className="font-medium">
-                            Reminder
-                        </span>: Confirm your attendance 30 minutes before the meeting time.
-                    </p>
-                </div>
-            </div>
-
             {/* Activity Tabs */}
             <CustomTabs
                 value={activeTab}
@@ -74,6 +62,20 @@ export default function MyActivitiesPage() {
                     <CustomTabsTrigger value="hosted">Hosted</CustomTabsTrigger>
                 </CustomTabsList>
             </CustomTabs>
+
+            {/* RSVP Reminder */}
+            {activeTab === "upcoming" && (
+                <div className="mb-6 w-full max-w-3xl rounded-xl bg-accent/30 px-4 py-3 text-accent-foreground">
+                    <div className="flex items-start gap-3">
+                        <Bell className="mt-0.5 h-4 w-4 shrink-0’" />
+                        <p className="text-sm">
+                            <span className="font-medium">
+                                Reminder
+                            </span>: Confirm your attendance 30 minutes before the meeting time.
+                        </p>
+                    </div>
+                </div>
+            )}
 
             {/* Host Activity Button */}
             {activeTab === "hosted" && (

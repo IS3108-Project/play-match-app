@@ -18,9 +18,6 @@ import discussions from "@/data/discussions.json"
 
 type TabValue = "groups" | "discussions"
 
-
-type Discussion = (typeof discussions)[number]
-
 export default function CommunityPage() {
     const [activeTab, setActiveTab] = React.useState<TabValue>("groups")
     const [searchTerm, setSearchTerm] = React.useState("")

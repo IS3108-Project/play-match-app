@@ -13,7 +13,7 @@ function CustomTabsList({
   return (
     <TabsList
       className={cn(
-        "w-full max-w-md rounded-none bg-transparent p-0 border-b border-b-border",
+        "w-full rounded-none bg-transparent p-0 border-b border-b-border",
         className
       )}
       {...props}
