@@ -2,13 +2,14 @@
 import * as React from "react"
 import SearchDrawer from "@/components/SearchDrawer"
 import ActivityCard from "@/components/ActivityCard"
+import FilterBar from "@/components/FilterBar"
+import { Button } from "@/components/ui/button"
 import logo from "@/assets/logo.svg"
 
 // TODO: Use actual activity info from the database
 import activities from "@/data/activities.json"
-import FilterBar from "@/components/FilterBar"
-import { Button } from "@/components/ui/button"
-import { PlusIcon } from "lucide-react"
+
+
 
 
 
@@ -21,6 +22,10 @@ export default function ExplorePage() {
   const [selectedSkills, setSelectedSkills] = React.useState<("Beginner" | "Intermediate" | "Advanced")[]>([])
   const [radiusKm, setRadiusKm] = React.useState<number | "any">("any")
   const [sortBy, setSortBy] = React.useState<"date" | "distance">("date")
+  const activityTypes = React.useMemo(
+    () => Array.from(new Set(activities.map((activity) => activity.activityType))),
+    []
+  )
 
   const filteredActivities = React.useMemo(() => {
     const result: typeof activities = []
@@ -50,16 +55,6 @@ export default function ExplorePage() {
 
     return result
   }, [selectedActivityTypes, selectedSkills, radiusKm, sortBy])
-
-  const buddyEmojis = [
-    { emoji: "✨", x: "-56px", y: "-82px", d: "0s" },
-    { emoji: "🏀", x: "-28px", y: "-98px", d: "0.2s" },
-    { emoji: "🏓", x: "0px", y: "-110px", d: "0.4s" },
-    { emoji: "🎱", x: "30px", y: "-95px", d: "0.6s" },
-    { emoji: "🏸", x: "58px", y: "-80px", d: "0.8s" },
-    { emoji: "🧘‍♀️", x: "-42px", y: "-70px", d: "1.0s" },
-    { emoji: "🥏", x: "44px", y: "-72px", d: "1.2s" },
-  ]
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -95,6 +90,9 @@ export default function ExplorePage() {
         onSelectedSkillsChange={setSelectedSkills}
         sortBy={sortBy}
         onSortByChange={setSortBy}
+        activityTypes={activityTypes}
+        selectedActivityTypes={selectedActivityTypes}
+        onSelectedActivityTypesChange={setSelectedActivityTypes}
       />
 
       {/* Activities Grid */}

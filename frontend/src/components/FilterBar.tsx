@@ -6,6 +6,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { ToggleMenu } from "@/components/ui/toggle-menu"
 import { ChevronDown, SlidersHorizontal } from "lucide-react"
 
 export type SortBy = "date" | "distance"
@@ -20,6 +21,10 @@ type FilterBarProps = {
 
     sortBy: SortBy
     onSortByChange: (value: SortBy) => void
+
+    activityTypes: string[]
+    selectedActivityTypes: string[]
+    onSelectedActivityTypesChange: (value: string[]) => void
 }
 
 
@@ -30,21 +35,25 @@ export default function FilterBar({
     onSelectedSkillsChange,
     sortBy,
     onSortByChange,
+    activityTypes,
+    selectedActivityTypes,
+    onSelectedActivityTypesChange,
 }: FilterBarProps) {
     const sortLabel =
         sortBy === "date" ? "Date" : sortBy === "distance" ? "Distance" : "Rating"
-    
-        
+    const formatActivityType = (value: string) => value.charAt(0).toUpperCase() + value.slice(1)
 
-const SKILLS: Skill[] = ["Beginner", "Intermediate", "Advanced"]
 
-const toggleSkill = (skill: Skill, checked: boolean) => {
-  if (checked) {
-    onSelectedSkillsChange([...selectedSkills, skill])
-  } else {
-    onSelectedSkillsChange(selectedSkills.filter((s) => s !== skill))
-  }
-}
+
+    const SKILLS: Skill[] = ["Beginner", "Intermediate", "Advanced"]
+
+    const toggleSkill = (skill: Skill, checked: boolean) => {
+        if (checked) {
+            onSelectedSkillsChange([...selectedSkills, skill])
+        } else {
+            onSelectedSkillsChange(selectedSkills.filter((s) => s !== skill))
+        }
+    }
 
     return (
         <div className="mb-6 flex items-center gap-2 overflow-x-auto pb-1">
@@ -55,8 +64,8 @@ const toggleSkill = (skill: Skill, checked: boolean) => {
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <Button variant="outline" className="h-9 shrink-0 rounded-xl px-4">
-                        Sort by: 
-                        <span className="font-normal">{sortLabel}</span>
+                        Sort by:
+                        <span className="font-normal text-primary">{sortLabel}</span>
                         <ChevronDown className="ml-1 size-4" />
                     </Button>
                 </DropdownMenuTrigger>
@@ -71,7 +80,11 @@ const toggleSkill = (skill: Skill, checked: boolean) => {
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <Button variant="outline" className="h-9 shrink-0 rounded-xl px-4">
-                        {radiusKm === "any" ? "Distance" : `${radiusKm} km`}
+                        {radiusKm === "any" ? (
+                            "Distance"
+                        ) : (
+                            <span className="font-normal text-primary">{`${radiusKm} km`}</span>
+                        )}
                         <ChevronDown className="ml-1 size-4" />
                     </Button>
                 </DropdownMenuTrigger>
@@ -88,7 +101,11 @@ const toggleSkill = (skill: Skill, checked: boolean) => {
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <Button variant="outline" className="h-9 shrink-0 rounded-xl px-4">
-                        {selectedSkills.length > 0 ? selectedSkills.join(", ") : "Skill level"}
+                        {selectedSkills.length > 0 ? (
+                            <span className="font-normal text-primary">{selectedSkills.join(", ")}</span>
+                        ) : (
+                            "Skill level"
+                        )}
                         <ChevronDown className="ml-1 size-4" />
                     </Button>
                 </DropdownMenuTrigger>
@@ -104,6 +121,33 @@ const toggleSkill = (skill: Skill, checked: boolean) => {
                     ))}
                 </DropdownMenuContent>
             </DropdownMenu>
+
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="h-9 shrink-0 rounded-xl px-4">
+                        {selectedActivityTypes.length > 0 ? (
+                            <span className="font-normal text-primary">
+                                {selectedActivityTypes.map(formatActivityType).join(", ")}
+                            </span>
+                        ) : (
+                            "Activity Types"
+                        )}
+                        <ChevronDown className="ml-1 size-4" />
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="max-h-[200px] overflow-y-auto">
+                    <ToggleMenu
+                        label="Activity type"
+                        options={activityTypes}
+                        selected={selectedActivityTypes}
+                        onSelectedChange={onSelectedActivityTypesChange}
+                        formatOptionLabel={formatActivityType}
+                        className="flex-col items-start"
+                    />
+                </DropdownMenuContent>
+            </DropdownMenu>
+
+
         </div>
     )
 }

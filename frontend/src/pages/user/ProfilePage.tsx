@@ -1,13 +1,14 @@
 import UserProfileCard from "@/components/UserProfileCard";
 import UserStatsCard from "@/components/UserStatsCard";
+import EditProfileDrawer from "@/components/EditProfileDrawer";
 import type { UserStatsItem } from "@/components/UserStatsCard";
-import { Button } from "@/components/ui/button";
 import { useRole } from "@/hooks/useRole";
-import { CalendarDays, Flame, Pencil } from "lucide-react"
+import { CalendarDays, Flame } from "lucide-react"
 
 // TODO: Replace with actual data
 import userStats from "@/data/user-stats.json";
 
+// TODO: Replace with actual data
 const streakDays = [
     { label: "M", done: true },
     { label: "T", done: false },
@@ -21,25 +22,49 @@ const streakDays = [
 export default function ProfilePage() {
     const { session } = useRole();
     const user = session?.user;
-    const preferredAreas = (user as { preferredAreas?: string[] } | undefined)?.preferredAreas;
+    const u = user as {
+        name?: string
+        preferredAreas?: string[]
+        skillLevel?: string | null
+        sportInterests?: string[]
+        preferredTimes?: string[]
+      } | undefined
+
     const statsItems = userStats as UserStatsItem[];
+
+    const handleProfileSave = (values: {
+        name: string;
+        locations: string[];
+        skillLevel: string;
+        sportsPreferences: string[];
+        preferredTimings: string[];
+      }) => {
+        // TODO: persist changes (API call / session update)
+        console.log("Profile saved:", values);
+      };
 
     return (
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-8">
-            <Button
-                aria-label="Edit profile"
-                variant="outline"
-                className="absolute right-4 top-20 items-center justify-center"
-            >
-                <Pencil className="h-4 w-4" />
-                Edit
-            </Button>
+            {/* Edit Profile Drawer */}
+            <div className="absolute right-4 top-20">
+                <EditProfileDrawer
+                    defaultValues={{
+                        name: u?.name ?? "",
+                        locations: u?.preferredAreas ?? [],
+                        skillLevel: u?.skillLevel ?? "", 
+                        sportsPreferences: u?.sportInterests ?? [],
+                        preferredTimings: u?.preferredTimes ?? [],
+                        image: user?.image ?? null,
+                    }}
+                    onDone={handleProfileSave}
+                />
+            </div>
 
             <UserProfileCard
                 image={user?.image}
                 name={user?.name}
-                location={preferredAreas?.length ? preferredAreas.join(", ") : "Singapore"}
-                level="Intermediate Level"
+                location={u?.preferredAreas?.length ? u?.preferredAreas.join(", ") : "Singapore"}
+                level={u?.skillLevel ?? "Intermediate Level"}
             />
 
             {/* Stats cards (flexbox) */}
@@ -65,7 +90,7 @@ export default function ProfilePage() {
                     {streakDays.map((day) => (
                         <div key={day.label} className="flex flex-col items-center gap-2">
                             <div
-                                className={`flex h-[1.25rem] w-[1.25rem] min-[375px]:h-[1.5rem] min-[375px]:w-[1.5rem] md:h-8 md:w-8 items-center justify-center rounded-full ${day.done
+                                className={`flex h-5 w-5 min-[375px]:h-6 min-[375px]:w-6 md:h-8 md:w-8 items-center justify-center rounded-full ${day.done
                                         ? "bg-accent text-primary"
                                         : "bg-primary-foreground/20 text-transparent"
                                     }`}
