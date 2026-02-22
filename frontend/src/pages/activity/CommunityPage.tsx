@@ -21,20 +21,6 @@ type TabValue = "groups" | "discussions"
 
 type Discussion = (typeof discussions)[number]
 
-
-function DiscussionCardPlaceholder({ discussion }: { discussion: Discussion }) {
-    return (
-        <div className="rounded-xl border bg-card p-4 shadow-sm">
-            <div className="mb-2 text-sm text-muted-foreground">Discussion card placeholder</div>
-            <h3 className="font-semibold">{discussion.title}</h3>
-            <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{discussion.content}</p>
-            <p className="mt-2 text-xs text-muted-foreground">
-                {discussion.authorName} · {discussion.groupName} · {discussion.timeAgo}
-            </p>
-        </div>
-    )
-}
-
 export default function CommunityPage() {
     const [activeTab, setActiveTab] = React.useState<TabValue>("groups")
     const [searchTerm, setSearchTerm] = React.useState("")

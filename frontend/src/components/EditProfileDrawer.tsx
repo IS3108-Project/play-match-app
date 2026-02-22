@@ -124,7 +124,7 @@ export default function EditProfileDrawer({
 
                     {/* Edit Name */}
                     <section className="space-y-3">
-                        <h3 className="text-2xl font-bold">My profile</h3>
+                        <h3 className="text-2xl font-bold">My Profile</h3>
                         <p className="text-sm text-muted-foreground">Other players can see your profile, make sure to fill in all the details to get the best matches!</p>
                         <div className="space-y-2">
                             <label htmlFor="profile-name" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">

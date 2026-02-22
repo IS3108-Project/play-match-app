@@ -87,8 +87,8 @@ export default function ProfilePage() {
                 </div>
 
                 <div className="mt-5 flex items-center justify-between gap-2 rounded-2xl bg-primary-foreground/10 p-4">
-                    {streakDays.map((day) => (
-                        <div key={day.label} className="flex flex-col items-center gap-2">
+                    {streakDays.map((day, index) => (
+                        <div key={day.label + index} className="flex flex-col items-center gap-2">
                             <div
                                 className={`flex h-5 w-5 min-[375px]:h-6 min-[375px]:w-6 md:h-8 md:w-8 items-center justify-center rounded-full ${day.done
                                         ? "bg-accent text-primary"

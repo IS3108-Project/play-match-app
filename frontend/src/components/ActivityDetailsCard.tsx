@@ -77,7 +77,7 @@ export default function ActivityDetailsCard({ activity, children }: ActivityDeta
                         <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                             Host & participants ({activity.participants.length})
                         </h4>
-                        <p className="text-sm text-muted-foreground">
+                        <div className="text-sm text-muted-foreground">
                             {/* TODO: Extract participant profile from database */}
                             {activity.participants.map((participant, index) => (
                                 <div key={`${participant}-${index}`} className="flex items-center gap-2">
@@ -93,7 +93,7 @@ export default function ActivityDetailsCard({ activity, children }: ActivityDeta
                                     <p className="text-sm text-muted-foreground">{participant}</p>
                                 </div>
                             ))}
-                        </p>
+                        </div>
                     </section>
                 </div>
 
