@@ -2,13 +2,13 @@
 import * as React from "react"
 import { parse, isValid, startOfDay } from "date-fns"
 import ActivityCard from "@/components/ActivityCard"
+import HostActivityDrawer, { type HostActivityValues } from "@/components/HostActivityDrawer"
 import { CustomTabs, CustomTabsList, CustomTabsTrigger } from "@/components/ui/custom-tabs"
-import { Bell, PlusIcon } from "lucide-react"
+import { Bell } from "lucide-react"
 import logo from "@/assets/logo.svg"
 
 // TODO: Use actual activity info from the database
 import activities from "@/data/activities.json"
-import { Button } from "@/components/ui/button"
 
 
 type TabValue = "upcoming" | "past" | "hosted"
@@ -40,6 +40,18 @@ export default function MyActivitiesPage() {
             return activityDate < today // past
         })
     }, [activeTab, today])
+
+    const handleHostActivitySubmit = async (values: HostActivityValues) => {
+        // TODO: Replace with backend API call
+        console.log("Saving hosted activity:", values)
+        await new Promise((resolve) => setTimeout(resolve, 500))
+    }
+
+    // TODO: Use actual activity types from the database
+    const activityTypes = React.useMemo(
+        () => Array.from(new Set(activities.map((a) => a.activityType))),
+        []
+    )
 
     return (
         <div className="container mx-auto px-4 py-8">
@@ -81,11 +93,10 @@ export default function MyActivitiesPage() {
             {activeTab === "hosted" && (
                 <div className="flex items-center justify-between w-ful pb-4">
                     <h3 className="text-left text-lg font-semibold">Hosted Activities</h3>
-                    {/* TODO: Implement host activity button */}
-                    <Button type="button" className="bg-primary text-primary-foreground">
-                        <PlusIcon className="size-4" />
-                        Host Activity
-                    </Button>
+                    <HostActivityDrawer
+                        onSubmit={handleHostActivitySubmit}
+                        activityTypes={activityTypes}
+                    />
                 </div>
             )}
 

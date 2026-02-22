@@ -127,9 +127,9 @@ export default function EditProfileDrawer({
                         <h3 className="text-2xl font-bold">My Profile</h3>
                         <p className="text-sm text-muted-foreground">Other players can see your profile, make sure to fill in all the details to get the best matches!</p>
                         <div className="space-y-2">
-                            <label htmlFor="profile-name" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                            <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                                 Name
-                            </label>
+                            </h4>
                             <Input
                                 id="profile-name"
                                 value={name}
@@ -141,7 +141,9 @@ export default function EditProfileDrawer({
 
                     {/* Edit Location Preferences*/}
                     <section className="mt-6 space-y-4 border-t pt-5">
-                        <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Location</h4>
+                        <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                            Location
+                        </h4>
                         <div className="grid grid-cols-2 gap-3">
                             {LOCATION_OPTIONS.map((option) => (
                                 <label key={option} className="flex items-center gap-2 text-sm">
@@ -157,7 +159,9 @@ export default function EditProfileDrawer({
 
                     {/* Edit Skill Level */}
                     <section className="mt-6 space-y-4 border-t pt-5">
-                        <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Skill level</h4>
+                        <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                            Skill level
+                        </h4>
                         <div className="grid grid-cols-1 gap-3">
                             {SKILL_OPTIONS.map((option) => (
                                 <label key={option} className="flex items-center gap-2 text-sm">
@@ -173,7 +177,9 @@ export default function EditProfileDrawer({
 
                     {/* Edit Sports Preferences*/}
                     <section className="mt-6 space-y-4 border-t pt-5">
-                        <h4 className="text-2xl font-bold">Sports Preferences</h4>
+                        <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                            Sports Preferences
+                        </h4>
                         <div className="flex flex-wrap gap-3">
                             {SPORTS_OPTIONS.map((option) => (
                                 <TogglePill
@@ -187,8 +193,8 @@ export default function EditProfileDrawer({
                     </section>
 
                     {/* Edit Preferred Timings */}
-                    <section className="mt-8 space-y-4">
-                        <h4 className="text-2xl font-bold">Preferred Timings</h4>
+                    <section className="mt-6 space-y-4 border-t pt-5">
+                        <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Preferred Timings</h4>
                         <div className="flex flex-wrap gap-3">
                             {TIMING_OPTIONS.map((option) => (
                                 <TogglePill
@@ -205,7 +211,7 @@ export default function EditProfileDrawer({
                 <DrawerFooter className="border-t">
                     <DrawerClose asChild>
                         <Button
-                            className="w-full rounded-full"
+                            className="w-full"
                             onClick={() =>
                                 onDone?.({
                                     name,
