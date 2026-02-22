@@ -66,6 +66,14 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
                         </Button>
                     </ActivityDetailsCard>
                 )}
+
+                {activity.status === "not-joined" && (
+                    <ActivityDetailsCard activity={activity}>
+                        <Button className="mt-3 w-full" size="sm" variant="default">
+                            Join Now
+                        </Button>
+                    </ActivityDetailsCard>
+                )}
             </div>
         </div>
     )

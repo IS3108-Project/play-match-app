@@ -30,6 +30,7 @@ export default function MyActivitiesPage() {
     const filteredActivities = React.useMemo(() => {
         const sortedActivities = activities.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
         // TODO: Filter activities by the user, this returns all activities for now
+        // TOOD: also filter out the not joined activites...
         if (activeTab === "hosted") return sortedActivities
 
         return activities.filter((activity) => {

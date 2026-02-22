@@ -9,11 +9,6 @@ import logo from "@/assets/logo.svg"
 // TODO: Use actual activity info from the database
 import activities from "@/data/activities.json"
 
-
-
-
-
-
 export default function ExplorePage() {
   const [date, setDate] = React.useState<Date>()
   const [activityInput, setActivityInput] = React.useState("")
@@ -27,10 +22,13 @@ export default function ExplorePage() {
     []
   )
 
+  // TODO: ideally do the filtering on the backend, then fetch filtered activities from the database
   const filteredActivities = React.useMemo(() => {
     const result: typeof activities = []
 
     for (const activity of activities) {
+      if (activity.status !== "not-joined") continue
+
       const matchesActivity =
         selectedActivityTypes.length === 0 ||
         selectedActivityTypes.includes(activity.activityType)
