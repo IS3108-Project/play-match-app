@@ -29,7 +29,7 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
 
             {/* Description */}
             <div className="basis-[55%] min-w-0 p-4 lg:basis-auto">
-                <span className="inline-block w-fit rounded bg-chart-1 px-2 py-1 text-xs text-secondary-foreground">
+                <span className="inline-block w-fit rounded bg-chart-1 px-2 py-1 text-xs text-primary">
                     {activity.activityType.toUpperCase()}
                 </span>
                 <h3 className="mt-2 font-semibold">{activity.activityTitle}</h3>
