@@ -108,6 +108,7 @@ export default function CommunityPage() {
                 <div className="flex flex-col gap-4 w-full items-stretch">
                     <div className="flex items-center justify-between w-full">
                         <h3 className="text-left text-lg font-semibold">My Groups</h3>
+                        {/* TODO: Implement create group button */}
                         <Button type="button" className="bg-primary text-primary-foreground">
                             <PlusIcon className="size-4" /> 
                             Create Group
@@ -130,6 +131,7 @@ export default function CommunityPage() {
                 <div className="flex flex-col gap-4 w-full items-stretch">
                     <div className="flex items-center justify-between">
                         <h3 className="text-left text-lg font-semibold">Community Discussions</h3>
+                        {/* TODO: Implement new post button */}
                         <Button type="button" className="bg-primary text-primary-foreground">
                             <PlusIcon className="size-4" /> 
                             New Post

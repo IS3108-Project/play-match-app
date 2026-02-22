@@ -9,7 +9,7 @@
       "status": "ended",
       "imageSrc": "/assets/default-activity-image/running.png",
       "distanceKm": 3,
-      "skill": "beginner",
+      "skill": "Beginner",
       "rating": 4.5
     },
     {
@@ -22,7 +22,7 @@
       "status": "ended",
       "imageSrc": "/assets/default-activity-image/yoga.png",
       "distanceKm": 6,
-      "skill": "beginner",
+      "skill": "Beginner",
       "rating": 4.8
     },
     {
@@ -35,7 +35,7 @@
       "status": "joined",
       "imageSrc": "/assets/default-activity-image/badminton.png",
       "distanceKm": 8,
-      "skill": "intermediate",
+      "skill": "Intermediate",
       "rating": 4.3
     },
     {
@@ -48,7 +48,7 @@
       "status": "joined",
       "imageSrc": "/assets/default-activity-image/basketball.png",
       "distanceKm": 11,
-      "skill": "advanced",
+      "skill": "Advanced",
       "rating": 4.7
     }
   ]

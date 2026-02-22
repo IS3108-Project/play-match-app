@@ -3,13 +3,14 @@ import * as React from "react"
 import { parse, isValid, startOfDay } from "date-fns"
 import ActivityCard from "@/components/ActivityCard"
 import { CustomTabs, CustomTabsList, CustomTabsTrigger } from "@/components/ui/custom-tabs"
-import { Bell } from "lucide-react"
+import { Bell, PlusIcon } from "lucide-react"
 
 // TODO: Use actual activity info from the database
 import activities from "@/data/activities.json"
+import { Button } from "@/components/ui/button"
 
 
-type TabValue = "upcoming" | "past" | "all"
+type TabValue = "upcoming" | "past" | "hosted"
 
 function parseActivityDate(dateStr: string) {
     // matches strings like "Saturday, Feb 8, 2026"
@@ -27,7 +28,8 @@ export default function MyActivitiesPage() {
 
     const filteredActivities = React.useMemo(() => {
         const sortedActivities = activities.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-        if (activeTab === "all") return sortedActivities
+        // TODO: Filter activities by the user, this returns all activities for now
+        if (activeTab === "hosted") return sortedActivities
 
         return activities.filter((activity) => {
             const activityDate = parseActivityDate(activity.date)
@@ -45,9 +47,9 @@ export default function MyActivitiesPage() {
             </div>
 
             {/* Notification */}
-            <div className="mx-auto mb-6 w-full max-w-3xl rounded-xl border border-amber-300/70 bg-amber-50 px-4 py-3 text-card-foreground">
+            <div className="mx-auto mb-6 w-full max-w-3xl rounded-xl bg-secondary/30 px-4 py-3 text-card-foreground">
                 <div className="flex items-start gap-3">
-                    <Bell className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+                    <Bell className="mt-0.5 h-4 w-4 shrink-0’" />
                     <p className="text-sm">
                         <span className="font-medium">
                             Reminder
@@ -65,9 +67,21 @@ export default function MyActivitiesPage() {
                 <CustomTabsList>
                     <CustomTabsTrigger value="upcoming">Upcoming</CustomTabsTrigger>
                     <CustomTabsTrigger value="past">Past</CustomTabsTrigger>
-                    <CustomTabsTrigger value="all">All</CustomTabsTrigger>
+                    <CustomTabsTrigger value="hosted">Hosted</CustomTabsTrigger>
                 </CustomTabsList>
             </CustomTabs>
+
+            {/* Host Activity Button */}
+            {activeTab === "hosted" && (
+                <div className="flex items-center justify-between w-ful pb-4">
+                    <h3 className="text-left text-lg font-semibold">Hosted Activities</h3>
+                    {/* TODO: Implement host activity button */}
+                    <Button type="button" className="bg-primary text-primary-foreground">
+                        <PlusIcon className="size-4" />
+                        Host Activity
+                    </Button>
+                </div>
+            )}
 
             {/* Activity Cards */}
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
