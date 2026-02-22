@@ -47,7 +47,7 @@ export default function MyActivitiesPage() {
             </div>
 
             {/* Notification */}
-            <div className="mx-auto mb-6 w-full max-w-3xl rounded-xl bg-secondary/30 px-4 py-3 text-card-foreground">
+            <div className="mx-auto mb-6 w-full max-w-3xl rounded-xl bg-accent/30 px-4 py-3 text-accent-foreground">
                 <div className="flex items-start gap-3">
                     <Bell className="mt-0.5 h-4 w-4 shrink-0’" />
                     <p className="text-sm">

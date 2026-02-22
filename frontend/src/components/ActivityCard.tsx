@@ -1,9 +1,17 @@
 import { Button } from "@/components/ui/button"
+import ActivityActionsMenu from "@/components/ActivityActionMenu"
+import ActivityDetailsCard from "@/components/ActivityDetailsCard"
 
 type Activity = {
     activityTitle: string
     location: string
     date: string
+    time: string
+    description: string
+    host: string
+    hostImage: string
+    participants: string[]
+    participantImages: string[]
     joined: number
     slotsLeft: number
     activityType: string
@@ -17,7 +25,19 @@ type ActivityCardProps = {
 
 export default function ActivityCard({ activity }: ActivityCardProps) {
     return (
-        <div className="flex flex-row overflow-hidden rounded-lg border bg-card shadow-sm lg:flex-col">
+        <div className="relative flex flex-row overflow-hidden rounded-lg border bg-card shadow-sm lg:flex-col">
+            {/* Actions Menu */}
+            {activity.status === "joined" && (
+                // TODO: Implement share link, report and cancel RSVP functionalities
+                <div className="absolute right-3 top-3 z-10">
+                    <ActivityActionsMenu
+                        onShareLink={() => { }}
+                        onReport={() => { }}
+                        onCancelRsvp={() => { }}
+                    />
+                </div>
+            )}
+
             {/* Picture */}
             <div className="basis-[45%] shrink-0 grow-0 bg-muted lg:basis-auto lg:w-full">
                 <img
@@ -40,9 +60,11 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
                     <span className="text-primary">{activity.slotsLeft} spots left</span>
                 </p>
                 {activity.status === "joined" && (
-                    <Button className="mt-3 w-full" size="sm" variant="outline">
-                        View More
-                    </Button>
+                    <ActivityDetailsCard activity={activity}>
+                        <Button className="mt-3 w-full" size="sm" variant="outline">
+                            View More
+                        </Button>
+                    </ActivityDetailsCard>
                 )}
             </div>
         </div>
