@@ -28,7 +28,7 @@ function CustomTabsTrigger({
   return (
     <TabsTrigger
       className={cn(
-        "rounded-t-md rounded-b-none border-0 border-b-2 border-b-transparent text-muted-foreground shadow-none data-[state=active]:border-b-primary data-[state=active]:bg-accent data-[state=active]:text-primary data-[state=active]:shadow-none",
+        "rounded-t-md rounded-b-none border-0 border-b-2 border-b-transparent text-muted-foreground shadow-none data-[state=active]:border-b-primary data-[state=active]:bg-secondary data-[state=active]:text-primary data-[state=active]:shadow-none",
         className
       )}
       {...props}

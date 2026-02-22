@@ -1,0 +1,26 @@
+[
+  {
+    "id": "streak",
+    "type": "currentStreak",
+    "label": "Current Streak",
+    "value": "12 Days"
+  },
+  {
+    "id": "joined",
+    "type": "joinedThisMonth",
+    "label": "Activities Joined",
+    "value": "8"
+  },
+  {
+    "id": "friends",
+    "type": "newFriendsMet",
+    "label": "New Friends Met",
+    "value": "24"
+  },
+  {
+    "id": "hosted",
+    "type": "activitiesHosted",
+    "label": "Activities Hosted",
+    "value": "5"
+  }
+]
