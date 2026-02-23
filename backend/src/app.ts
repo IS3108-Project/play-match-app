@@ -1,3 +1,7 @@
+/**
+ * Express application instance configured with CORS, authentication, and API routing.
+ * Sets up middleware for cross-origin requests, Better Auth handler, JSON parsing, and initializes API routes.
+ */
 import express from "express";
 import cors from "cors";
 import routes from "./routes/index";

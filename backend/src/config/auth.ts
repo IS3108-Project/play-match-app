@@ -8,7 +8,7 @@ import { z } from "zod";
 import { env } from "./env";
 import { prisma } from "./prisma";
 import { Resend } from "resend";
-import ForgotPasswordEmail from "../email/forgot-password-email";
+import ForgotPasswordEmail from "../email/email_templates/forgot-password-email";
 
 const resend = new Resend(env.RESEND_API_KEY);
 
