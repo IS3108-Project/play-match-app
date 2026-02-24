@@ -1,6 +1,6 @@
 import { ThumbsUp } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import PostActionMenu from "@/components/PostActionMenu"
+import PostActionMenu from "@/components/community/PostActionMenu"
 
 type PostCommentCardProps = {
     authorName: string

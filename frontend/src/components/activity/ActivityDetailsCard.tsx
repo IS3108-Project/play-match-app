@@ -18,8 +18,8 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { MapPin, CalendarDays, Clock3, PlusIcon, MinusIcon, MailIcon, ChevronDown } from "lucide-react"
-import { Input } from "./ui/input"
-import { TelegramOutline } from "./ui/telegram-icon"
+import { Input } from "../ui/input"
+import { TelegramOutline } from "../ui/telegram-icon"
 
 type Activity = {
     activityTitle: string

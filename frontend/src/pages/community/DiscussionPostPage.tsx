@@ -4,9 +4,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
-import PostCommentCard from "@/components/PostCommentCard"
-import DiscussionPostContent from "@/components/DiscussionPostContent"
-import PostActionMenu from "@/components/PostActionMenu"
+import PostCommentCard from "@/components/community/PostCommentCard"
+import DiscussionPostContent from "@/components/community/DiscussionPostContent"
+import PostActionMenu from "@/components/community/PostActionMenu"
 import { useRole } from "@/hooks/useRole"
 
 // TODO: Use actual discussion and comment info from the database

@@ -10,9 +10,9 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import CreatePostDrawer from "@/components/ui/CreatePostDrawer"
 import CreateGroupDrawer from "@/components/ui/CreateGroupDrawer"
-import GroupCard from "@/components/GroupCard"
-import FeaturedGroupCard from "@/components/FeaturedGroupCard"
-import DiscussionCard from "@/components/DiscussionCard"
+import GroupCard from "@/components/community/GroupCard"
+import FeaturedGroupCard from "@/components/community/FeaturedGroupCard"
+import DiscussionCard from "@/components/community/DiscussionCard"
 import logo from "@/assets/logo.svg"
 
 // TODO: Use actual group and discussion info from the database

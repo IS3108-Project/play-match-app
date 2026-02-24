@@ -3,7 +3,7 @@ import { ArrowLeft, Plus, UserRound } from "lucide-react"
 import { Link, Navigate, useParams } from "react-router"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import DiscussionCard from "@/components/DiscussionCard"
+import DiscussionCard from "@/components/community/DiscussionCard"
 import { Image } from "@/components/ui/image"
 
 // TODO: Use actual group and discussion info from the database

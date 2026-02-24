@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button"
-import ActivityActionsMenu from "@/components/ActivityActionMenu"
-import ActivityDetailsCard from "@/components/ActivityDetailsCard"
+import ActivityActionsMenu from "@/components/activity/ActivityActionMenu"
+import ActivityDetailsCard from "@/components/activity/ActivityDetailsCard"
 
 type Activity = {
     activityTitle: string

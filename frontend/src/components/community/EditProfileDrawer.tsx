@@ -17,7 +17,7 @@ import {
     DrawerTitle,
     DrawerTrigger,
 } from "@/components/ui/drawer"
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"
 
 // TODO: Replace with actual data from database
 const LOCATION_OPTIONS = ["North", "South", "East", "West", "Central"] as const

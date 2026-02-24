@@ -1,7 +1,7 @@
 "use client"
 import * as React from "react"
 import SearchDrawer from "@/components/SearchDrawer"
-import ActivityCard from "@/components/ActivityCard"
+import ActivityCard from "@/components/activity/ActivityCard"
 import FilterBar from "@/components/FilterBar"
 import { Button } from "@/components/ui/button"
 import logo from "@/assets/logo.svg"

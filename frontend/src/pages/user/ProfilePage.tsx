@@ -1,7 +1,7 @@
-import UserProfileCard from "@/components/UserProfileCard";
-import UserStatsCard from "@/components/UserStatsCard";
-import EditProfileDrawer from "@/components/EditProfileDrawer";
-import type { UserStatsItem } from "@/components/UserStatsCard";
+import UserProfileCard from "@/components/profile/UserProfileCard";
+import UserStatsCard from "@/components/profile/UserStatsCard";
+import EditProfileDrawer from "@/components/community/EditProfileDrawer";
+import type { UserStatsItem } from "@/components/profile/UserStatsCard";
 import { useRole } from "@/hooks/useRole";
 import { CalendarDays, Flame } from "lucide-react"
 
