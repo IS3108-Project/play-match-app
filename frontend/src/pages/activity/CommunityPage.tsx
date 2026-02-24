@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { SearchIcon, PlusIcon } from "lucide-react"
+import { useSearchParams } from "react-router"
 
 import { CustomTabs, CustomTabsList, CustomTabsTrigger } from "@/components/ui/custom-tabs"
 import { ButtonGroup } from "@/components/ui/button-group"
@@ -19,8 +20,17 @@ import discussions from "@/data/discussions.json"
 type TabValue = "groups" | "discussions"
 
 export default function CommunityPage() {
-    const [activeTab, setActiveTab] = React.useState<TabValue>("discussions")
+    const [searchParams] = useSearchParams()
+    const defaultTab = searchParams.get("tab") === "groups" ? "groups" : "discussions"
+    const [activeTab, setActiveTab] = React.useState<TabValue>(defaultTab)
     const [searchTerm, setSearchTerm] = React.useState("")
+
+    React.useEffect(() => {
+        const tab = searchParams.get("tab")
+        if (tab === "groups" || tab === "discussions") {
+            setActiveTab(tab)
+        }
+    }, [searchParams])
 
     const filteredGroups = React.useMemo(() => {
         const q = searchTerm.trim().toLowerCase()
@@ -130,7 +140,7 @@ export default function CommunityPage() {
                     </div>
                     {filteredDiscussions.map((discussion) => (
                         // <DiscussionCardPlaceholder key={discussion.id} discussion={discussion} />
-                        <DiscussionCard key={discussion.id} discussion={discussion} />
+                        <DiscussionCard key={discussion.id} discussion={discussion} backTo="/community/discussions" />
                     ))}
                 </div>
             )}

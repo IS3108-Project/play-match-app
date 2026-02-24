@@ -5,6 +5,7 @@ import ExplorePage from "@/pages/activity/ExplorePage";
 import MyActivitiesPage from "@/pages/activity/MyActivitiesPage";
 import CommunityPage from "@/pages/activity/CommunityPage";
 import DiscussionPostPage from "@/pages/community/DiscussionPostPage";
+import GroupDetailPage from "@/pages/community/GroupDetailPage";
 import ProfilePage from "@/pages/user/ProfilePage";
 import ForgotPasswordPage from "@/pages/auth/ForgotPasswordPage";
 import LoginPage from "@/pages/auth/LoginPage";
@@ -38,8 +39,9 @@ export const router = createBrowserRouter([
       { path: "explore", element: <ExplorePage /> },
       { path: "my-activities", element: <MyActivitiesPage /> },
       { path: "community", element: <CommunityPage /> },
+      { path: "community/discussions", element: <CommunityPage /> },
       { path: "community/discussions/:discussionId", element: <DiscussionPostPage /> },
-      // { path: "community/groups/:groupId", element: <GroupDetailPage /> },
+      { path: "community/groups/:groupId", element: <GroupDetailPage /> },
       { path: "profile", element: <ProfilePage /> },
     ],
   },

@@ -1,5 +1,5 @@
 import { ArrowLeft, Send } from "lucide-react"
-import { Link, Navigate, useParams } from "react-router"
+import { Link, Navigate, useLocation, useParams } from "react-router"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -47,9 +47,14 @@ function getInitials(name: string) {
 
 export default function DiscussionPostPage() {
     const { discussionId } = useParams()
+    const location = useLocation()
     const { session } = useRole()
     const user = session?.user
     const discussion = (discussions as Discussion[]).find((item) => item.id === discussionId)
+    const backTo =
+        typeof (location.state as { backTo?: unknown } | null)?.backTo === "string"
+            ? (location.state as { backTo: string }).backTo
+            : "/community/discussions"
 
     const handleShare = async () => {
         try {
@@ -91,7 +96,7 @@ export default function DiscussionPostPage() {
             <div className="mx-auto max-w-xl rounded-2xl border bg-card">
                 <header className="flex items-start justify-between border-b px-4 py-3">
                     <div className="flex min-w-0 items-center gap-3">
-                        <Link to="/community" className="text-muted-foreground transition-colors hover:text-foreground">
+                        <Link to={backTo} className="text-muted-foreground transition-colors hover:text-foreground">
                             <ArrowLeft className="h-5 w-5" />
                         </Link>
                         <div className="min-w-0">

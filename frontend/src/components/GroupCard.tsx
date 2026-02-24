@@ -1,4 +1,6 @@
 import { MessageSquare, Users } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Link } from "react-router"
 
 type Group = {
   id: string
@@ -57,9 +59,11 @@ export default function GroupCard({ group }: GroupCardProps) {
               ))}
             </div>
 
-            <button type="button" className="text-sm font-semibold text-primary hover:underline">
-              View More
-            </button>
+            <Button variant="ghost" size="sm" className="text-primary">
+              <Link to={`/community/groups/${group.id}`}>
+                View More
+              </Link>
+            </Button>
           </div>
         </div>
       </div>

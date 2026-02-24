@@ -17,6 +17,7 @@ type Discussion = {
 
 type DiscussionCardProps = {
     discussion: Discussion
+    backTo?: string
 }
 
 function getInitials(name: string) {
@@ -28,10 +29,11 @@ function getInitials(name: string) {
         .toUpperCase()
 }
 
-export default function DiscussionCard({ discussion }: DiscussionCardProps) {
+export default function DiscussionCard({ discussion, backTo = "/community/discussions" }: DiscussionCardProps) {
     return (
         <Link
             to={`/community/discussions/${discussion.id}`}
+            state={{ backTo }}
             className="block rounded-xl border bg-card p-4 shadow-sm transition-colors hover:bg-accent/30"
         >
             <header className="flex items-start justify-between gap-3">
