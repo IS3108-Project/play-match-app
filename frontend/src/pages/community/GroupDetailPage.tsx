@@ -144,7 +144,7 @@ export default function GroupDetailPage() {
         <div className="container mx-auto px-4 py-6">
             <div className="mx-auto max-w-xl rounded-2xl border bg-card overflow-hidden">
                 <header className="border-b">
-                    <div className="relative min-h-[220px]">
+                    <div className="relative">
                         {headerBackground ? (
                             <>
                                 <Image
@@ -155,15 +155,15 @@ export default function GroupDetailPage() {
                                 <div
                                     className={cn(
                                         "absolute inset-0",
-                                        isDarkBackground ? "bg-black/40" : "bg-white/25",
+                                        isDarkBackground ? "bg-primary-foreground/40" : "bg-accent-foreground/25",
                                     )}
                                 />
                             </>
                         ) : (
-                            <div className="absolute inset-0 bg-white" />
+                            <div className="absolute w-150 inset-0 bg-secondary/20" />
                         )}
 
-                        <div className="relative flex min-h-[220px] flex-col justify-between p-4">
+                        <div className="relative flex min-h-50 flex-col justify-between p-4">
                             <div>
                                 {/* TODO: back to community page but groups tab */}
                                 <Link to="/community?tab=groups" className="text-muted-foreground transition-colors hover:text-foreground">
