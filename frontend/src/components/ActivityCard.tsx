@@ -60,7 +60,7 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
                     <span className="text-primary">{activity.slotsLeft} spots left</span>
                 </p>
                 {activity.status === "joined" && (
-                    <ActivityDetailsCard activity={activity}>
+                    <ActivityDetailsCard activity={activity} status="joined">
                         <Button className="mt-3 w-full" size="sm" variant="outline">
                             View More
                         </Button>
@@ -68,7 +68,7 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
                 )}
 
                 {activity.status === "not-joined" && (
-                    <ActivityDetailsCard activity={activity}>
+                    <ActivityDetailsCard activity={activity} status="not-joined">
                         <Button className="mt-3 w-full" size="sm" variant="default">
                             Join Now
                         </Button>
