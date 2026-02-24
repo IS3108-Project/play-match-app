@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { SearchIcon, PlusIcon } from "lucide-react"
+import { SearchIcon } from "lucide-react"
 import { useSearchParams } from "react-router"
 
 import { CustomTabs, CustomTabsList, CustomTabsTrigger } from "@/components/ui/custom-tabs"
@@ -9,6 +9,7 @@ import { ButtonGroup } from "@/components/ui/button-group"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import CreatePostDrawer from "@/components/ui/CreatePostDrawer"
+import CreateGroupDrawer from "@/components/ui/CreateGroupDrawer"
 import GroupCard from "@/components/GroupCard"
 import FeaturedGroupCard from "@/components/FeaturedGroupCard"
 import DiscussionCard from "@/components/DiscussionCard"
@@ -110,11 +111,7 @@ export default function CommunityPage() {
                 <div className="flex flex-col gap-4 w-full items-stretch">
                     <div className="flex items-center justify-between w-full">
                         <h3 className="text-left text-lg font-semibold">My Groups</h3>
-                        {/* TODO: Implement create group button */}
-                        <Button type="button" className="bg-primary text-primary-foreground">
-                            <PlusIcon className="size-4" />
-                            Create Group
-                        </Button>
+                        <CreateGroupDrawer />
                     </div>
                     {filteredGroups.map((group) => (
                         <GroupCard key={group.id} group={group} />
