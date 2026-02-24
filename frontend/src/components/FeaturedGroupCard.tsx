@@ -1,5 +1,6 @@
 import { Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Link } from "react-router"
 
 type FeaturedGroup = {
     id: string
@@ -42,11 +43,8 @@ export default function FeaturedGroupCardPlaceholder({
                 </div>
 
                 {/* Action Button */}
-                <Button
-                    type="button"
-                    className="mt-auto w-full bg-primary text-sm font-semibold text-primary-foreground"
-                >
-                    Join
+                <Button asChild className="mt-auto w-full bg-primary text-sm font-semibold text-primary-foreground">
+                    <Link to={`/community/groups/${group.id}`}>Join</Link>
                 </Button>
             </div>
         </article>
