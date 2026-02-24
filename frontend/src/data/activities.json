@@ -1,0 +1,248 @@
+[
+  {
+    "activityTitle": "Morning Jog at MacRitchie!",
+    "location": "MacRitchie Reservoir",
+    "date": "Saturday, Feb 8, 2026",
+    "time": "7:00 AM - 8:30 AM",
+    "description": "Easy-paced morning jog around MacRitchie with a short warm-up and cool-down. Great for beginners looking for a friendly group run.",
+    "host": "Ethan Lim",
+    "hostImage": "/assets/logo.svg",
+    "participants": [
+      "Sofia",
+      "Marcus",
+      "Jia Yi",
+      "Daniel",
+      "Priya"
+    ],
+    "participantImages": [
+      "/assets/logo.svg",
+      "/assets/logo.svg",
+      "/assets/logo.svg",
+      "/assets/logo.svg",
+      "/assets/logo.svg"
+    ],
+    "joined": 12,
+    "slotsLeft": 8,
+    "activityType": "running",
+    "status": "ended",
+    "imageSrc": "/assets/default-activity-image/running.png",
+    "distanceKm": 3,
+    "skill": "Beginner",
+    "rating": 4.5
+  },
+  {
+    "activityTitle": "Sunset Yoga in the Park",
+    "location": "East Coast Park",
+    "date": "Sunday, Feb 9, 2026",
+    "time": "6:00 PM - 7:00 PM",
+    "description": "Unwind with a guided sunset yoga flow by the beach. Bring your own mat and water bottle.",
+    "host": "Mei Chen",
+    "hostImage": "/assets/logo.svg",
+    "participants": [
+      "Alicia",
+      "Noah",
+      "Farah",
+      "Ben",
+      "Iris"
+    ],
+    "participantImages": [
+      "/assets/logo.svg",
+      "/assets/logo.svg",
+      "/assets/logo.svg",
+      "/assets/logo.svg",
+      "/assets/logo.svg"
+    ],
+    "joined": 15,
+    "slotsLeft": 5,
+    "activityType": "yoga",
+    "status": "not-joined",
+    "imageSrc": "/assets/default-activity-image/yoga.png",
+    "distanceKm": 6,
+    "skill": "Beginner",
+    "rating": 4.8
+  },
+  {
+    "activityTitle": "Casual Badminton Doubles",
+    "location": "Yio Chu Kang Sports Hall",
+    "date": "Monday, Feb 10, 2027",
+    "time": "8:00 PM - 10:00 PM",
+    "description": "Friendly doubles matches for intermediate players. Rotation format so everyone gets court time.",
+    "host": "Ryan Tan",
+    "hostImage": "/assets/logo.svg",
+    "participants": [
+      "Kelvin",
+      "Amelia",
+      "Hafiz",
+      "Serene",
+      "Ivan",
+      "Nadia"
+    ],
+    "participantImages": [
+      "/assets/logo.svg",
+      "/assets/logo.svg",
+      "/assets/logo.svg",
+      "/assets/logo.svg",
+      "/assets/logo.svg",
+      "/assets/logo.svg"
+    ],
+    "joined": 10,
+    "slotsLeft": 6,
+    "activityType": "badminton",
+    "status": "joined",
+    "imageSrc": "/assets/default-activity-image/badminton.png",
+    "distanceKm": 8,
+    "skill": "Intermediate",
+    "rating": 4.3
+  },
+  {
+    "activityTitle": "Community Basketball Scrimmage",
+    "location": "Bishan Active Park",
+    "date": "Tuesday, Feb 11, 2027",
+    "time": "7:30 PM - 9:30 PM",
+    "description": "Half-court and full-court scrimmages depending on turnout. Suitable for experienced players who want competitive games.",
+    "host": "Zachary Ong",
+    "hostImage": "/assets/logo.svg",
+    "participants": [
+      "Aaron",
+      "Joel",
+      "Celine",
+      "Aiman",
+      "Rachel",
+      "Darren",
+      "Hui Min"
+    ],
+    "participantImages": [
+      "/assets/logo.svg",
+      "/assets/logo.svg",
+      "/assets/logo.svg",
+      "/assets/logo.svg",
+      "/assets/logo.svg",
+      "/assets/logo.svg",
+      "/assets/logo.svg"
+    ],
+    "joined": 14,
+    "slotsLeft": 2,
+    "activityType": "basketball",
+    "status": "joined",
+    "imageSrc": "/assets/default-activity-image/basketball.png",
+    "distanceKm": 11,
+    "skill": "Advanced",
+    "rating": 4.7
+  },
+  {
+    "activityTitle": "Evening Run Intervals",
+    "location": "Punggol Waterway Park",
+    "date": "Wednesday, Mar 4, 2026",
+    "time": "7:00 PM - 8:00 PM",
+    "description": "Short interval session with easy recovery jogs. Friendly pace groups available.",
+    "host": "Kai Wong",
+    "hostImage": "/assets/logo.svg",
+    "participants": [
+      "Nina",
+      "Aarav",
+      "Claire",
+      "Ming"
+    ],
+    "participantImages": [
+      "/assets/logo.svg",
+      "/assets/logo.svg",
+      "/assets/logo.svg",
+      "/assets/logo.svg"
+    ],
+    "joined": 9,
+    "slotsLeft": 7,
+    "activityType": "running",
+    "status": "not-joined",
+    "imageSrc": "/assets/default-activity-image/running.png",
+    "distanceKm": 5,
+    "skill": "Intermediate",
+    "rating": 4.4
+  },
+  {
+    "activityTitle": "Beginner Flow Yoga",
+    "location": "Botanic Gardens Lawn",
+    "date": "Saturday, Mar 7, 2026",
+    "time": "8:30 AM - 9:30 AM",
+    "description": "Gentle morning flow focused on mobility and breathing. Suitable for first-timers.",
+    "host": "Hannah Goh",
+    "hostImage": "/assets/logo.svg",
+    "participants": [
+      "Lena",
+      "Arjun",
+      "Mabel"
+    ],
+    "participantImages": [
+      "/assets/logo.svg",
+      "/assets/logo.svg",
+      "/assets/logo.svg"
+    ],
+    "joined": 6,
+    "slotsLeft": 9,
+    "activityType": "yoga",
+    "status": "not-joined",
+    "imageSrc": "/assets/default-activity-image/yoga.png",
+    "distanceKm": 4,
+    "skill": "Beginner",
+    "rating": 4.6
+  },
+  {
+    "activityTitle": "Friendly Badminton Rally",
+    "location": "Jurong East Sports Hall",
+    "date": "Friday, Mar 6, 2026",
+    "time": "8:00 PM - 10:00 PM",
+    "description": "Casual doubles with rotation format. Bring your own racket if possible.",
+    "host": "Daryl Lee",
+    "hostImage": "/assets/logo.svg",
+    "participants": [
+      "Yuki",
+      "Sean",
+      "Farid",
+      "Tina",
+      "Wei"
+    ],
+    "participantImages": [
+      "/assets/logo.svg",
+      "/assets/logo.svg",
+      "/assets/logo.svg",
+      "/assets/logo.svg",
+      "/assets/logo.svg"
+    ],
+    "joined": 8,
+    "slotsLeft": 8,
+    "activityType": "badminton",
+    "status": "not-joined",
+    "imageSrc": "/assets/default-activity-image/badminton.png",
+    "distanceKm": 10,
+    "skill": "Intermediate",
+    "rating": 4.2
+  },
+  {
+    "activityTitle": "Weekend Basketball Shootaround",
+    "location": "Tampines Hub Courts",
+    "date": "Sunday, Mar 8, 2026",
+    "time": "5:00 PM - 7:00 PM",
+    "description": "Warm-up drills and light scrimmage games. Open to all who want to get reps in.",
+    "host": "Isaac Tan",
+    "hostImage": "/assets/logo.svg",
+    "participants": [
+      "Joel",
+      "Nico",
+      "Rei",
+      "Sam"
+    ],
+    "participantImages": [
+      "/assets/logo.svg",
+      "/assets/logo.svg",
+      "/assets/logo.svg",
+      "/assets/logo.svg"
+    ],
+    "joined": 11,
+    "slotsLeft": 5,
+    "activityType": "basketball",
+    "status": "not-joined",
+    "imageSrc": "/assets/default-activity-image/basketball.png",
+    "distanceKm": 7,
+    "skill": "Advanced",
+    "rating": 4.5
+  }
+]
