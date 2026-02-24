@@ -1,4 +1,5 @@
 import { MessageCircle, ThumbsUp } from "lucide-react"
+import { Link } from "react-router"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 type Discussion = {
@@ -6,11 +7,12 @@ type Discussion = {
     title: string
     authorName: string
     authorAvatar: string
-    groupName: string
+    groupName?: string | null
     content: string
     likes: number
     replies: number
     timeAgo: string
+    imgSrc?: string | null
 }
 
 type DiscussionCardProps = {
@@ -26,22 +28,12 @@ function getInitials(name: string) {
         .toUpperCase()
 }
 
-// function DiscussionCardPlaceholder({ discussion }: { discussion: Discussion }) {
-//     return (
-//         <div className="rounded-xl border bg-card p-4 shadow-sm">
-//             <div className="mb-2 text-sm text-muted-foreground">Discussion card placeholder</div>
-//             <h3 className="font-semibold">{discussion.title}</h3>
-//             <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{discussion.content}</p>
-//             <p className="mt-2 text-xs text-muted-foreground">
-//                 {discussion.authorName} · {discussion.groupName} · {discussion.timeAgo}
-//             </p>
-//         </div>
-//     )
-// }
-
 export default function DiscussionCard({ discussion }: DiscussionCardProps) {
     return (
-        <div className="rounded-xl border bg-card p-4 shadow-sm">
+        <Link
+            to={`/community/discussions/${discussion.id}`}
+            className="block rounded-xl border bg-card p-4 shadow-sm transition-colors hover:bg-accent/30"
+        >
             <header className="flex items-start justify-between gap-3">
                 <div className="flex min-w-0 items-start gap-3">
                     <Avatar className="h-9 w-9">
@@ -60,9 +52,10 @@ export default function DiscussionCard({ discussion }: DiscussionCardProps) {
                 </div>
             </header>
 
-            <p className="mt-3 text-sm leading-6 text-foreground/90">{discussion.content}</p>
+            <p className="mt-3 line-clamp-2 text-sm leading-6 text-foreground/90">{discussion.content}</p>
 
             <footer className="mt-4 flex items-center gap-5 border-t pt-3 text-sm text-muted-foreground">
+                {/* TODO: Implement like functionality */}
                 <div className="inline-flex items-center gap-1.5">
                     <ThumbsUp className="h-4 w-4" />
                     <span>{discussion.likes}</span>
@@ -75,6 +68,6 @@ export default function DiscussionCard({ discussion }: DiscussionCardProps) {
                     <span className="shrink-0 text-xs text-muted-foreground/70">{discussion.timeAgo}</span>
                 </div>
             </footer>
-        </div>
+        </Link>
     )
 }

@@ -19,7 +19,7 @@ import discussions from "@/data/discussions.json"
 type TabValue = "groups" | "discussions"
 
 export default function CommunityPage() {
-    const [activeTab, setActiveTab] = React.useState<TabValue>("groups")
+    const [activeTab, setActiveTab] = React.useState<TabValue>("discussions")
     const [searchTerm, setSearchTerm] = React.useState("")
 
     const filteredGroups = React.useMemo(() => {
@@ -38,6 +38,7 @@ export default function CommunityPage() {
         return groups.filter((group) => group.isFeatured)
     }, [])
 
+    // TODO: only show public discussion
     const filteredDiscussions = React.useMemo(() => {
         const q = searchTerm.trim().toLowerCase()
         if (!q) return discussions
@@ -46,7 +47,7 @@ export default function CommunityPage() {
             return (
                 discussion.title.toLowerCase().includes(q) ||
                 discussion.content.toLowerCase().includes(q) ||
-                discussion.groupName.toLowerCase().includes(q) ||
+                discussion.groupName?.toLowerCase().includes(q) ||
                 discussion.authorName.toLowerCase().includes(q)
             )
         })
@@ -65,6 +66,7 @@ export default function CommunityPage() {
             </div>
 
             {/* Search Bar */}
+            {/* TODO: Implement a more robust search functionality? */}
             <ButtonGroup className="my-4 w-full">
                 <Input
                     value={searchTerm}
@@ -87,8 +89,9 @@ export default function CommunityPage() {
                 className="mx-auto mb-8 w-full"
             >
                 <CustomTabsList>
+                    {/* TODO: refactor "Discussions" to "Discover" */}
+                    <CustomTabsTrigger value="discussions">Discover</CustomTabsTrigger>
                     <CustomTabsTrigger value="groups">Groups</CustomTabsTrigger>
-                    <CustomTabsTrigger value="discussions">Discussions</CustomTabsTrigger>
                 </CustomTabsList>
             </CustomTabs>
 

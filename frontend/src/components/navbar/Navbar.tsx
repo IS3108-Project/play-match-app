@@ -76,7 +76,7 @@ export default function Navbar() {
           <DropdownMenuTrigger className="flex items-center gap-2 outline-none">
             <Avatar className="h-8 w-8">
               <AvatarImage src={user?.image ?? undefined} alt={user?.name ?? "User"} />
-              <AvatarFallback className="bg-primary text-white">
+              <AvatarFallback className="bg-primary text-primary-foreground">
                 {user?.name?.charAt(0).toUpperCase() ?? "U"}
               </AvatarFallback>
             </Avatar>

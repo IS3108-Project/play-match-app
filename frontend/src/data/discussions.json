@@ -5,17 +5,18 @@
       "authorName": "Matthew Wong",
       "authorAvatar": "https://i.pravatar.cc/80?img=12",
       "groupName": "Runners in Singapore",
-      "content": "What are your favorite running routes in Singapore? Looking for some new places to explore!",
+      "content": "What are your favorite running routes in Singapore? Looking for some new places to explore! Keeping a steady routine made the biggest difference for me. If you are starting out, focus on consistency first and pace second.",
       "likes": 24,
       "replies": 3,
-      "timeAgo": "2h ago"
+      "timeAgo": "2h ago",
+      "imgSrc": "https://images.unsplash.com/photo-1552674605-db6ffd4facb5?auto=format&fit=crop&w=1600&q=80"
     },
     {
       "id": "Mg==",
       "title": "Tips for post-workout recovery?",
       "authorName": "Karen Lim",
       "authorAvatar": "https://i.pravatar.cc/80?img=47",
-      "groupName": "Gym Beginners Hub",
+      "groupName": null,
       "content": "I'm quite sore after my workouts. Any tips for better recovery?",
       "likes": 18,
       "replies": 2,
