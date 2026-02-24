@@ -65,6 +65,7 @@ export default function ExplorePage() {
         <p className="mt-2 text-muted-foreground">
           Join local activities organized by the community. Or... Try out our new feature:
         </p>
+        {/* TODO: implement finding buddies functionality (FE + BE) */}
         <Button type="button" className="bg-primary text-primary-foreground mt-4">
           Finding Buddies
         </Button>
