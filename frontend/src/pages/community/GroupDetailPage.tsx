@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import DiscussionCard from "@/components/DiscussionCard"
 import { Image } from "@/components/ui/image"
+
 // TODO: Use actual group and discussion info from the database
 import groups from "@/data/groups.json"
 import discussions from "@/data/discussions.json"
@@ -152,12 +153,7 @@ export default function GroupDetailPage() {
                                     alt={`${group.name} cover`}
                                     className="absolute inset-0 h-full w-full object-cover"
                                 />
-                                <div
-                                    className={cn(
-                                        "absolute inset-0",
-                                        isDarkBackground ? "bg-primary-foreground/40" : "bg-accent-foreground/25",
-                                    )}
-                                />
+                                <div className="absolute inset-0"/>
                             </>
                         ) : (
                             <div className="absolute w-150 inset-0 bg-secondary/20" />

@@ -8,6 +8,7 @@ import { CustomTabs, CustomTabsList, CustomTabsTrigger } from "@/components/ui/c
 import { ButtonGroup } from "@/components/ui/button-group"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import CreatePostDrawer from "@/components/ui/CreatePostDrawer"
 import GroupCard from "@/components/GroupCard"
 import FeaturedGroupCard from "@/components/FeaturedGroupCard"
 import DiscussionCard from "@/components/DiscussionCard"
@@ -132,11 +133,7 @@ export default function CommunityPage() {
                 <div className="flex flex-col gap-4 w-full items-stretch">
                     <div className="flex items-center justify-between">
                         <h3 className="text-left text-lg font-semibold">Community Discussions</h3>
-                        {/* TODO: Implement new post button */}
-                        <Button type="button" className="bg-primary text-primary-foreground">
-                            <PlusIcon className="size-4" />
-                            New Post
-                        </Button>
+                        <CreatePostDrawer groupOptions={groups.map((group) => group.name)} />
                     </div>
                     {filteredDiscussions.map((discussion) => (
                         // <DiscussionCardPlaceholder key={discussion.id} discussion={discussion} />
