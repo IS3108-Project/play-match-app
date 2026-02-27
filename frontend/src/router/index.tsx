@@ -7,6 +7,12 @@ import CommunityPage from "@/pages/activity/CommunityPage";
 import DiscussionPostPage from "@/pages/community/DiscussionPostPage";
 import GroupDetailPage from "@/pages/community/GroupDetailPage";
 import ProfilePage from "@/pages/user/ProfilePage";
+import SettingsPage from "@/pages/settings/SettingsPage";
+import SettingsLayout from "@/pages/settings/SettingsLayout";
+import PersonalInfoPage from "@/pages/settings/PersonalInfoPage";
+import SecurityPage from "@/pages/settings/SecurityPage";
+import NotificationsPage from "@/pages/settings/NotificationsPage";
+import FaqPage from "@/pages/settings/FaqPage";
 import ForgotPasswordPage from "@/pages/auth/ForgotPasswordPage";
 import LoginPage from "@/pages/auth/LoginPage";
 import RegisterPage from "@/pages/auth/RegisterPage";
@@ -40,9 +46,23 @@ export const router = createBrowserRouter([
       { path: "my-activities", element: <MyActivitiesPage /> },
       { path: "community", element: <CommunityPage /> },
       { path: "community/discussions", element: <CommunityPage /> },
-      { path: "community/discussions/:discussionId", element: <DiscussionPostPage /> },
+      {
+        path: "community/discussions/:discussionId",
+        element: <DiscussionPostPage />,
+      },
       { path: "community/groups/:groupId", element: <GroupDetailPage /> },
       { path: "profile", element: <ProfilePage /> },
+      {
+        path: "settings",
+        element: <SettingsLayout />,
+        children: [
+          { index: true, element: <SettingsPage /> },
+          { path: "personal-info", element: <PersonalInfoPage /> },
+          { path: "security", element: <SecurityPage /> },
+          { path: "notifications", element: <NotificationsPage /> },
+          { path: "faq", element: <FaqPage /> },
+        ],
+      },
     ],
   },
 
@@ -50,8 +70,6 @@ export const router = createBrowserRouter([
   {
     path: "/admin",
     element: <AdminLayout />,
-    children: [
-      { index: true, element: <UsersPage /> },
-    ],
+    children: [{ index: true, element: <UsersPage /> }],
   },
 ]);
