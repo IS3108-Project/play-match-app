@@ -9,6 +9,7 @@ import logo from "@/assets/logo.svg"
 
 // TODO: Use actual activity info from the database
 import activities from "@/data/activities.json"
+import { isParticipantStatus, type Activity } from "@/types/activity"
 
 
 type TabValue = "upcoming" | "past" | "hosted"
@@ -27,20 +28,32 @@ export default function MyActivitiesPage() {
     const [activeTab, setActiveTab] = React.useState<TabValue>("upcoming")
     const today = startOfDay(new Date())
 
+    const typedActivities = React.useMemo<Activity[]>(() => {
+        return activities.map((activity) => ({
+            ...activity,
+            status: isParticipantStatus(activity.status) ? activity.status : "not-joined",
+            participantStatuses: Array.isArray(activity.participantStatuses)
+                ? activity.participantStatuses.filter(isParticipantStatus)
+                : undefined,
+        }))
+    }, [])
+
     const filteredActivities = React.useMemo(() => {
-        const sortedActivities = activities.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+        const sortedActivities = [...typedActivities].sort(
+            (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+        )
         // TODO: Filter activities by the user, this returns all activities for now
         // TOOD: also filter out the not joined activites...
         if (activeTab === "hosted") return sortedActivities
 
-        return activities.filter((activity) => {
+        return sortedActivities.filter((activity) => {
             const activityDate = parseActivityDate(activity.date)
             if (!activityDate) return false
 
             if (activeTab === "upcoming") return activityDate > today
             return activityDate < today // past
         })
-    }, [activeTab, today])
+    }, [activeTab, today, typedActivities])
 
     const handleHostActivitySubmit = async (values: HostActivityValues) => {
         // TODO: Replace with backend API call
@@ -50,8 +63,8 @@ export default function MyActivitiesPage() {
 
     // TODO: Use actual activity types from the database
     const activityTypes = React.useMemo(
-        () => Array.from(new Set(activities.map((a) => a.activityType))),
-        []
+        () => Array.from(new Set(typedActivities.map((a) => a.activityType))),
+        [typedActivities]
     )
 
     return (
@@ -106,10 +119,7 @@ export default function MyActivitiesPage() {
                 {filteredActivities.map((activity) => (
                     <ActivityCard
                         key={`${activity.activityTitle}-${activity.date}`}
-                        activity={{
-                            ...activity,
-                            status: activity.status as "joined" | "confirmed" | "cancelled" | "pending" | "ended" | "not-joined"
-                        }}
+                        activity={activity}
                     />
                 ))}
             </div>
