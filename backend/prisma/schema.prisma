@@ -39,6 +39,10 @@ model User {
   shouldOnboard  Boolean   @default(true)
   completedSteps String?
 
+  hostedActivities Activity[]    @relation("hostedActivities")
+  participations   Participant[]
+  invitedGuests    Guest[]       @relation("invitedGuests")
+
   @@unique([email])
   @@map("user")
 }
@@ -89,4 +93,83 @@ model Verification {
 
   @@index([identifier])
   @@map("verification")
+}
+
+// ── Activity Domain ─────────────────────────────────────────────────────
+
+enum ParticipantStatus {
+  CONFIRMED
+  PENDING
+  WAITLISTED
+  CANCELLED
+  REJECTED
+}
+
+enum ActivityStatus {
+  ACTIVE
+  CANCELLED
+  COMPLETED
+}
+
+model Activity {
+  id              String         @id @default(cuid())
+  title           String
+  description     String
+  activityType    String
+  date            DateTime
+  startTime       String
+  endTime         String
+  location        String
+  skillLevel      String
+  maxParticipants Int
+  requireApproval Boolean        @default(false)
+  status          ActivityStatus @default(ACTIVE)
+  imageSrc        String?
+
+  hostId       String
+  host         User          @relation("hostedActivities", fields: [hostId], references: [id], onDelete: Cascade)
+  participants Participant[]
+  guests       Guest[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([hostId])
+  @@index([date])
+  @@index([status])
+  @@map("activity")
+}
+
+model Participant {
+  id            String            @id @default(cuid())
+  userId        String
+  activityId    String
+  status        ParticipantStatus @default(CONFIRMED)
+  attended      Boolean           @default(false)
+  joinedAt      DateTime          @default(now())
+  rejectionNote String?
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, activityId])
+  @@index([activityId, status])
+  @@map("participant")
+}
+
+model Guest {
+  id          String @id @default(cuid())
+  name        String
+  contactType String
+  contact     String
+  activityId  String
+  invitedById String
+
+  activity  Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  invitedBy User     @relation("invitedGuests", fields: [invitedById], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([activityId])
+  @@map("guest")
 }
