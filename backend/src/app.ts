@@ -4,6 +4,7 @@
  */
 import express from "express";
 import cors from "cors";
+import path from "path";
 import routes from "./routes/index";
 import { toNodeHandler } from "better-auth/node";
 import { auth } from "./config/auth";
@@ -19,6 +20,9 @@ app.use(
 );
 app.all("/api/auth/*splat", toNodeHandler(auth));
 app.use(express.json());
+
+// Serve uploaded files
+app.use(express.static(path.join(__dirname, "../public")));
 
 app.use("/api", routes);
 
