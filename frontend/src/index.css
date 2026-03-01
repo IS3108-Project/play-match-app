@@ -181,3 +181,9 @@ html, body, #root {
   max-width: 100%;
   overflow-x: hidden;
 }
+
+/* Google Places Autocomplete dropdown sits on document.body —
+   needs to render above Vaul drawer overlay (z-index ~50) */
+.pac-container {
+  z-index: 9999 !important;
+}

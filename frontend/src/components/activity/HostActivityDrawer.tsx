@@ -1,11 +1,12 @@
 "use client"
 
 import * as React from "react"
-import { ChevronDown, PlusIcon } from "lucide-react"
+import { ChevronDown, PlusIcon, Pencil, ImagePlus, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { format } from "date-fns"
@@ -25,8 +26,10 @@ import {
     DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
+import { activityApi } from "@/lib/api"
+import { toast } from "sonner"
+import LocationPicker from "./LocationPicker"
 
-// TODO: replace with actual activity types from the database
 const ACTIVITY_TYPE_OPTIONS = ["Running", "Yoga", "Badminton", "Basketball", "Tennis", "Cycling", "Swimming", "Football"] as const
 const SKILL_LEVEL_OPTIONS = ["Beginner", "Intermediate", "Advanced"] as const
 
@@ -40,11 +43,16 @@ export type HostActivityValues = {
     skillLevel: string
     maxParticipants: number
     description: string
+    requireApproval: boolean
+    imageSrc?: string
 }
 
 type HostActivityFormProps = {
     onSubmit?: (values: HostActivityValues) => Promise<void> | void
     activityTypes?: string[]
+    initialValues?: HostActivityValues
+    mode?: "create" | "edit"
+    className?: string
 }
 
 const INITIAL_VALUES: HostActivityValues = {
@@ -57,19 +65,59 @@ const INITIAL_VALUES: HostActivityValues = {
     skillLevel: "",
     maxParticipants: 2,
     description: "",
+    requireApproval: false,
 }
 
 export default function HostActivityForm({
     onSubmit,
     activityTypes = [...ACTIVITY_TYPE_OPTIONS],
+    initialValues,
+    mode = "create",
+    className,
 }: HostActivityFormProps) {
+    const defaults = initialValues ?? INITIAL_VALUES
     const [open, setOpen] = React.useState(false)
-    const [form, setForm] = React.useState<HostActivityValues>(INITIAL_VALUES)
-    const [selectedDate, setSelectedDate] = React.useState<Date | undefined>(undefined)
+    const [form, setForm] = React.useState<HostActivityValues>(defaults)
+    const [selectedDate, setSelectedDate] = React.useState<Date | undefined>(
+        defaults.date ? new Date(defaults.date) : undefined
+    )
     const [isSubmitting, setIsSubmitting] = React.useState(false)
+    const [uploading, setUploading] = React.useState(false)
+    const fileInputRef = React.useRef<HTMLInputElement>(null)
+
+    React.useEffect(() => {
+        if (initialValues) {
+            setForm(initialValues)
+            setSelectedDate(initialValues.date ? new Date(initialValues.date) : undefined)
+        }
+    }, [initialValues])
 
     const handleChange = <K extends keyof HostActivityValues>(key: K, value: HostActivityValues[K]) => {
         setForm((prev) => ({ ...prev, [key]: value }))
+    }
+
+    const handleImageUpload = async (file: File) => {
+        setUploading(true)
+        try {
+            const url = await activityApi.uploadImage(file)
+            handleChange("imageSrc", url)
+        } catch (err: any) {
+            toast.error(err.message || "Failed to upload image")
+        } finally {
+            setUploading(false)
+        }
+    }
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault()
+        const file = e.dataTransfer.files[0]
+        if (file && file.type.startsWith("image/")) handleImageUpload(file)
+    }
+
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (file) handleImageUpload(file)
+        e.target.value = ""
     }
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -80,34 +128,99 @@ export default function HostActivityForm({
             if (onSubmit) {
                 await onSubmit(form)
             } else {
-                // Dummy DB call placeholder
                 await new Promise((resolve) => setTimeout(resolve, 500))
                 console.log("Host activity payload:", form)
             }
 
             setOpen(false)
-            setForm(INITIAL_VALUES)
+            if (mode === "create") {
+                setForm(INITIAL_VALUES)
+                setSelectedDate(undefined)
+            }
         } finally {
             setIsSubmitting(false)
         }
     }
 
+    const isEdit = mode === "edit"
+
+    // Resolve preview URL for uploaded images
+    const previewSrc = form.imageSrc
+        ? form.imageSrc.startsWith("/uploads/")
+            ? `http://localhost:3000${form.imageSrc}`
+            : form.imageSrc
+        : null
+
     return (
         <Drawer direction="bottom" open={open} onOpenChange={setOpen}>
             <DrawerTrigger asChild>
-                <Button type="button" className="bg-primary text-primary-foreground">
-                    <PlusIcon className="size-4" />
-                    Host Activity
-                </Button>
+                {isEdit ? (
+                    <Button type="button" variant="outline" size="sm" className={className}>
+                        <Pencil className="size-4" />
+                        Edit
+                    </Button>
+                ) : (
+                    <Button type="button" className={cn("bg-primary text-primary-foreground", className)}>
+                        <PlusIcon className="size-4" />
+                        Host Activity
+                    </Button>
+                )}
             </DrawerTrigger>
 
             <DrawerContent className="h-[88vh] flex flex-col">
                 <DrawerHeader className="border-b shrink-0">
-                    <DrawerTitle className="text-center">Host Activity</DrawerTitle>
+                    <DrawerTitle className="text-center">
+                        {isEdit ? "Edit Activity" : "Host Activity"}
+                    </DrawerTitle>
                 </DrawerHeader>
 
                 <form onSubmit={handleSubmit} className="flex-1 min-h-0 flex flex-col">
                     <div className="flex-1 min-h-0 overflow-y-auto px-4 py-5 space-y-5">
+                        {/* Image Upload */}
+                        <div className="space-y-2">
+                            <Label>Cover Image</Label>
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp"
+                                className="hidden"
+                                onChange={handleFileSelect}
+                            />
+                            {previewSrc ? (
+                                <div className="relative rounded-lg overflow-hidden">
+                                    <img
+                                        src={previewSrc}
+                                        alt="Activity cover"
+                                        className="w-full h-40 object-cover"
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="destructive"
+                                        size="icon"
+                                        className="absolute top-2 right-2 h-7 w-7"
+                                        onClick={() => handleChange("imageSrc", undefined)}
+                                    >
+                                        <X className="size-4" />
+                                    </Button>
+                                </div>
+                            ) : (
+                                <div
+                                    className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-muted-foreground/25 p-6 cursor-pointer hover:border-muted-foreground/50 transition-colors"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    onDrop={handleDrop}
+                                    onDragOver={(e) => e.preventDefault()}
+                                >
+                                    <ImagePlus className="size-8 text-muted-foreground/50" />
+                                    <p className="text-sm text-muted-foreground">
+                                        {uploading ? "Uploading..." : "Click or drag to upload"}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground/70">
+                                        JPG, PNG or WebP (max 5MB)
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+
                         {/* Activity Name */}
                         <div className="space-y-3">
                             <Label htmlFor="activity-name">Activity Name</Label>
@@ -204,13 +317,10 @@ export default function HostActivityForm({
 
                         {/* Meeting Location */}
                         <div className="space-y-2">
-                            <Label htmlFor="meeting-location">Meeting Location</Label>
-                            <Input
-                                id="meeting-location"
+                            <Label>Meeting Location</Label>
+                            <LocationPicker
                                 value={form.meetingLocation}
-                                onChange={(e) => handleChange("meetingLocation", e.target.value)}
-                                placeholder="e.g. Bedok Sports Hall"
-                                required
+                                onChange={(val) => handleChange("meetingLocation", val)}
                             />
                         </div>
 
@@ -255,6 +365,21 @@ export default function HostActivityForm({
                             />
                         </div>
 
+                        {/* Require Approval */}
+                        <div className="flex items-center justify-between rounded-lg border p-3">
+                            <div className="space-y-0.5">
+                                <Label htmlFor="require-approval">Require Join Approval</Label>
+                                <p className="text-xs text-muted-foreground">
+                                    Review and approve join requests before confirming
+                                </p>
+                            </div>
+                            <Switch
+                                id="require-approval"
+                                checked={form.requireApproval}
+                                onCheckedChange={(checked) => handleChange("requireApproval", checked)}
+                            />
+                        </div>
+
                         {/* Description */}
                         <div className="space-y-2">
                             <Label htmlFor="description">Description</Label>
@@ -273,12 +398,12 @@ export default function HostActivityForm({
                     </div>
 
                     <DrawerFooter className="border-t">
-                        {/* TODO: Implement submit functionality */}
                         <Button type="submit" className="w-full" disabled={isSubmitting}>
-                            {isSubmitting ? "Submitting..." : "Create Activity"}
+                            {isSubmitting
+                                ? (isEdit ? "Saving..." : "Creating...")
+                                : (isEdit ? "Save Changes" : "Create Activity")}
                         </Button>
                         <DrawerClose asChild>
-                            {/* TODO: Implement cancel functionality */}
                             <Button type="button" variant="outline" className="w-full">
                                 Cancel
                             </Button>

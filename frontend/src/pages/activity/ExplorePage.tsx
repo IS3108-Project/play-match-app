@@ -4,10 +4,9 @@ import SearchDrawer from "@/components/SearchDrawer"
 import ActivityCard from "@/components/activity/ActivityCard"
 import FilterBar from "@/components/FilterBar"
 import { Button } from "@/components/ui/button"
+import { Spinner } from "@/components/ui/spinner"
 import logo from "@/assets/logo.svg"
-
-// TODO: Use actual activity info from the database
-import activities from "@/data/activities.json"
+import { activityApi, type Activity } from "@/lib/api"
 
 export default function ExplorePage() {
   const [date, setDate] = React.useState<Date>()
@@ -17,42 +16,57 @@ export default function ExplorePage() {
   const [selectedSkills, setSelectedSkills] = React.useState<("Beginner" | "Intermediate" | "Advanced")[]>([])
   const [radiusKm, setRadiusKm] = React.useState<number | "any">("any")
   const [sortBy, setSortBy] = React.useState<"date" | "distance">("date")
+
+  const [activities, setActivities] = React.useState<Activity[]>([])
+  const [loading, setLoading] = React.useState(true)
+
   const activityTypes = React.useMemo(
-    () => Array.from(new Set(activities.map((activity) => activity.activityType))),
-    []
+    () => Array.from(new Set(activities.map((a) => a.activityType))),
+    [activities]
   )
 
-  // TODO: ideally do the filtering on the backend, then fetch filtered activities from the database
-  const filteredActivities = React.useMemo(() => {
-    const result: typeof activities = []
-
-    for (const activity of activities) {
-      if (activity.status !== "not-joined") continue
-
-      const matchesActivity =
-        selectedActivityTypes.length === 0 ||
-        selectedActivityTypes.includes(activity.activityType)
-
-      const matchesSkill =
-        selectedSkills.length === 0 ||
-        selectedSkills.includes(activity.skill as "Beginner" | "Intermediate" | "Advanced")
-
-      const matchesRadius =
-        radiusKm === "any" || activity.distanceKm <= radiusKm
-
-      if (matchesActivity && matchesSkill && matchesRadius) {
-        result.push(activity)
+  const fetchActivities = React.useCallback(async () => {
+    setLoading(true)
+    try {
+      const params: Record<string, string> = {}
+      if (selectedActivityTypes.length > 0) {
+        params.activityType = selectedActivityTypes.join(",")
       }
+      if (selectedSkills.length === 1) {
+        params.skillLevel = selectedSkills[0]!
+      }
+      const data = await activityApi.list(params)
+      setActivities(data)
+    } catch {
+      // silently fail — user sees empty state
+    } finally {
+      setLoading(false)
+    }
+  }, [selectedActivityTypes, selectedSkills])
+
+  React.useEffect(() => {
+    fetchActivities()
+  }, [fetchActivities])
+
+  // Client-side filtering for skills (multi-select) and sort
+  const filteredActivities = React.useMemo(() => {
+    let result = activities
+
+    if (selectedSkills.length > 1) {
+      result = result.filter((a) =>
+        selectedSkills.includes(a.skillLevel as "Beginner" | "Intermediate" | "Advanced")
+      )
     }
 
-    result.sort((a, b) => {
-      if (sortBy === "distance") return a.distanceKm - b.distanceKm
-      // date sort
-      return new Date(a.date).getTime() - new Date(b.date).getTime()
+    result = [...result].sort((a, b) => {
+      if (sortBy === "date") {
+        return new Date(a.date).getTime() - new Date(b.date).getTime()
+      }
+      return 0 // distance sorting not supported without geolocation
     })
 
     return result
-  }, [selectedActivityTypes, selectedSkills, radiusKm, sortBy])
+  }, [activities, selectedSkills, sortBy])
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -65,7 +79,6 @@ export default function ExplorePage() {
         <p className="mt-2 text-muted-foreground">
           Join local activities organized by the community. Or... Try out our new feature:
         </p>
-        {/* TODO: implement finding buddies functionality (FE + BE) */}
         <Button type="button" className="bg-primary text-primary-foreground mt-4">
           Finding Buddies
         </Button>
@@ -95,19 +108,25 @@ export default function ExplorePage() {
       />
 
       {/* Activities Grid */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        {filteredActivities.map((activity) => (
-          <ActivityCard
-            key={`${activity.activityTitle}-${activity.date}`}
-            activity={{
-              ...activity,
-              status: activity.status as "joined" | "confirmed" | "cancelled" | "pending" | "ended" | "not-joined"
-            }}
-          />
-        ))}
-      </div>
+      {loading ? (
+        <div className="flex justify-center py-16">
+          <Spinner className="size-8 text-primary" />
+        </div>
+      ) : filteredActivities.length === 0 ? (
+        <div className="text-center py-16">
+          <p className="text-muted-foreground">No activities found. Be the first to host one!</p>
+        </div>
+      ) : (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          {filteredActivities.map((activity) => (
+            <ActivityCard
+              key={activity.id}
+              activity={activity}
+              onRefresh={fetchActivities}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
-
-
