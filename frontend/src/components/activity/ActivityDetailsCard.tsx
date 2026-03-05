@@ -2,11 +2,6 @@
 
 import * as React from "react";
 import { Button } from "@/components/ui/button";
-import ActivityDetailsSection from "@/components/activity/ActivityDetailsSection";
-import BringAGuestForm from "@/components/activity/BringAGuestForm";
-import EditActivityForm from "@/components/activity/EditActivityForm";
-import type { EditActivityValues } from "@/components/activity/EditActivityForm";
-import type { Activity, ParticipantStatus } from "@/types/activity";
 import {
   Drawer,
   DrawerContent,
