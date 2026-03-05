@@ -7,19 +7,20 @@
     "description": "Easy-paced morning jog around MacRitchie with a short warm-up and cool-down. Great for beginners looking for a friendly group run.",
     "host": "Ethan Lim",
     "hostImage": "/assets/logo.svg",
-    "participants": [
-      "Sofia",
-      "Marcus",
-      "Jia Yi",
-      "Daniel",
-      "Priya"
-    ],
+    "participants": ["Sofia", "Marcus", "Jia Yi", "Daniel", "Priya"],
     "participantImages": [
       "/assets/logo.svg",
       "/assets/logo.svg",
       "/assets/logo.svg",
       "/assets/logo.svg",
       "/assets/logo.svg"
+    ],
+    "participantStatuses": [
+      "confirmed",
+      "confirmed",
+      "joined",
+      "pending",
+      "cancelled"
     ],
     "joined": 12,
     "slotsLeft": 8,
@@ -38,19 +39,20 @@
     "description": "Unwind with a guided sunset yoga flow by the beach. Bring your own mat and water bottle.",
     "host": "Mei Chen",
     "hostImage": "/assets/logo.svg",
-    "participants": [
-      "Alicia",
-      "Noah",
-      "Farah",
-      "Ben",
-      "Iris"
-    ],
+    "participants": ["Alicia", "Noah", "Farah", "Ben", "Iris"],
     "participantImages": [
       "/assets/logo.svg",
       "/assets/logo.svg",
       "/assets/logo.svg",
       "/assets/logo.svg",
       "/assets/logo.svg"
+    ],
+    "participantStatuses": [
+      "confirmed",
+      "confirmed",
+      "joined",
+      "joined",
+      "pending"
     ],
     "joined": 15,
     "slotsLeft": 5,
@@ -69,14 +71,7 @@
     "description": "Friendly doubles matches for intermediate players. Rotation format so everyone gets court time.",
     "host": "Ryan Tan",
     "hostImage": "/assets/logo.svg",
-    "participants": [
-      "Kelvin",
-      "Amelia",
-      "Hafiz",
-      "Serene",
-      "Ivan",
-      "Nadia"
-    ],
+    "participants": ["Kelvin", "Amelia", "Hafiz", "Serene", "Ivan", "Nadia"],
     "participantImages": [
       "/assets/logo.svg",
       "/assets/logo.svg",
@@ -84,6 +79,14 @@
       "/assets/logo.svg",
       "/assets/logo.svg",
       "/assets/logo.svg"
+    ],
+    "participantStatuses": [
+      "confirmed",
+      "confirmed",
+      "joined",
+      "joined",
+      "pending",
+      "cancelled"
     ],
     "joined": 10,
     "slotsLeft": 6,
@@ -120,6 +123,15 @@
       "/assets/logo.svg",
       "/assets/logo.svg"
     ],
+    "participantStatuses": [
+      "confirmed",
+      "confirmed",
+      "confirmed",
+      "joined",
+      "joined",
+      "pending",
+      "cancelled"
+    ],
     "joined": 14,
     "slotsLeft": 2,
     "activityType": "basketball",
@@ -137,18 +149,14 @@
     "description": "Short interval session with easy recovery jogs. Friendly pace groups available.",
     "host": "Kai Wong",
     "hostImage": "/assets/logo.svg",
-    "participants": [
-      "Nina",
-      "Aarav",
-      "Claire",
-      "Ming"
-    ],
+    "participants": ["Nina", "Aarav", "Claire", "Ming"],
     "participantImages": [
       "/assets/logo.svg",
       "/assets/logo.svg",
       "/assets/logo.svg",
       "/assets/logo.svg"
     ],
+    "participantStatuses": ["confirmed", "joined", "pending", "cancelled"],
     "joined": 9,
     "slotsLeft": 7,
     "activityType": "running",
@@ -166,16 +174,13 @@
     "description": "Gentle morning flow focused on mobility and breathing. Suitable for first-timers.",
     "host": "Hannah Goh",
     "hostImage": "/assets/logo.svg",
-    "participants": [
-      "Lena",
-      "Arjun",
-      "Mabel"
-    ],
+    "participants": ["Lena", "Arjun", "Mabel"],
     "participantImages": [
       "/assets/logo.svg",
       "/assets/logo.svg",
       "/assets/logo.svg"
     ],
+    "participantStatuses": ["confirmed", "joined", "pending"],
     "joined": 6,
     "slotsLeft": 9,
     "activityType": "yoga",
@@ -193,19 +198,20 @@
     "description": "Casual doubles with rotation format. Bring your own racket if possible.",
     "host": "Daryl Lee",
     "hostImage": "/assets/logo.svg",
-    "participants": [
-      "Yuki",
-      "Sean",
-      "Farid",
-      "Tina",
-      "Wei"
-    ],
+    "participants": ["Yuki", "Sean", "Farid", "Tina", "Wei"],
     "participantImages": [
       "/assets/logo.svg",
       "/assets/logo.svg",
       "/assets/logo.svg",
       "/assets/logo.svg",
       "/assets/logo.svg"
+    ],
+    "participantStatuses": [
+      "confirmed",
+      "confirmed",
+      "joined",
+      "pending",
+      "cancelled"
     ],
     "joined": 8,
     "slotsLeft": 8,
@@ -224,18 +230,14 @@
     "description": "Warm-up drills and light scrimmage games. Open to all who want to get reps in.",
     "host": "Isaac Tan",
     "hostImage": "/assets/logo.svg",
-    "participants": [
-      "Joel",
-      "Nico",
-      "Rei",
-      "Sam"
-    ],
+    "participants": ["Joel", "Nico", "Rei", "Sam"],
     "participantImages": [
       "/assets/logo.svg",
       "/assets/logo.svg",
       "/assets/logo.svg",
       "/assets/logo.svg"
     ],
+    "participantStatuses": ["confirmed", "joined", "pending", "cancelled"],
     "joined": 11,
     "slotsLeft": 5,
     "activityType": "basketball",
