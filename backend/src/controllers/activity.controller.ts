@@ -4,7 +4,10 @@ import * as activityService from "../services/activity.service";
 
 export async function createActivity(req: AuthRequest, res: Response) {
   try {
-    const activity = await activityService.createActivity(req.user.id, req.body);
+    const activity = await activityService.createActivity(
+      req.user.id,
+      req.body,
+    );
     res.status(201).json(activity);
   } catch (error) {
     console.error("Failed to create activity:", error);
@@ -14,7 +17,10 @@ export async function createActivity(req: AuthRequest, res: Response) {
 
 export async function getActivities(req: AuthRequest, res: Response) {
   try {
-    const { activityType, skillLevel, dateFrom, dateTo } = req.query as Record<string, string | undefined>;
+    const { activityType, skillLevel, dateFrom, dateTo } = req.query as Record<
+      string,
+      string | undefined
+    >;
     const activities = await activityService.getActivities(req.user.id, {
       ...(activityType ? { activityType: activityType.split(",") } : {}),
       ...(skillLevel ? { skillLevel } : {}),
@@ -30,7 +36,8 @@ export async function getActivities(req: AuthRequest, res: Response) {
 
 export async function getMyActivities(req: AuthRequest, res: Response) {
   try {
-    const tab = (req.query as Record<string, string | undefined>).tab || "upcoming";
+    const tab =
+      (req.query as Record<string, string | undefined>).tab || "upcoming";
     const activities = await activityService.getMyActivities(
       req.user.id,
       tab as "upcoming" | "past" | "hosted",
@@ -60,7 +67,11 @@ export async function getActivity(req: AuthRequest, res: Response) {
 export async function updateActivity(req: AuthRequest, res: Response) {
   try {
     const id = req.params.id as string;
-    const activity = await activityService.updateActivity(id, req.user.id, req.body);
+    const activity = await activityService.updateActivity(
+      id,
+      req.user.id,
+      req.body,
+    );
     res.json(activity);
   } catch (error: any) {
     if (error.message === "FORBIDDEN") {
@@ -103,7 +114,11 @@ export async function cancelActivity(req: AuthRequest, res: Response) {
   try {
     const id = req.params.id as string;
     const { transferToUserId } = req.body ?? {};
-    const result = await activityService.cancelActivity(id, req.user.id, transferToUserId);
+    const result = await activityService.cancelActivity(
+      id,
+      req.user.id,
+      transferToUserId,
+    );
     res.json(result);
   } catch (error: any) {
     if (error.message === "FORBIDDEN") {
@@ -154,8 +169,8 @@ export async function joinActivity(req: AuthRequest, res: Response) {
 export async function leaveActivity(req: AuthRequest, res: Response) {
   try {
     const id = req.params.id as string;
-    await activityService.leaveActivity(id, req.user.id);
-    res.json({ message: "Left activity" });
+    const result = await activityService.leaveActivity(id, req.user.id);
+    res.json({ message: "Left activity", ...result });
   } catch (error: any) {
     if (error.message === "NOT_PARTICIPANT") {
       res.status(404).json({ error: "Not a participant" });
@@ -174,7 +189,11 @@ export async function approveParticipant(req: AuthRequest, res: Response) {
   try {
     const id = req.params.id as string;
     const participantId = req.params.participantId as string;
-    const result = await activityService.approveParticipant(id, req.user.id, participantId);
+    const result = await activityService.approveParticipant(
+      id,
+      req.user.id,
+      participantId,
+    );
     res.json(result);
   } catch (error: any) {
     if (error.message === "FORBIDDEN") {
@@ -195,7 +214,12 @@ export async function rejectParticipant(req: AuthRequest, res: Response) {
     const id = req.params.id as string;
     const participantId = req.params.participantId as string;
     const { rejectionNote } = req.body ?? {};
-    await activityService.rejectParticipant(id, req.user.id, participantId, rejectionNote);
+    await activityService.rejectParticipant(
+      id,
+      req.user.id,
+      participantId,
+      rejectionNote,
+    );
     res.json({ message: "Participant rejected" });
   } catch (error: any) {
     if (error.message === "FORBIDDEN") {
@@ -241,7 +265,11 @@ export async function removeGuest(req: AuthRequest, res: Response) {
 export async function markAttendance(req: AuthRequest, res: Response) {
   try {
     const id = req.params.id as string;
-    await activityService.markAttendance(id, req.user.id, req.body.participantIds);
+    await activityService.markAttendance(
+      id,
+      req.user.id,
+      req.body.attendance ?? {},
+    );
     res.json({ message: "Attendance marked" });
   } catch (error: any) {
     if (error.message === "FORBIDDEN") {

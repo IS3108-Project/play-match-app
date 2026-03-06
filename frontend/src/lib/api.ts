@@ -35,21 +35,49 @@ export interface Activity {
   host: { id: string; name: string; image?: string | null };
   _count: { confirmed: number };
   slotsLeft: number;
-  myStatus: "CONFIRMED" | "PENDING" | "WAITLISTED" | "CANCELLED" | "REJECTED" | null;
+  myStatus:
+    | "CONFIRMED"
+    | "PENDING"
+    | "WAITLISTED"
+    | "CANCELLED"
+    | "REJECTED"
+    | null;
   pendingCount?: number;
   createdAt: string;
 }
 
+export type AttendanceStatus =
+  | "PENDING"
+  | "ATTENDED"
+  | "NO_SHOW"
+  | "LATE_CANCEL"
+  | "CANCELLED";
+
+export interface ReliabilityBadge {
+  label:
+    | "Rock Solid"
+    | "Consistent"
+    | "Inconsistent"
+    | "No-Show Warning"
+    | "New";
+  icon: string;
+  colour: "green" | "yellow" | "orange" | "red" | "grey";
+}
+
+export interface ActivityParticipant {
+  id: string;
+  userId: string;
+  status: string;
+  attendanceStatus: AttendanceStatus;
+  joinedAt: string;
+  rejectionNote?: string | null;
+  reliabilityScore: number | null;
+  reliabilityBadge: ReliabilityBadge;
+  user: { id: string; name: string; image?: string | null; email: string };
+}
+
 export interface ActivityDetail extends Activity {
-  participants: Array<{
-    id: string;
-    userId: string;
-    status: string;
-    attended: boolean;
-    joinedAt: string;
-    rejectionNote?: string | null;
-    user: { id: string; name: string; image?: string | null; email: string };
-  }>;
+  participants: ActivityParticipant[];
   guests: Array<{
     id: string;
     name: string;
@@ -94,13 +122,13 @@ export interface CancelInfo {
 
 export const activityApi = {
   list: (params?: Record<string, string>) =>
-    request<Activity[]>(`/activities${params ? `?${new URLSearchParams(params)}` : ""}`),
+    request<Activity[]>(
+      `/activities${params ? `?${new URLSearchParams(params)}` : ""}`,
+    ),
 
-  mine: (tab: string) =>
-    request<Activity[]>(`/activities/mine?tab=${tab}`),
+  mine: (tab: string) => request<Activity[]>(`/activities/mine?tab=${tab}`),
 
-  get: (id: string) =>
-    request<ActivityDetail>(`/activities/${id}`),
+  get: (id: string) => request<ActivityDetail>(`/activities/${id}`),
 
   create: (data: CreateActivityPayload) =>
     request<Activity>("/activities", {
@@ -130,7 +158,11 @@ export const activityApi = {
     request<{ status: string }>(`/activities/${id}/join`, { method: "POST" }),
 
   leave: (id: string) =>
-    request<{ message: string }>(`/activities/${id}/leave`, { method: "POST" }),
+    request<{
+      message: string;
+      isLateCancellation: boolean;
+      attendanceStatus: AttendanceStatus;
+    }>(`/activities/${id}/leave`, { method: "POST" }),
 
   approve: (id: string, participantId: string) =>
     request<{ status: string }>(`/activities/${id}/approve/${participantId}`, {
@@ -154,10 +186,11 @@ export const activityApi = {
       method: "DELETE",
     }),
 
-  markAttendance: (id: string, participantIds: string[]) =>
+  // attendance: { [participantId]: "ATTENDED" | "NO_SHOW" | "LATE_CANCEL" }
+  markAttendance: (id: string, attendance: Record<string, AttendanceStatus>) =>
     request<{ message: string }>(`/activities/${id}/attendance`, {
       method: "POST",
-      body: JSON.stringify({ participantIds }),
+      body: JSON.stringify({ attendance }),
     }),
 
   uploadImage: async (file: File): Promise<string> => {
@@ -175,4 +208,91 @@ export const activityApi = {
     const data = await res.json();
     return data.url;
   },
+};
+// ── User / Profile API ──────────────────────────────────────────────────
+
+export interface UserProfile {
+  id: string;
+  name: string;
+  image?: string | null;
+  bio?: string | null;
+  sportInterests: string[];
+  skillLevel?: string | null;
+  preferredAreas: string[];
+  preferredTimes: string[];
+  memberSince: string;
+  reliabilityScore: number | null;
+  reliabilityBadge: ReliabilityBadge;
+  stats: {
+    totalAttended: number;
+    thisMonth: number;
+    activitiesHosted: number;
+    currentStreak: number;
+    longestStreak: number;
+    favoriteSport: string | null;
+  };
+  activityHistory: Array<{
+    id: string;
+    title: string;
+    activityType: string;
+    date: string;
+    startTime: string;
+    location: string;
+    skillLevel: string;
+    participantStatus: string;
+    attendanceStatus: AttendanceStatus;
+    host: { id: string; name: string; image?: string | null };
+  }>;
+  isOwnProfile: boolean;
+}
+
+export const userApi = {
+  getProfile: (userId: string) =>
+    request<UserProfile>(`/users/${userId}/profile`),
+
+  updateMe: (data: {
+    bio?: string;
+    name?: string;
+    image?: string;
+    sportInterests?: string[];
+    skillLevel?: string;
+    preferredAreas?: string[];
+    preferredTimes?: string[];
+  }) =>
+    request<Partial<UserProfile>>("/users/me", {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
+};
+
+// ── Report API ──────────────────────────────────────────────────────────
+
+export type ReportType =
+  | "NO_SHOW"
+  | "RUDE_UNSAFE"
+  | "MISREPRESENTED"
+  | "SPAM"
+  | "OTHER";
+
+export const reportApi = {
+  create: (data: {
+    reportedUserId: string;
+    activityId?: string;
+    type: ReportType;
+    details: string;
+    anonymous: boolean;
+  }) =>
+    request<{ message: string }>("/reports", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  adminList: (status?: string) =>
+    request<any[]>(`/reports/admin${status ? `?status=${status}` : ""}`),
+
+  resolve: (reportId: string, status: "REVIEWED" | "DISMISSED") =>
+    request<any>(`/reports/${reportId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ status }),
+    }),
 };
