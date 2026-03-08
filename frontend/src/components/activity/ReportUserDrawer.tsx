@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Drawer,
   DrawerContent,
@@ -192,14 +193,12 @@ export default function ReportUserDrawer({
             </p>
           </section>
 
-          {/* Anonymous toggle */}
+          {/* Anonymous toggle — use shadcn Checkbox for consistency */}
           <section>
             <label className="flex items-center gap-3 cursor-pointer rounded-lg border p-3 hover:bg-accent/50 transition-colors">
-              <input
-                type="checkbox"
+              <Checkbox
                 checked={anonymous}
-                onChange={(e) => setAnonymous(e.target.checked)}
-                className="h-4 w-4 rounded border-input accent-primary"
+                onCheckedChange={(v) => setAnonymous(v === true)}
               />
               <div>
                 <p className="text-sm font-medium">Submit anonymously</p>
@@ -215,14 +214,24 @@ export default function ReportUserDrawer({
           <p className="text-xs text-muted-foreground text-center">
             Reports are reviewed by admins. Misuse may result in account action.
           </p>
-          <Button
-            className="w-full"
-            variant="destructive"
-            onClick={handleSubmit}
-            disabled={submitting || !selectedType}
-          >
-            {submitting ? "Submitting…" : "Submit Report"}
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={() => setOpen(false)}
+              disabled={submitting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              className="flex-1"
+              onClick={handleSubmit}
+              disabled={submitting || !selectedType}
+            >
+              {submitting ? "Submitting…" : "Submit Report"}
+            </Button>
+          </div>
         </DrawerFooter>
       </DrawerContent>
     </Drawer>

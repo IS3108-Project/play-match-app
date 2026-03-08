@@ -12,7 +12,8 @@ import { toast } from "sonner";
 
 /** Build the last-7-weeks streak bubbles from a streak count. */
 function buildStreakDots(currentStreak: number) {
-  const weekLabels = ["W1", "W2", "W3", "W4", "W5", "W6", "W7"];
+  // Show temporal labels so users know which direction is "now"
+  const weekLabels = ["6w ago", "5w ago", "4w ago", "3w ago", "2w ago", "Last wk", "This wk"];
   return weekLabels.map((label, i) => ({
     label,
     done: i >= weekLabels.length - currentStreak,
@@ -136,15 +137,20 @@ export default function ProfilePage() {
         level={profile?.skillLevel ?? "Intermediate Level"}
       />
 
-      {/* Reliability badge */}
+      {/* Reliability badge + explanation */}
       {profile && (
-        <section className="flex justify-center">
+        <section className="flex flex-col items-center gap-1.5">
           <ReliabilityBadge
             badge={profile.reliabilityBadge}
             score={profile.reliabilityScore}
             showScore
             className="text-sm px-4 py-1.5"
           />
+          <p className="text-xs text-muted-foreground">
+            {profile.reliabilityScore === null
+              ? "Complete 5+ activities to earn a reliability score"
+              : "Based on attended activities vs no-shows and late cancellations"}
+          </p>
         </section>
       )}
 
@@ -195,17 +201,24 @@ export default function ProfilePage() {
       </section>
 
       {/* Bio */}
-      {profile?.bio && (
+      {profile?.bio ? (
         <section className="rounded-2xl border bg-card p-5 space-y-2">
           <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
             About
           </h3>
           <p className="text-sm leading-relaxed">{profile.bio}</p>
         </section>
-      )}
+      ) : profile?.isOwnProfile ? (
+        <section className="rounded-2xl border border-dashed bg-card p-5 space-y-1">
+          <p className="text-sm font-medium text-muted-foreground">No bio yet</p>
+          <p className="text-xs text-muted-foreground">
+            Tap Edit Profile to add a short bio so others know who you are.
+          </p>
+        </section>
+      ) : null}
 
       {/* Favourite sport */}
-      {profile?.stats.favoriteSport && (
+      {profile?.stats.favoriteSport ? (
         <section className="rounded-2xl border bg-card px-5 py-4 flex items-center justify-between">
           <span className="text-sm text-muted-foreground font-medium">
             Favourite sport
@@ -214,7 +227,16 @@ export default function ProfilePage() {
             {profile.stats.favoriteSport}
           </span>
         </section>
-      )}
+      ) : profile?.isOwnProfile ? (
+        <section className="rounded-2xl border border-dashed bg-card px-5 py-4 flex items-center justify-between">
+          <span className="text-sm text-muted-foreground">
+            Favourite sport
+          </span>
+          <span className="text-xs text-muted-foreground italic">
+            Join more activities to see your favourite sport
+          </span>
+        </section>
+      ) : null}
     </div>
   );
 }

@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/drawer";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Spinner } from "@/components/ui/spinner";
-import { ClipboardCheck } from "lucide-react";
+import { ClipboardCheck, Flag } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   activityApi,
@@ -103,8 +103,24 @@ export default function AttendanceDrawer({
 
   const markedCount = Object.keys(attendance).length;
 
+  // Clicking the active button again reverts the participant to PENDING (removes key)
   const setStatus = (participantId: string, status: AttendanceStatus) => {
-    setAttendance((prev) => ({ ...prev, [participantId]: status }));
+    setAttendance((prev) => {
+      if (prev[participantId] === status) {
+        const next = { ...prev };
+        delete next[participantId];
+        return next;
+      }
+      return { ...prev, [participantId]: status };
+    });
+  };
+
+  const markAllAttended = () => {
+    const all: Record<string, AttendanceStatus> = {};
+    confirmedParticipants.forEach((p) => {
+      all[p.id] = "ATTENDED";
+    });
+    setAttendance(all);
   };
 
   const handleSave = async () => {
@@ -145,21 +161,60 @@ export default function AttendanceDrawer({
           </div>
         ) : (
           <>
-            <div className="flex-1 overflow-y-auto px-4 py-5 space-y-3">
+            {/* H1: warn at top so it's always visible, not buried below the list */}
+            {!hasStarted && (
+              <div className="bg-amber-50 border-b border-amber-200 px-4 py-2.5 flex items-center gap-2 text-xs text-amber-700">
+                <span className="shrink-0">⏳</span>
+                Attendance can only be marked after the activity has started.
+              </div>
+            )}
+
+            {/* H7: mark all shortcut */}
+            <div className="flex items-center justify-between px-4 pt-3 pb-1">
+              <p className="text-xs text-muted-foreground">
+                {markedCount}/{confirmedParticipants.length} marked
+              </p>
+              <button
+                type="button"
+                className="text-xs text-primary hover:underline underline-offset-2 disabled:opacity-40 disabled:pointer-events-none"
+                disabled={!hasStarted}
+                onClick={markAllAttended}
+              >
+                Mark all as attended
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-4 py-2 space-y-3">
               {confirmedParticipants.map((p) => (
                 <div key={p.id} className="rounded-lg border p-3 space-y-3">
-                  {/* Participant info */}
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage
-                        src={p.user.image ?? undefined}
-                        alt={p.user.name}
-                      />
-                      <AvatarFallback className="bg-primary text-primary-foreground">
-                        {p.user.name.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <p className="text-sm font-medium">{p.user.name}</p>
+                  {/* Participant info + H8: flag icon instead of full-width text link */}
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <Avatar className="h-10 w-10 shrink-0">
+                        <AvatarImage
+                          src={p.user.image ?? undefined}
+                          alt={p.user.name}
+                        />
+                        <AvatarFallback className="bg-primary text-primary-foreground">
+                          {p.user.name.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <p className="text-sm font-medium truncate">{p.user.name}</p>
+                    </div>
+                    <ReportUserDrawer
+                      reportedUserId={p.user.id}
+                      reportedUserName={p.user.name}
+                      activityId={activityId}
+                      trigger={
+                        <button
+                          type="button"
+                          title={`Report ${p.user.name}`}
+                          className="shrink-0 rounded-md p-1.5 text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 transition-colors"
+                        >
+                          <Flag className="size-3.5" />
+                        </button>
+                      }
+                    />
                   </div>
 
                   {/* 3-way status buttons */}
@@ -184,30 +239,12 @@ export default function AttendanceDrawer({
                     })}
                   </div>
 
-                  {/* Report participant */}
-                  <ReportUserDrawer
-                    reportedUserId={p.user.id}
-                    reportedUserName={p.user.name}
-                    activityId={activityId}
-                    trigger={
-                      <button
-                        type="button"
-                        className="text-xs text-muted-foreground underline-offset-2 hover:text-destructive hover:underline transition-colors text-right w-full"
-                      >
-                        Report this participant
-                      </button>
-                    }
-                  />
+
                 </div>
               ))}
             </div>
 
             <DrawerFooter className="border-t">
-              {!hasStarted && (
-                <p className="text-sm text-muted-foreground text-center">
-                  Attendance can only be marked after the activity has started.
-                </p>
-              )}
               <Button
                 className="w-full"
                 onClick={handleSave}
