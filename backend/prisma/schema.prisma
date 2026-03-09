@@ -24,6 +24,7 @@ model User {
   email         String
   emailVerified Boolean  @default(false)
   image         String?
+  bio           String?
   role          UserRole @default(USER)
 
   sportInterests String[]
@@ -42,6 +43,8 @@ model User {
   hostedActivities Activity[]    @relation("hostedActivities")
   participations   Participant[]
   invitedGuests    Guest[]       @relation("invitedGuests")
+  reportsMade      Report[]      @relation("reportsMade")
+  reportsReceived  Report[]      @relation("reportsReceived")
 
   @@unique([email])
   @@map("user")
@@ -105,6 +108,14 @@ enum ParticipantStatus {
   REJECTED
 }
 
+enum AttendanceStatus {
+  PENDING
+  ATTENDED
+  NO_SHOW
+  LATE_CANCEL
+  CANCELLED
+}
+
 enum ActivityStatus {
   ACTIVE
   CANCELLED
@@ -130,6 +141,7 @@ model Activity {
   host         User          @relation("hostedActivities", fields: [hostId], references: [id], onDelete: Cascade)
   participants Participant[]
   guests       Guest[]
+  reports      Report[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -144,9 +156,9 @@ model Participant {
   id            String            @id @default(cuid())
   userId        String
   activityId    String
-  status        ParticipantStatus @default(CONFIRMED)
-  attended      Boolean           @default(false)
-  joinedAt      DateTime          @default(now())
+  status           ParticipantStatus @default(CONFIRMED)
+  attendanceStatus AttendanceStatus  @default(PENDING)
+  joinedAt         DateTime          @default(now())
   rejectionNote String?
 
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -172,4 +184,41 @@ model Guest {
 
   @@index([activityId])
   @@map("guest")
+}
+
+// ── Report Domain ────────────────────────────────────────────────────────
+
+model Report {
+  id             String       @id @default(cuid())
+  reporterId     String
+  reportedUserId String
+  activityId     String?
+  type           ReportType
+  details        String
+  anonymous      Boolean      @default(false)
+  status         ReportStatus @default(PENDING)
+  createdAt      DateTime     @default(now())
+  resolvedAt     DateTime?
+
+  reporter     User      @relation("reportsMade",     fields: [reporterId],     references: [id], onDelete: Cascade)
+  reportedUser User      @relation("reportsReceived", fields: [reportedUserId], references: [id], onDelete: Cascade)
+  activity     Activity? @relation(fields: [activityId], references: [id], onDelete: SetNull)
+
+  @@index([reportedUserId])
+  @@index([createdAt])
+  @@map("report")
+}
+
+enum ReportType {
+  NO_SHOW
+  RUDE_UNSAFE
+  MISREPRESENTED
+  SPAM
+  OTHER
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWED
+  DISMISSED
 }

@@ -1,6 +1,10 @@
 import { prisma } from "../config/prisma";
 import { ParticipantStatus, ActivityStatus } from "../generated/prisma/client";
 import * as notificationService from "./notification.service";
+import {
+  computeReliabilityScore,
+  getReliabilityBadge,
+} from "./reliability.service";
 import { format } from "date-fns";
 
 // ── Types ───────────────────────────────────────────────────────────────
@@ -40,9 +44,13 @@ interface GuestInput {
 
 // ── Helpers ─────────────────────────────────────────────────────────────
 
-function activityToNotification(
-  activity: { title: string; date: Date; startTime: string; location: string; id: string },
-): notificationService.ActivityDetails {
+function activityToNotification(activity: {
+  title: string;
+  date: Date;
+  startTime: string;
+  location: string;
+  id: string;
+}): notificationService.ActivityDetails {
   return {
     name: activity.title,
     date: format(activity.date, "EEEE, d MMM yyyy") + ", " + activity.startTime,
@@ -53,7 +61,10 @@ function activityToNotification(
 
 // ── Create ──────────────────────────────────────────────────────────────
 
-export async function createActivity(hostId: string, input: CreateActivityInput) {
+export async function createActivity(
+  hostId: string,
+  input: CreateActivityInput,
+) {
   const activity = await prisma.activity.create({
     data: {
       title: input.title,
@@ -222,7 +233,8 @@ function mapActivityResponse(a: any, userId: string) {
     _count: { confirmed },
     slotsLeft: a.maxParticipants - confirmed - guestCount,
     myStatus: myParticipant?.status ?? null,
-    pendingCount: a.participants.filter((p: any) => p.status === "PENDING").length,
+    pendingCount: a.participants.filter((p: any) => p.status === "PENDING")
+      .length,
     createdAt: a.createdAt.toISOString(),
   };
 }
@@ -248,13 +260,38 @@ export async function getActivityById(activityId: string, userId: string) {
 
   if (!activity) return null;
 
+  // Batch-fetch reliability history for all participants (one extra query)
+  const participantUserIds = activity.participants.map((p) => p.userId);
+  const reliabilityHistory = await prisma.participant.findMany({
+    where: {
+      userId: { in: participantUserIds },
+      attendanceStatus: { in: ["ATTENDED", "NO_SHOW", "LATE_CANCEL"] as any[] },
+    },
+    select: { userId: true, attendanceStatus: true },
+  });
+  const historyByUser: Record<string, { attendanceStatus: string }[]> = {};
+  for (const r of reliabilityHistory) {
+    (historyByUser[r.userId] ??= []).push({
+      attendanceStatus: r.attendanceStatus,
+    });
+  }
+
   const confirmed = activity.participants.filter(
     (p) => p.status === "CONFIRMED",
   ).length;
   const myParticipant = activity.participants.find((p) => p.userId === userId);
 
+  // Augment each participant with their reliability score + badge
+  const participants = activity.participants.map((p) => {
+    const history = historyByUser[p.userId] ?? [];
+    const score = computeReliabilityScore(history);
+    const badge = getReliabilityBadge(score, history.length);
+    return { ...p, reliabilityScore: score, reliabilityBadge: badge };
+  });
+
   return {
     ...activity,
+    participants,
     date: activity.date.toISOString(),
     createdAt: activity.createdAt.toISOString(),
     updatedAt: activity.updatedAt.toISOString(),
@@ -303,7 +340,13 @@ export async function updateActivity(
 
   if (input.location && input.location !== activity.location) {
     notificationService
-      .sendChangeAlert(users, activityDetails, "location", activity.location, input.location)
+      .sendChangeAlert(
+        users,
+        activityDetails,
+        "location",
+        activity.location,
+        input.location,
+      )
       .catch(console.error);
   }
   if (
@@ -318,7 +361,10 @@ export async function updateActivity(
   }
 
   // If maxParticipants increased, auto-promote from waitlist
-  if (input.maxParticipants && input.maxParticipants > activity.maxParticipants) {
+  if (
+    input.maxParticipants &&
+    input.maxParticipants > activity.maxParticipants
+  ) {
     const currentConfirmed = activity.participants.length;
     const newSlots = input.maxParticipants - currentConfirmed;
     if (newSlots > 0) {
@@ -435,8 +481,14 @@ export async function joinActivity(
     where: { userId_activityId: { userId, activityId } },
   });
 
-  // Allow re-join after rejection
-  if (existing && existing.status === "REJECTED") {
+  // Allow re-join after rejection or a clean (non-late) cancellation.
+  // Block re-join when the previous leave was a LATE_CANCEL to preserve the penalty.
+  if (
+    existing &&
+    (existing.status === "REJECTED" ||
+      (existing.status === "CANCELLED" &&
+        existing.attendanceStatus !== "LATE_CANCEL"))
+  ) {
     await prisma.participant.delete({
       where: { userId_activityId: { userId, activityId } },
     });
@@ -473,7 +525,10 @@ export async function joinActivity(
   if (result.status === "CONFIRMED") {
     const activityDetails = activityToNotification(activity);
     notificationService
-      .sendRsvpConfirmation({ name: userName, email: userEmail }, activityDetails)
+      .sendRsvpConfirmation(
+        { name: userName, email: userEmail },
+        activityDetails,
+      )
       .catch(console.error);
   }
 
@@ -496,13 +551,27 @@ export async function leaveActivity(activityId: string, userId: string) {
   // Can't leave if host
   if (activity.hostId === userId) throw new Error("HOST_CANNOT_LEAVE");
 
+  // Determine if this is a late cancellation (<24 hrs before activity start)
+  const activityStart = new Date(activity.date);
+  const [h, m] = activity.startTime.split(":").map(Number);
+  activityStart.setHours(h ?? 0, m ?? 0, 0, 0);
+  const hoursUntil = (activityStart.getTime() - Date.now()) / (1000 * 60 * 60);
+  const isLateCancellation = hoursUntil < 24 && hoursUntil > 0;
+
+  // Determine the attendance status to record
+  const newAttendanceStatus = isLateCancellation ? "LATE_CANCEL" : "CANCELLED";
+
   const wasConfirmed = participant.status === "CONFIRMED";
 
-  // Delete participant + their guests
+  // Delete their guests and update participant record (keep for reliability tracking)
   await prisma.$transaction([
     prisma.guest.deleteMany({ where: { activityId, invitedById: userId } }),
-    prisma.participant.delete({
+    prisma.participant.update({
       where: { userId_activityId: { userId, activityId } },
+      data: {
+        status: "CANCELLED",
+        attendanceStatus: newAttendanceStatus as any,
+      },
     }),
   ]);
 
@@ -510,6 +579,8 @@ export async function leaveActivity(activityId: string, userId: string) {
   if (wasConfirmed) {
     await promoteFromWaitlist(activityId, 1, activity.requireApproval);
   }
+
+  return { isLateCancellation, attendanceStatus: newAttendanceStatus };
 }
 
 // ── Approve / Reject ────────────────────────────────────────────────────
@@ -646,10 +717,11 @@ export async function removeGuest(
 
 // ── Attendance ──────────────────────────────────────────────────────────
 
+// attendance: { [participantId]: "ATTENDED" | "NO_SHOW" | "LATE_CANCEL" }
 export async function markAttendance(
   activityId: string,
   hostId: string,
-  participantIds: string[],
+  attendance: Record<string, string>,
 ) {
   const activity = await prisma.activity.findUnique({
     where: { id: activityId },
@@ -665,25 +737,34 @@ export async function markAttendance(
 
   if (now < activityStart) throw new Error("TOO_EARLY");
 
-  // Bulk update: mark selected as attended, rest as not attended
-  await prisma.$transaction([
+  const allowed = new Set(["ATTENDED", "NO_SHOW", "LATE_CANCEL"]);
+
+  const participantIdsInPayload = Object.keys(attendance);
+  const updates = Object.entries(attendance)
+    .filter(([, status]) => allowed.has(status))
+    .map(([participantId, attendanceStatus]) =>
+      prisma.participant.updateMany({
+        where: { id: participantId, activityId, status: "CONFIRMED" },
+        data: { attendanceStatus: attendanceStatus as any },
+      }),
+    );
+
+  // Reset participants NOT in the payload back to PENDING
+  updates.push(
     prisma.participant.updateMany({
       where: {
         activityId,
         status: "CONFIRMED",
-        id: { in: participantIds },
+        attendanceStatus: { in: Array.from(allowed) as any[] },
+        ...(participantIdsInPayload.length
+          ? { id: { notIn: participantIdsInPayload } }
+          : {}),
       },
-      data: { attended: true },
+      data: { attendanceStatus: "PENDING" as any },
     }),
-    prisma.participant.updateMany({
-      where: {
-        activityId,
-        status: "CONFIRMED",
-        id: { notIn: participantIds },
-      },
-      data: { attended: false },
-    }),
-  ]);
+  );
+
+  await prisma.$transaction(updates);
 }
 
 // ── Waitlist promotion (internal) ───────────────────────────────────────
