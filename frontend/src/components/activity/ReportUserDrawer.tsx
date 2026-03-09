@@ -85,6 +85,10 @@ export default function ReportUserDrawer({
       toast.error("Please select a reason");
       return;
     }
+    if (!details.trim()) {
+      toast.error("Please provide details about what happened");
+      return;
+    }
     setSubmitting(true);
     try {
       await reportApi.create({
@@ -176,9 +180,7 @@ export default function ReportUserDrawer({
           <section className="space-y-2">
             <p className="text-sm font-semibold">
               Additional details{" "}
-              <span className="font-normal text-muted-foreground">
-                (optional)
-              </span>
+              <span className="font-normal text-destructive">*</span>
             </p>
             <textarea
               value={details}

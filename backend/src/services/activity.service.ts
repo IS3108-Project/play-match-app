@@ -481,10 +481,13 @@ export async function joinActivity(
     where: { userId_activityId: { userId, activityId } },
   });
 
-  // Allow re-join after rejection or cancellation
+  // Allow re-join after rejection or a clean (non-late) cancellation.
+  // Block re-join when the previous leave was a LATE_CANCEL to preserve the penalty.
   if (
     existing &&
-    (existing.status === "REJECTED" || existing.status === "CANCELLED")
+    (existing.status === "REJECTED" ||
+      (existing.status === "CANCELLED" &&
+        existing.attendanceStatus !== "LATE_CANCEL"))
   ) {
     await prisma.participant.delete({
       where: { userId_activityId: { userId, activityId } },
@@ -736,17 +739,32 @@ export async function markAttendance(
 
   const allowed = new Set(["ATTENDED", "NO_SHOW", "LATE_CANCEL"]);
 
-  // Update each participant individually with their specific status
-  await prisma.$transaction(
-    Object.entries(attendance)
-      .filter(([, status]) => allowed.has(status))
-      .map(([participantId, attendanceStatus]) =>
-        prisma.participant.updateMany({
-          where: { id: participantId, activityId, status: "CONFIRMED" },
-          data: { attendanceStatus: attendanceStatus as any },
-        }),
-      ),
+  const participantIdsInPayload = Object.keys(attendance);
+  const updates = Object.entries(attendance)
+    .filter(([, status]) => allowed.has(status))
+    .map(([participantId, attendanceStatus]) =>
+      prisma.participant.updateMany({
+        where: { id: participantId, activityId, status: "CONFIRMED" },
+        data: { attendanceStatus: attendanceStatus as any },
+      }),
+    );
+
+  // Reset participants NOT in the payload back to PENDING
+  updates.push(
+    prisma.participant.updateMany({
+      where: {
+        activityId,
+        status: "CONFIRMED",
+        attendanceStatus: { in: Array.from(allowed) as any[] },
+        ...(participantIdsInPayload.length
+          ? { id: { notIn: participantIdsInPayload } }
+          : {}),
+      },
+      data: { attendanceStatus: "PENDING" as any },
+    }),
   );
+
+  await prisma.$transaction(updates);
 }
 
 // ── Waitlist promotion (internal) ───────────────────────────────────────

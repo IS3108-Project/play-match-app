@@ -187,7 +187,7 @@ export const activityApi = {
     }),
 
   // attendance: { [participantId]: "ATTENDED" | "NO_SHOW" | "LATE_CANCEL" }
-  markAttendance: (id: string, attendance: Record<string, AttendanceStatus>) =>
+  markAttendance: (id: string, attendance: Record<string, "ATTENDED" | "NO_SHOW" | "LATE_CANCEL">) =>
     request<{ message: string }>(`/activities/${id}/attendance`, {
       method: "POST",
       body: JSON.stringify({ attendance }),

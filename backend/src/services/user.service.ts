@@ -16,9 +16,13 @@ function getMondayOfWeek(date: Date): Date {
   return d;
 }
 
-/** Stable string key for a week: "YYYY-MM-DD" of that week's Monday. */
+/** Stable string key for a week: "YYYY-MM-DD" of that week's Monday (local time). */
 function weekKey(date: Date): string {
-  return getMondayOfWeek(date).toISOString().split("T")[0]!;
+  const monday = getMondayOfWeek(date);
+  const year = monday.getFullYear();
+  const month = String(monday.getMonth() + 1).padStart(2, "0");
+  const day = String(monday.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 /**

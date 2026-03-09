@@ -47,8 +47,14 @@ export async function createReport(
 // ── Admin: list reports ───────────────────────────────────────────────────────
 
 export async function getAdminReports(filter?: { status?: string }) {
+  const validStatuses = ["PENDING", "REVIEWED", "DISMISSED"] as const;
+  const statusFilter =
+    filter?.status && (validStatuses as readonly string[]).includes(filter.status)
+      ? (filter.status as (typeof validStatuses)[number])
+      : undefined;
+
   return prisma.report.findMany({
-    ...(filter?.status && { where: { status: filter.status as any } }),
+    ...(statusFilter && { where: { status: statusFilter } }),
     orderBy: { createdAt: "desc" },
     include: {
       reporter: {
