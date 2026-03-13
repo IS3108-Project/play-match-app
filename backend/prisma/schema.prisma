@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -13,18 +7,59 @@ datasource db {
   provider = "postgresql"
 }
 
+// ── Enums ───────────────────────────────────────────────────────────────
+
 enum UserRole {
   USER
   ADMIN
 }
 
+enum ParticipantStatus {
+  CONFIRMED
+  PENDING
+  WAITLISTED
+  CANCELLED
+  REJECTED
+}
+
+enum ActivityStatus {
+  ACTIVE
+  CANCELLED
+  COMPLETED
+}
+
+enum AttendanceStatus {
+  PENDING
+  ATTENDED
+  NO_SHOW
+  LATE_CANCEL
+  CANCELLED
+}
+
+enum ReportType {
+  NO_SHOW
+  RUDE_UNSAFE
+  MISREPRESENTED
+  SPAM
+  OTHER
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWED
+  DISMISSED
+}
+
+// ── Auth Domain ─────────────────────────────────────────────────────────
+
 model User {
-  id            String   @id
-  name          String
-  email         String
-  emailVerified Boolean  @default(false)
-  image         String?
-  role          UserRole @default(USER)
+  id             String   @id
+  name           String
+  email          String   @unique
+  emailVerified  Boolean  @default(false)
+  image          String?
+  role           UserRole @default(USER)
+  bio            String?
 
   sportInterests String[]
   skillLevel     String?
@@ -36,21 +71,22 @@ model User {
   sessions       Session[]
   accounts       Account[]
 
-  shouldOnboard  Boolean   @default(true)
+  shouldOnboard  Boolean @default(true)
   completedSteps String?
 
   hostedActivities Activity[]    @relation("hostedActivities")
   participations   Participant[]
   invitedGuests    Guest[]       @relation("invitedGuests")
+  reportsFiled     Report[]      @relation("reportsFiled")
+  reportsReceived  Report[]      @relation("reportsReceived")
 
-  @@unique([email])
   @@map("user")
 }
 
 model Session {
   id        String   @id
   expiresAt DateTime
-  token     String
+  token     String   @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   ipAddress String?
@@ -58,7 +94,6 @@ model Session {
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([token])
   @@index([userId])
   @@map("session")
 }
@@ -97,20 +132,6 @@ model Verification {
 
 // ── Activity Domain ─────────────────────────────────────────────────────
 
-enum ParticipantStatus {
-  CONFIRMED
-  PENDING
-  WAITLISTED
-  CANCELLED
-  REJECTED
-}
-
-enum ActivityStatus {
-  ACTIVE
-  CANCELLED
-  COMPLETED
-}
-
 model Activity {
   id              String         @id @default(cuid())
   title           String
@@ -130,6 +151,7 @@ model Activity {
   host         User          @relation("hostedActivities", fields: [hostId], references: [id], onDelete: Cascade)
   participants Participant[]
   guests       Guest[]
+  reports      Report[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -141,13 +163,13 @@ model Activity {
 }
 
 model Participant {
-  id            String            @id @default(cuid())
-  userId        String
-  activityId    String
-  status        ParticipantStatus @default(CONFIRMED)
-  attended      Boolean           @default(false)
-  joinedAt      DateTime          @default(now())
-  rejectionNote String?
+  id               String            @id @default(cuid())
+  userId           String
+  activityId       String
+  status           ParticipantStatus @default(CONFIRMED)
+  attendanceStatus AttendanceStatus  @default(PENDING)
+  joinedAt         DateTime          @default(now())
+  rejectionNote    String?
 
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
@@ -172,4 +194,27 @@ model Guest {
 
   @@index([activityId])
   @@map("guest")
+}
+
+// ── Report Domain ───────────────────────────────────────────────────────
+
+model Report {
+  id             String       @id
+  reporterId     String
+  reportedUserId String
+  activityId     String?
+  type           ReportType
+  details        String
+  anonymous      Boolean      @default(false)
+  status         ReportStatus @default(PENDING)
+  createdAt      DateTime     @default(now())
+  resolvedAt     DateTime?
+
+  activity     Activity? @relation(fields: [activityId], references: [id])
+  reporter     User      @relation("reportsFiled", fields: [reporterId], references: [id], onDelete: Cascade)
+  reportedUser User      @relation("reportsReceived", fields: [reportedUserId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt])
+  @@index([reportedUserId])
+  @@map("report")
 }

@@ -45,7 +45,7 @@ export interface ActivityDetail extends Activity {
     id: string;
     userId: string;
     status: string;
-    attended: boolean;
+    attendanceStatus: "PENDING" | "ATTENDED" | "NO_SHOW" | "LATE_CANCEL" | "CANCELLED";
     joinedAt: string;
     rejectionNote?: string | null;
     user: { id: string; name: string; image?: string | null; email: string };
