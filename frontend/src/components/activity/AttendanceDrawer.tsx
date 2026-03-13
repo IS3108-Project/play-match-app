@@ -42,7 +42,7 @@ export default function AttendanceDrawer({
             // Pre-check participants already marked as attended
             const attended = new Set(
                 data.participants
-                    .filter((p) => p.attended && p.status === "CONFIRMED")
+                    .filter((p) => p.attendanceStatus === "ATTENDED" && p.status === "CONFIRMED")
                     .map((p) => p.id)
             )
             setChecked(attended)

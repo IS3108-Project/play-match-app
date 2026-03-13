@@ -665,7 +665,7 @@ export async function markAttendance(
 
   if (now < activityStart) throw new Error("TOO_EARLY");
 
-  // Bulk update: mark selected as attended, rest as not attended
+  // Bulk update: mark selected as attended, rest as no-show
   await prisma.$transaction([
     prisma.participant.updateMany({
       where: {
@@ -673,7 +673,7 @@ export async function markAttendance(
         status: "CONFIRMED",
         id: { in: participantIds },
       },
-      data: { attended: true },
+      data: { attendanceStatus: "ATTENDED" },
     }),
     prisma.participant.updateMany({
       where: {
@@ -681,7 +681,7 @@ export async function markAttendance(
         status: "CONFIRMED",
         id: { notIn: participantIds },
       },
-      data: { attended: false },
+      data: { attendanceStatus: "NO_SHOW" },
     }),
   ]);
 }
