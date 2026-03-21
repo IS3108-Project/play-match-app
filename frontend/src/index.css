@@ -182,8 +182,89 @@ html, body, #root {
   overflow-x: hidden;
 }
 
-/* Google Places Autocomplete dropdown sits on document.body —
-   needs to render above Vaul drawer overlay (z-index ~50) */
+/* Google Places Autocomplete Styling */
 .pac-container {
   z-index: 9999 !important;
+  position: fixed !important;
+  pointer-events: auto !important;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background-color: var(--background);
+  box-shadow: none;
+  font-family: var(--font-sans);
+  margin-top: 4px;
+  padding: 4px 0;
+  max-height: 300px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+/* Remove Google's default "powered by" logo to save space */
+.pac-container::after {
+  display: none !important;
+}
+
+.pac-item {
+  pointer-events: auto !important;
+  padding: 10px 12px;
+  cursor: pointer !important;
+  border-top: none;
+  border-bottom: 1px solid var(--border);
+  background-color: var(--background);
+  color: var(--foreground);
+  line-height: 1.4;
+}
+
+.pac-item:last-child {
+  border-bottom: none;
+}
+
+.pac-item:hover,
+.pac-item-selected {
+  background-color: var(--accent);
+}
+
+.pac-icon {
+  margin-top: 2px;
+  margin-right: 10px;
+}
+
+.pac-item-query {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--foreground);
+}
+
+.pac-matched {
+  font-weight: 600;
+}
+
+.pac-item span:not(.pac-item-query):not(.pac-matched) {
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+
+/* Dark mode support */
+.dark .pac-container {
+  background-color: var(--popover);
+  border-color: var(--border);
+}
+
+.dark .pac-item {
+  background-color: var(--popover);
+  color: var(--foreground);
+  border-color: var(--border);
+}
+
+.dark .pac-item:hover,
+.dark .pac-item-selected {
+  background-color: var(--accent);
+}
+
+.dark .pac-item-query {
+  color: var(--foreground);
+}
+
+.dark .pac-item span:not(.pac-item-query):not(.pac-matched) {
+  color: var(--muted-foreground);
 }

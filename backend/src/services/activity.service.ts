@@ -2,8 +2,50 @@ import { prisma } from "../config/prisma";
 import { ParticipantStatus, ActivityStatus } from "../generated/prisma/client";
 import * as notificationService from "./notification.service";
 import { format } from "date-fns";
+import * as fs from "fs";
+import * as path from "path";
 
 // ── Types ───────────────────────────────────────────────────────────────
+
+/**
+ * Calculate distance between two coordinates using Haversine formula
+ * @returns distance in kilometers
+ */
+function calculateDistanceKm(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+): number {
+  const R = 6371; // Earth's radius in km
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+/**
+ * Calculate a bounding box for initial DB filtering (rough filter before exact distance calculation)
+ */
+function getBoundingBox(lat: number, lng: number, distanceKm: number) {
+  // 1 degree of latitude ≈ 111 km
+  const latDelta = distanceKm / 111;
+  // 1 degree of longitude varies by latitude
+  const lngDelta = distanceKm / (111 * Math.cos((lat * Math.PI) / 180));
+  
+  return {
+    minLat: lat - latDelta,
+    maxLat: lat + latDelta,
+    minLng: lng - lngDelta,
+    maxLng: lng + lngDelta,
+  };
+}
 
 interface CreateActivityInput {
   title: string;
@@ -13,6 +55,8 @@ interface CreateActivityInput {
   startTime: string; // "07:00"
   endTime: string; // "08:30"
   location: string;
+  latitude?: number | null;
+  longitude?: number | null;
   skillLevel: string;
   maxParticipants: number;
   requireApproval: boolean;
@@ -26,10 +70,12 @@ interface UpdateActivityInput {
   startTime?: string;
   endTime?: string;
   location?: string;
+  latitude?: number | null;
+  longitude?: number | null;
   skillLevel?: string;
   maxParticipants?: number;
   requireApproval?: boolean;
-  imageSrc?: string;
+  imageSrc?: string | null;
 }
 
 interface GuestInput {
@@ -63,6 +109,8 @@ export async function createActivity(hostId: string, input: CreateActivityInput)
       startTime: input.startTime,
       endTime: input.endTime,
       location: input.location,
+      latitude: input.latitude ?? null,
+      longitude: input.longitude ?? null,
       skillLevel: input.skillLevel,
       maxParticipants: input.maxParticipants,
       requireApproval: input.requireApproval,
@@ -81,22 +129,67 @@ export async function createActivity(hostId: string, input: CreateActivityInput)
 
 // ── List (Explore) ──────────────────────────────────────────────────────
 
+interface PaginationParams {
+  page?: number | undefined;
+  limit?: number | undefined;
+}
+
+interface ActivityFilters {
+  search?: string;
+  activityType?: string[];
+  skillLevel?: string[];
+  region?: string[];
+  dateFrom?: Date;
+  dateTo?: Date;
+  sortBy?: "date" | "createdAt" | "distance";
+  // Distance-based filtering
+  lat?: number;
+  lng?: number;
+  maxDistance?: number; // in km
+}
+
 export async function getActivities(
   userId: string,
-  filters: {
-    activityType?: string[];
-    skillLevel?: string;
-    dateFrom?: Date;
-    dateTo?: Date;
-  },
+  filters: ActivityFilters,
+  pagination: PaginationParams = {},
 ) {
+  const page = Math.max(1, pagination.page ?? 1);
+  const limit = Math.min(50, Math.max(1, pagination.limit ?? 12)); // Default 12, max 50
+
   const where: any = { status: "ACTIVE" as ActivityStatus };
+
+  // Check if we need distance-based filtering or sorting
+  const useDistanceFilter = filters.lat != null && filters.lng != null && filters.maxDistance != null;
+  const sortByDistance = filters.sortBy === "distance" && filters.lat != null && filters.lng != null;
+  const showDistances = filters.lat != null && filters.lng != null; // Always calculate distance when coords provided
+
+  // Text search on title and description (case-insensitive)
+  if (filters.search?.trim()) {
+    const searchTerm = filters.search.trim();
+    where.OR = [
+      { title: { contains: searchTerm, mode: "insensitive" } },
+      { description: { contains: searchTerm, mode: "insensitive" } },
+      { activityType: { contains: searchTerm, mode: "insensitive" } },
+      { location: { contains: searchTerm, mode: "insensitive" } },
+    ];
+  }
 
   if (filters.activityType?.length) {
     where.activityType = { in: filters.activityType };
   }
-  if (filters.skillLevel) {
-    where.skillLevel = filters.skillLevel;
+  if (filters.skillLevel?.length) {
+    where.skillLevel = { in: filters.skillLevel };
+  }
+  // Region filter - matches if location contains any of the selected regions
+  if (filters.region?.length) {
+    where.AND = [
+      ...(where.AND || []),
+      {
+        OR: filters.region.map((r) => ({
+          location: { contains: r, mode: "insensitive" },
+        })),
+      },
+    ];
   }
   if (filters.dateFrom || filters.dateTo) {
     where.date = {};
@@ -104,20 +197,145 @@ export async function getActivities(
     if (filters.dateTo) where.date.lte = filters.dateTo;
   }
 
-  const activities = await prisma.activity.findMany({
-    where,
-    orderBy: { date: "asc" },
-    include: {
-      host: { select: { id: true, name: true, image: true } },
-      participants: {
-        select: { id: true, userId: true, status: true },
+  // Add bounding box filter for distance queries (rough filter to reduce DB results)
+  if (useDistanceFilter) {
+    const bbox = getBoundingBox(filters.lat!, filters.lng!, filters.maxDistance!);
+    where.AND = [
+      ...(where.AND || []),
+      { latitude: { not: null } },
+      { longitude: { not: null } },
+      { latitude: { gte: bbox.minLat, lte: bbox.maxLat } },
+      { longitude: { gte: bbox.minLng, lte: bbox.maxLng } },
+    ];
+  }
+
+  // For distance-based queries, we need to fetch all matching activities first,
+  // then filter/sort by exact distance, then paginate manually
+  if (useDistanceFilter || sortByDistance || showDistances) {
+    // Ensure only activities with coordinates are included for distance sorting
+    if (sortByDistance && !useDistanceFilter) {
+      where.AND = [
+        ...(where.AND || []),
+        { latitude: { not: null } },
+        { longitude: { not: null } },
+      ];
+    }
+
+    // Fetch all matching activities (we'll filter and paginate manually)
+    const allActivities = await prisma.activity.findMany({
+      where,
+      include: {
+        host: { select: { id: true, name: true, image: true } },
+        participants: {
+          select: { id: true, userId: true, status: true },
+        },
+        _count: { select: { guests: true } },
       },
-      _count: { select: { guests: true } },
-    },
-  });
+    });
+
+    // Calculate distance for each activity and filter/sort
+    let activitiesWithDistance = allActivities.map((a) => ({
+      ...a,
+      distance: a.latitude != null && a.longitude != null
+        ? calculateDistanceKm(filters.lat!, filters.lng!, a.latitude, a.longitude)
+        : null,
+    }));
+
+    // Filter by maxDistance if specified
+    if (useDistanceFilter) {
+      activitiesWithDistance = activitiesWithDistance.filter(
+        (a) => a.distance !== null && a.distance <= filters.maxDistance!
+      );
+    }
+
+    // Sort by distance or date
+    if (sortByDistance) {
+      activitiesWithDistance.sort((a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity));
+    } else {
+      activitiesWithDistance.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    }
+
+    // Manual pagination
+    const total = activitiesWithDistance.length;
+    const totalPages = Math.ceil(total / limit);
+    const skip = (page - 1) * limit;
+    const paginatedActivities = activitiesWithDistance.slice(skip, skip + limit);
+
+    // Map to response shape
+    const data = paginatedActivities.map((a) => {
+      const confirmed = a.participants.filter((p) => p.status === "CONFIRMED").length;
+      const guestCount = a._count.guests;
+      const myParticipant = a.participants.find((p) => p.userId === userId);
+
+      return {
+        id: a.id,
+        title: a.title,
+        description: a.description,
+        activityType: a.activityType,
+        date: a.date.toISOString(),
+        startTime: a.startTime,
+        endTime: a.endTime,
+        location: a.location,
+        latitude: a.latitude,
+        longitude: a.longitude,
+        skillLevel: a.skillLevel,
+        maxParticipants: a.maxParticipants,
+        requireApproval: a.requireApproval,
+        status: a.status,
+        imageSrc: a.imageSrc,
+        hostId: a.hostId,
+        host: a.host,
+        _count: { confirmed },
+        slotsLeft: a.maxParticipants - confirmed - guestCount,
+        myStatus: myParticipant?.status ?? null,
+        createdAt: a.createdAt.toISOString(),
+        distance: a.distance != null ? Math.round(a.distance * 10) / 10 : null, // Round to 1 decimal
+      };
+    });
+
+    return {
+      data,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      },
+    };
+  }
+
+  // Standard query without distance (use DB pagination)
+  const skip = (page - 1) * limit;
+
+  // Determine sort order
+  const orderBy = filters.sortBy === "createdAt"
+    ? { createdAt: "desc" as const }
+    : { date: "asc" as const };
+
+  // Run count and findMany in parallel for efficiency
+  const [total, activities] = await Promise.all([
+    prisma.activity.count({ where }),
+    prisma.activity.findMany({
+      where,
+      orderBy,
+      skip,
+      take: limit,
+      include: {
+        host: { select: { id: true, name: true, image: true } },
+        participants: {
+          select: { id: true, userId: true, status: true },
+        },
+        _count: { select: { guests: true } },
+      },
+    }),
+  ]);
+
+  const totalPages = Math.ceil(total / limit);
 
   // Map to response shape with counts + current user's status
-  return activities.map((a) => {
+  const data = activities.map((a) => {
     const confirmed = a.participants.filter(
       (p) => p.status === "CONFIRMED",
     ).length;
@@ -133,6 +351,8 @@ export async function getActivities(
       startTime: a.startTime,
       endTime: a.endTime,
       location: a.location,
+      latitude: a.latitude,
+      longitude: a.longitude,
       skillLevel: a.skillLevel,
       maxParticipants: a.maxParticipants,
       requireApproval: a.requireApproval,
@@ -144,8 +364,21 @@ export async function getActivities(
       slotsLeft: a.maxParticipants - confirmed - guestCount,
       myStatus: myParticipant?.status ?? null,
       createdAt: a.createdAt.toISOString(),
+      distance: null, // No distance info in standard query
     };
   });
+
+  return {
+    data,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPrevPage: page > 1,
+    },
+  };
 }
 
 // ── My Activities ───────────────────────────────────────────────────────
@@ -154,7 +387,9 @@ export async function getMyActivities(
   userId: string,
   tab: "upcoming" | "past" | "hosted",
 ) {
-  const now = new Date();
+  // Use start of today for date comparison (activities today should be "upcoming")
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
   if (tab === "hosted") {
     const activities = await prisma.activity.findMany({
@@ -181,7 +416,7 @@ export async function getMyActivities(
           status: { in: ["CONFIRMED", "PENDING", "WAITLISTED"] },
         },
       },
-      date: tab === "upcoming" ? { gte: now } : { lt: now },
+      date: tab === "upcoming" ? { gte: today } : { lt: today },
     },
     orderBy: { date: "asc" },
     include: {
@@ -283,7 +518,25 @@ export async function updateActivity(
 
   if (!activity) throw new Error("NOT_FOUND");
   if (activity.hostId !== hostId) throw new Error("FORBIDDEN");
-  if (activity.date < new Date()) throw new Error("PAST_ACTIVITY");
+  
+  // Compare dates only (not time) to allow editing activities scheduled for today
+  const activityDate = new Date(activity.date);
+  activityDate.setHours(0, 0, 0, 0);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  if (activityDate < today) throw new Error("PAST_ACTIVITY");
+
+  // Handle image removal/replacement - delete old file if it exists
+  if ("imageSrc" in input && activity.imageSrc && activity.imageSrc !== input.imageSrc) {
+    if (activity.imageSrc.startsWith("/uploads/")) {
+      const oldFilePath = path.join(__dirname, "../../public", activity.imageSrc);
+      fs.unlink(oldFilePath, (err) => {
+        if (err && err.code !== "ENOENT") {
+          console.error("Failed to delete old image:", err);
+        }
+      });
+    }
+  }
 
   const data: any = { ...input };
   if (input.date) data.date = new Date(input.date);

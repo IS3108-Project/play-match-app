@@ -47,6 +47,30 @@ export const auth = betterAuth({
         type: "boolean",
         input: false,
       },
+      sportInterests: {
+        type: "string[]",
+        input: false,
+      },
+      skillLevel: {
+        type: "string",
+        input: false,
+      },
+      preferredTimes: {
+        type: "string[]",
+        input: false,
+      },
+      preferredAreas: {
+        type: "string[]",
+        input: false,
+      },
+      locationSharingEnabled: {
+        type: "boolean",
+        input: false,
+      },
+      bio: {
+        type: "string",
+        input: false,
+      },
     },
   },
   plugins: [
@@ -109,8 +133,21 @@ export const auth = betterAuth({
           required: false,
           once: false,
         }),
+        locationSharing: createOnboardingStep({
+          input: z.object({
+            locationSharingEnabled: z.boolean(),
+          }),
+          async handler(ctx) {
+            await prisma.user.update({
+              where: { id: ctx.context.session!.user.id },
+              data: { locationSharingEnabled: ctx.body.locationSharingEnabled },
+            });
+          },
+          required: false,
+          once: false,
+        }),
       },
-      completionStep: "preferredAreas",
+      completionStep: "locationSharing",
     }),
   ],
   trustedOrigins: ["http://localhost:5173"],

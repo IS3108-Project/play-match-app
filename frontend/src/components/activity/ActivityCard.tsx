@@ -8,6 +8,7 @@ import CancelActivityDrawer from "@/components/activity/CancelActivityDrawer"
 import { type Activity, activityApi } from "@/lib/api"
 import { toast } from "sonner"
 import { format } from "date-fns"
+import { MapPin } from "lucide-react"
 
 type ActivityCardProps = {
     activity: Activity
@@ -47,12 +48,15 @@ export default function ActivityCard({ activity, isHosted, onRefresh }: Activity
             date: values.date,
             startTime: values.startTime,
             endTime: values.endTime,
-            location: values.meetingLocation,
+            location: values.meetingLocation.location,
+            latitude: values.meetingLocation.latitude,
+            longitude: values.meetingLocation.longitude,
             skillLevel: values.skillLevel,
             maxParticipants: values.maxParticipants,
             description: values.description,
             requireApproval: values.requireApproval,
-            ...(values.imageSrc ? { imageSrc: values.imageSrc } : {}),
+            // Send null explicitly when image is removed, or the new image URL
+            imageSrc: values.imageSrc ?? null,
         })
         toast.success("Activity updated!")
         onRefresh?.()
@@ -64,7 +68,11 @@ export default function ActivityCard({ activity, isHosted, onRefresh }: Activity
         date: activity.date.split("T")[0]!,
         startTime: activity.startTime,
         endTime: activity.endTime,
-        meetingLocation: activity.location,
+        meetingLocation: {
+            location: activity.location,
+            latitude: activity.latitude ?? null,
+            longitude: activity.longitude ?? null,
+        },
         skillLevel: activity.skillLevel,
         maxParticipants: activity.maxParticipants,
         description: activity.description,
@@ -108,9 +116,17 @@ export default function ActivityCard({ activity, isHosted, onRefresh }: Activity
 
             {/* Description */}
             <div className="basis-[55%] min-w-0 p-4 lg:basis-auto">
-                <span className="inline-block w-fit rounded bg-chart-1 px-2 py-1 text-xs text-primary">
-                    {activity.activityType.toUpperCase()}
-                </span>
+                <div className="flex flex-wrap gap-2">
+                    <span className="inline-block w-fit rounded bg-chart-1 px-2 py-1 text-xs text-primary">
+                        {activity.activityType.toUpperCase()}
+                    </span>
+                    {activity.distance != null && (
+                        <span className="inline-flex items-center gap-1 rounded bg-muted px-2 py-1 text-xs text-muted-foreground">
+                            <MapPin className="h-3 w-3" />
+                            {activity.distance} km
+                        </span>
+                    )}
+                </div>
                 <h3 className="mt-2 font-semibold">{activity.title}</h3>
                 <p className="text-sm text-muted-foreground">{activity.location}</p>
                 <p className="text-sm text-muted-foreground">{displayDate}</p>

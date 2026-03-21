@@ -16,3 +16,59 @@ export const getUser = async (req: Request, res: Response) => {
 
   res.json(user);
 };
+
+export const updateLocationSharing = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const { enabled } = req.body;
+    if (typeof enabled !== "boolean") {
+      return res.status(400).json({ error: "enabled must be a boolean" });
+    }
+
+    const result = await userService.updateLocationSharing(userId, enabled);
+    res.json(result);
+  } catch (error) {
+    console.error("Error updating location sharing:", error);
+    res.status(500).json({ error: "Failed to update location sharing" });
+  }
+};
+
+export const updateProfile = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const {
+      name,
+      preferredAreas,
+      skillLevel,
+      sportInterests,
+      preferredTimes,
+      locationSharingEnabled,
+      image,
+      bio,
+    } = req.body;
+
+    const result = await userService.updateProfile(userId, {
+      name,
+      preferredAreas,
+      skillLevel,
+      sportInterests,
+      preferredTimes,
+      locationSharingEnabled,
+      image,
+      bio,
+    });
+
+    res.json(result);
+  } catch (error) {
+    console.error("Error updating profile:", error);
+    res.status(500).json({ error: "Failed to update profile" });
+  }
+};

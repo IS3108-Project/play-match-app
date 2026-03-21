@@ -1,12 +1,14 @@
 "use client"
 
 import * as React from "react"
-import { Camera, Pencil } from "lucide-react"
+import { Camera, Pencil, MapPin } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { TogglePill } from "@/components/ui/toggle-pill"
+import { Switch } from "@/components/ui/switch"
+import { toast } from "sonner"
 
 import {
     Drawer,
@@ -21,9 +23,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"
 
 // TODO: Replace with actual data from database
 const LOCATION_OPTIONS = ["North", "South", "East", "West", "Central"] as const
-const SKILL_OPTIONS = ["Beginner", "Intermediate", "Advanced"] as const
-const SPORTS_OPTIONS = ["Running", "Yoga", "Badminton", "Basketball", "Tennis", "Cycling", "Swimming", "Football"] as const
-const TIMING_OPTIONS = ["Early Morning", "Morning", "Afternoon", "Evening", "Night"] as const
+const SKILL_OPTIONS = ["beginner", "intermediate", "advanced"] as const
+const SPORTS_OPTIONS = ["Running", "Yoga", "Badminton", "Basketball", "Tennis", "Cycling", "Swimming", "Football", "Hiking"] as const
+const TIMING_OPTIONS = ["Morning", "Afternoon", "Evening", "Weekends"] as const
 
 type EditProfileValues = {
     name: string
@@ -33,6 +35,7 @@ type EditProfileValues = {
     preferredTimings: string[]
     image?: string | null
     imageFile?: File | null
+    locationSharingEnabled?: boolean
 }
 
 type EditProfileDrawerProps = {
@@ -47,7 +50,10 @@ export default function EditProfileDrawer({
 }: EditProfileDrawerProps) {
     const [image, setImage] = React.useState<string | null>(defaultValues?.image ?? null)
     const [imageFile, setImageFile] = React.useState<File | null>(null)
-    const [name, setName] = React.useState(defaultValues?.name ?? "Samuel Tan")
+    const [name, setName] = React.useState(defaultValues?.name ?? "")
+    const [locationSharingEnabled, setLocationSharingEnabled] = React.useState(
+        defaultValues?.locationSharingEnabled ?? false
+    )
     const [locations, setLocations] = React.useState<string[]>(
         defaultValues?.locations ?? []
     )
@@ -60,6 +66,19 @@ export default function EditProfileDrawer({
     const [preferredTimings, setPreferredTimings] = React.useState<string[]>(
         defaultValues?.preferredTimings ?? []
     )
+
+    // Sync state when defaultValues change (e.g., when session loads)
+    React.useEffect(() => {
+        if (defaultValues) {
+            setImage(defaultValues.image ?? null)
+            setName(defaultValues.name ?? "")
+            setLocationSharingEnabled(defaultValues.locationSharingEnabled ?? false)
+            setLocations(defaultValues.locations ?? [])
+            setSkillLevel(defaultValues.skillLevel ?? "")
+            setSportsPreferences(defaultValues.sportsPreferences ?? [])
+            setPreferredTimings(defaultValues.preferredTimings ?? [])
+        }
+    }, [defaultValues])
 
     const toggleMulti = (
         value: string,
@@ -164,7 +183,7 @@ export default function EditProfileDrawer({
                         </h4>
                         <div className="grid grid-cols-1 gap-3">
                             {SKILL_OPTIONS.map((option) => (
-                                <label key={option} className="flex items-center gap-2 text-sm">
+                                <label key={option} className="flex items-center gap-2 text-sm capitalize">
                                     <Checkbox
                                         checked={skillLevel === option}
                                         onCheckedChange={() => setSkillLevel(option)}
@@ -206,6 +225,63 @@ export default function EditProfileDrawer({
                             ))}
                         </div>
                     </section>
+
+                    {/* Location Sharing Toggle */}
+                    <section className="mt-6 space-y-4 border-t pt-5">
+                        <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                            Location Services
+                        </h4>
+                        <div className="flex items-center justify-between rounded-lg border p-4">
+                            <div className="flex items-start gap-3">
+                                <MapPin className="mt-0.5 h-5 w-5 text-muted-foreground" />
+                                <div className="space-y-1">
+                                    <p className="text-sm font-medium">Enable Distance Features</p>
+                                    <p className="text-xs text-muted-foreground">
+                                        Sort and filter activities by distance from your location
+                                    </p>
+                                </div>
+                            </div>
+                            <Switch
+                                checked={locationSharingEnabled}
+                                onCheckedChange={async (checked) => {
+                                    if (checked) {
+                                        try {
+                                            // Check permission status first (not supported in all browsers)
+                                            let permissionState = "prompt";
+                                            try {
+                                                const permission = await navigator.permissions.query({ name: "geolocation" });
+                                                permissionState = permission.state;
+                                            } catch {
+                                                // Permissions API not supported (e.g., Safari) - will prompt
+                                            }
+                                            
+                                            if (permissionState === "granted") {
+                                                // Already have permission
+                                                setLocationSharingEnabled(true);
+                                            } else if (permissionState === "prompt") {
+                                                // Request permission and wait for result
+                                                await new Promise<void>((resolve, reject) => {
+                                                    navigator.geolocation.getCurrentPosition(
+                                                        () => resolve(),
+                                                        () => reject(new Error("denied")),
+                                                        { timeout: 10000 }
+                                                    );
+                                                });
+                                                setLocationSharingEnabled(true);
+                                            } else {
+                                                // Permission was denied - user needs to enable in browser settings
+                                                toast.error("Location blocked. Please enable in browser settings.");
+                                            }
+                                        } catch {
+                                            toast.error("Location permission denied");
+                                        }
+                                    } else {
+                                        setLocationSharingEnabled(false);
+                                    }
+                                }}
+                            />
+                        </div>
+                    </section>
                 </div>
 
                 <DrawerFooter className="border-t">
@@ -221,10 +297,11 @@ export default function EditProfileDrawer({
                                     preferredTimings,
                                     image,
                                     imageFile,
+                                    locationSharingEnabled,
                                 })
                             }
                         >
-                            Done
+                            Save Changes
                         </Button>
                     </DrawerClose>
                 </DrawerFooter>

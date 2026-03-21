@@ -28,7 +28,7 @@ import {
 import { cn } from "@/lib/utils"
 import { activityApi } from "@/lib/api"
 import { toast } from "sonner"
-import LocationPicker from "./LocationPicker"
+import LocationPicker, { type LocationValue } from "./LocationPicker"
 
 const ACTIVITY_TYPE_OPTIONS = ["Running", "Yoga", "Badminton", "Basketball", "Tennis", "Cycling", "Swimming", "Football"] as const
 const SKILL_LEVEL_OPTIONS = ["Beginner", "Intermediate", "Advanced"] as const
@@ -39,7 +39,7 @@ export type HostActivityValues = {
     date: string
     startTime: string
     endTime: string
-    meetingLocation: string
+    meetingLocation: LocationValue
     skillLevel: string
     maxParticipants: number
     description: string
@@ -61,7 +61,7 @@ const INITIAL_VALUES: HostActivityValues = {
     date: "",
     startTime: "",
     endTime: "",
-    meetingLocation: "",
+    meetingLocation: { location: "", latitude: null, longitude: null },
     skillLevel: "",
     maxParticipants: 2,
     description: "",
@@ -83,6 +83,20 @@ export default function HostActivityForm({
     )
     const [isSubmitting, setIsSubmitting] = React.useState(false)
     const [uploading, setUploading] = React.useState(false)
+    const [errors, setErrors] = React.useState<{
+        activityName?: boolean
+        activityType?: boolean
+        date?: boolean
+        datePast?: boolean
+        startTime?: boolean
+        startTimePast?: boolean
+        endTime?: boolean
+        endTimeInvalid?: boolean
+        skillLevel?: boolean
+        location?: boolean
+        maxParticipants?: boolean
+        description?: boolean
+    }>({})
     const fileInputRef = React.useRef<HTMLInputElement>(null)
 
     React.useEffect(() => {
@@ -122,6 +136,57 @@ export default function HostActivityForm({
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
+        
+        // Validate all required fields
+        const newErrors: typeof errors = {}
+        if (!form.activityName.trim()) newErrors.activityName = true
+        if (!form.activityType) newErrors.activityType = true
+        if (!form.date) newErrors.date = true
+        
+        // Check if date/time is in the past
+        if (form.date) {
+            const today = new Date()
+            today.setHours(0, 0, 0, 0)
+            const selectedDate = new Date(form.date)
+            selectedDate.setHours(0, 0, 0, 0)
+            
+            if (selectedDate < today) {
+                newErrors.datePast = true
+            } else if (selectedDate.getTime() === today.getTime() && form.startTime) {
+                // Same day - check if start time is in the past
+                const now = new Date()
+                const [hours, minutes] = form.startTime.split(":").map(Number)
+                if (hours < now.getHours() || (hours === now.getHours() && minutes <= now.getMinutes())) {
+                    newErrors.startTimePast = true
+                }
+            }
+        }
+        
+        if (!form.startTime) newErrors.startTime = true
+        if (!form.endTime) newErrors.endTime = true
+        // Check end time is after start time
+        if (form.startTime && form.endTime && form.endTime <= form.startTime) {
+            newErrors.endTimeInvalid = true
+        }
+        if (!form.skillLevel) newErrors.skillLevel = true
+        // Location validation: require lat/lng in create mode, but allow legacy location string in edit mode
+        const hasCoordinates = form.meetingLocation.latitude && form.meetingLocation.longitude
+        const hasLocationString = form.meetingLocation.location.trim()
+        if (mode === "create") {
+            // Create mode: must select from dropdown (need coordinates)
+            if (!hasCoordinates) newErrors.location = true
+        } else {
+            // Edit mode: allow legacy data with just location string
+            if (!hasCoordinates && !hasLocationString) newErrors.location = true
+        }
+        if (!form.maxParticipants || form.maxParticipants < 2) newErrors.maxParticipants = true
+        if (!form.description.trim()) newErrors.description = true
+        
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors)
+            return
+        }
+        
         setIsSubmitting(true)
 
         try {
@@ -136,6 +201,7 @@ export default function HostActivityForm({
             if (mode === "create") {
                 setForm(INITIAL_VALUES)
                 setSelectedDate(undefined)
+                setErrors({})
             }
         } finally {
             setIsSubmitting(false)
@@ -167,7 +233,16 @@ export default function HostActivityForm({
                 )}
             </DrawerTrigger>
 
-            <DrawerContent className="h-[88vh] flex flex-col">
+            <DrawerContent
+                className="h-[88vh] flex flex-col"
+                onInteractOutside={(e) => {
+                    // Prevent drawer from closing when clicking on Google Places autocomplete
+                    const target = e.target as HTMLElement
+                    if (target.closest(".pac-container")) {
+                        e.preventDefault()
+                    }
+                }}
+            >
                 <DrawerHeader className="border-b shrink-0">
                     <DrawerTitle className="text-center">
                         {isEdit ? "Edit Activity" : "Host Activity"}
@@ -222,19 +297,25 @@ export default function HostActivityForm({
                         </div>
 
                         {/* Activity Name */}
-                        <div className="space-y-3">
+                        <div className="space-y-2">
                             <Label htmlFor="activity-name">Activity Name</Label>
                             <Input
                                 id="activity-name"
                                 value={form.activityName}
-                                onChange={(e) => handleChange("activityName", e.target.value)}
+                                onChange={(e) => {
+                                    handleChange("activityName", e.target.value)
+                                    if (e.target.value.trim()) setErrors((prev) => ({ ...prev, activityName: false }))
+                                }}
                                 placeholder="Enter activity name"
-                                required
+                                className={cn(errors.activityName && "border-destructive")}
                             />
+                            {errors.activityName && (
+                                <p className="text-sm text-destructive">Please enter an activity name</p>
+                            )}
                         </div>
 
                         {/* Activity Type */}
-                        <div className="space-y-3">
+                        <div className="space-y-2">
                             <Label htmlFor="activity-type-trigger">Activity Type</Label>
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
@@ -242,7 +323,7 @@ export default function HostActivityForm({
                                         id="activity-type-trigger"
                                         type="button"
                                         variant="outline"
-                                        className="w-full justify-between"
+                                        className={cn("w-full justify-between", errors.activityType && "border-destructive")}
                                     >
                                         {form.activityType || "Select activity type"}
                                         <ChevronDown className="size-4 opacity-70" />
@@ -252,13 +333,19 @@ export default function HostActivityForm({
                                     {activityTypes.map((type) => (
                                         <DropdownMenuItem
                                             key={type}
-                                            onClick={() => handleChange("activityType", type)}
+                                            onClick={() => {
+                                                handleChange("activityType", type)
+                                                setErrors((prev) => ({ ...prev, activityType: false }))
+                                            }}
                                         >
                                             {type}
                                         </DropdownMenuItem>
                                     ))}
                                 </DropdownMenuContent>
                             </DropdownMenu>
+                            {errors.activityType && (
+                                <p className="text-sm text-destructive">Please select an activity type</p>
+                            )}
                         </div>
 
                         {/* Date */}
@@ -270,7 +357,7 @@ export default function HostActivityForm({
                                         id="activity-date-trigger"
                                         type="button"
                                         variant="outline"
-                                        className="w-full justify-between font-normal"
+                                        className={cn("w-full justify-between font-normal", (errors.date || errors.datePast) && "border-destructive")}
                                     >
                                         {selectedDate ? format(selectedDate, "PPP") : "Pick a date"}
                                         <ChevronDown className="size-4 opacity-70" />
@@ -283,11 +370,18 @@ export default function HostActivityForm({
                                         onSelect={(nextDate) => {
                                             setSelectedDate(nextDate)
                                             handleChange("date", nextDate ? format(nextDate, "yyyy-MM-dd") : "")
+                                            if (nextDate) setErrors((prev) => ({ ...prev, date: false, datePast: false, startTimePast: false }))
                                         }}
                                         disabled={{ before: new Date() }}
                                     />
                                 </PopoverContent>
                             </Popover>
+                            {errors.date && (
+                                <p className="text-sm text-destructive">Please select a date</p>
+                            )}
+                            {errors.datePast && !errors.date && (
+                                <p className="text-sm text-destructive">Date cannot be in the past</p>
+                            )}
                         </div>
 
                         {/* Start Time and End Time */}
@@ -298,9 +392,18 @@ export default function HostActivityForm({
                                     id="start-time"
                                     type="time"
                                     value={form.startTime}
-                                    onChange={(e) => handleChange("startTime", e.target.value)}
-                                    required
+                                    onChange={(e) => {
+                                        handleChange("startTime", e.target.value)
+                                        if (e.target.value) setErrors((prev) => ({ ...prev, startTime: false, startTimePast: false, endTimeInvalid: false }))
+                                    }}
+                                    className={cn((errors.startTime || errors.startTimePast) && "border-destructive")}
                                 />
+                                {errors.startTime && (
+                                    <p className="text-sm text-destructive">Required</p>
+                                )}
+                                {errors.startTimePast && !errors.startTime && (
+                                    <p className="text-sm text-destructive">Start time cannot be in the past</p>
+                                )}
                             </div>
 
                             <div className="space-y-2">
@@ -309,9 +412,18 @@ export default function HostActivityForm({
                                     id="end-time"
                                     type="time"
                                     value={form.endTime}
-                                    onChange={(e) => handleChange("endTime", e.target.value)}
-                                    required
+                                    onChange={(e) => {
+                                        handleChange("endTime", e.target.value)
+                                        if (e.target.value) setErrors((prev) => ({ ...prev, endTime: false, endTimeInvalid: false }))
+                                    }}
+                                    className={cn((errors.endTime || errors.endTimeInvalid) && "border-destructive")}
                                 />
+                                {errors.endTime && (
+                                    <p className="text-sm text-destructive">Required</p>
+                                )}
+                                {errors.endTimeInvalid && !errors.endTime && (
+                                    <p className="text-sm text-destructive">End time must be after start time</p>
+                                )}
                             </div>
                         </div>
 
@@ -320,8 +432,16 @@ export default function HostActivityForm({
                             <Label>Meeting Location</Label>
                             <LocationPicker
                                 value={form.meetingLocation}
-                                onChange={(val) => handleChange("meetingLocation", val)}
+                                onChange={(val) => {
+                                    handleChange("meetingLocation", val)
+                                    if (val.latitude && val.longitude) {
+                                        setErrors((prev) => ({ ...prev, location: false }))
+                                    }
+                                }}
                             />
+                            {errors.location && (
+                                <p className="text-sm text-destructive">Please select a location from the dropdown</p>
+                            )}
                         </div>
 
                         {/* Skill Level */}
@@ -333,7 +453,7 @@ export default function HostActivityForm({
                                         id="skill-level-trigger"
                                         type="button"
                                         variant="outline"
-                                        className="w-full justify-between"
+                                        className={cn("w-full justify-between", errors.skillLevel && "border-destructive")}
                                     >
                                         {form.skillLevel || "Select skill level"}
                                         <ChevronDown className="size-4 opacity-70" />
@@ -343,13 +463,19 @@ export default function HostActivityForm({
                                     {SKILL_LEVEL_OPTIONS.map((level) => (
                                         <DropdownMenuItem
                                             key={level}
-                                            onClick={() => handleChange("skillLevel", level)}
+                                            onClick={() => {
+                                                handleChange("skillLevel", level)
+                                                setErrors((prev) => ({ ...prev, skillLevel: false }))
+                                            }}
                                         >
                                             {level}
                                         </DropdownMenuItem>
                                     ))}
                                 </DropdownMenuContent>
                             </DropdownMenu>
+                            {errors.skillLevel && (
+                                <p className="text-sm text-destructive">Please select a skill level</p>
+                            )}
                         </div>
 
                         {/* Max Participants */}
@@ -360,9 +486,15 @@ export default function HostActivityForm({
                                 type="number"
                                 min={2}
                                 value={form.maxParticipants}
-                                onChange={(e) => handleChange("maxParticipants", Number(e.target.value))}
-                                required
+                                onChange={(e) => {
+                                    handleChange("maxParticipants", Number(e.target.value))
+                                    if (Number(e.target.value) >= 2) setErrors((prev) => ({ ...prev, maxParticipants: false }))
+                                }}
+                                className={cn(errors.maxParticipants && "border-destructive")}
                             />
+                            {errors.maxParticipants && (
+                                <p className="text-sm text-destructive">Please enter at least 2 participants</p>
+                            )}
                         </div>
 
                         {/* Require Approval */}
@@ -386,14 +518,20 @@ export default function HostActivityForm({
                             <textarea
                                 id="description"
                                 value={form.description}
-                                onChange={(e) => handleChange("description", e.target.value)}
+                                onChange={(e) => {
+                                    handleChange("description", e.target.value)
+                                    if (e.target.value.trim()) setErrors((prev) => ({ ...prev, description: false }))
+                                }}
                                 placeholder="Add activity details..."
                                 rows={4}
-                                required
                                 className={cn(
-                                    "border-input placeholder:text-muted-foreground w-full rounded-md border bg-transparent px-3 py-2 text-sm outline-none"
+                                    "border-input placeholder:text-muted-foreground w-full rounded-md border bg-transparent px-3 py-2 text-sm outline-none",
+                                    errors.description && "border-destructive"
                                 )}
                             />
+                            {errors.description && (
+                                <p className="text-sm text-destructive">Please enter a description</p>
+                            )}
                         </div>
                     </div>
 

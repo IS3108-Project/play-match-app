@@ -4,6 +4,9 @@ import EditProfileDrawer from "@/components/community/EditProfileDrawer";
 import type { UserStatsItem } from "@/components/profile/UserStatsCard";
 import { useRole } from "@/hooks/useRole";
 import { CalendarDays, Flame } from "lucide-react"
+import { userApi, activityApi } from "@/lib/api";
+import { toast } from "sonner";
+import { authClient } from "@/lib/client-auth";
 
 // TODO: Replace with actual data
 import userStats from "@/data/user-stats.json";
@@ -28,43 +31,68 @@ export default function ProfilePage() {
         skillLevel?: string | null
         sportInterests?: string[]
         preferredTimes?: string[]
+        locationSharingEnabled?: boolean
       } | undefined
 
     const statsItems = userStats as UserStatsItem[];
 
-    const handleProfileSave = (values: {
+    const handleProfileSave = async (values: {
         name: string;
         locations: string[];
         skillLevel: string;
         sportsPreferences: string[];
         preferredTimings: string[];
+        locationSharingEnabled?: boolean;
+        image?: string | null;
+        imageFile?: File | null;
       }) => {
-        // TODO: persist changes (API call / session update)
-        console.log("Profile saved:", values);
+        try {
+          // Upload image if new file selected
+          let imageUrl = values.image;
+          if (values.imageFile) {
+            imageUrl = await activityApi.uploadImage(values.imageFile);
+          }
+
+          await userApi.updateProfile({
+            name: values.name,
+            preferredAreas: values.locations,
+            skillLevel: values.skillLevel,
+            sportInterests: values.sportsPreferences,
+            preferredTimes: values.preferredTimings,
+            locationSharingEnabled: values.locationSharingEnabled,
+            image: imageUrl,
+          });
+
+          // Refresh session to get updated user data
+          await authClient.getSession({ fetchOptions: { cache: "no-store" } });
+          
+          toast.success("Profile updated!");
+        } catch (error: any) {
+          toast.error(error.message || "Failed to update profile");
+        }
       };
 
     return (
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-8">
-            {/* Edit Profile Drawer */}
-            <div className="relative z-60 self-end">
-                <EditProfileDrawer
-                    defaultValues={{
-                        name: u?.name ?? "",
-                        locations: u?.preferredAreas ?? [],
-                        skillLevel: u?.skillLevel ?? "", 
-                        sportsPreferences: u?.sportInterests ?? [],
-                        preferredTimings: u?.preferredTimes ?? [],
-                        image: user?.image ?? null,
-                    }}
-                    onDone={handleProfileSave}
-                />
-            </div>
-
             <UserProfileCard
                 image={user?.image}
                 name={user?.name}
                 location={u?.preferredAreas?.length ? u?.preferredAreas.join(", ") : "Singapore"}
                 level={u?.skillLevel ?? "Intermediate Level"}
+                editAction={
+                    <EditProfileDrawer
+                        defaultValues={{
+                            name: u?.name ?? "",
+                            locations: u?.preferredAreas ?? [],
+                            skillLevel: u?.skillLevel ?? "", 
+                            sportsPreferences: u?.sportInterests ?? [],
+                            preferredTimings: u?.preferredTimes ?? [],
+                            image: user?.image ?? null,
+                            locationSharingEnabled: u?.locationSharingEnabled ?? false,
+                        }}
+                        onDone={handleProfileSave}
+                    />
+                }
             />
 
             {/* Stats cards (flexbox) */}

@@ -6,6 +6,7 @@ type UserProfileCardProps = {
   name?: string | null;
   location?: string;
   level?: string;
+  editAction?: React.ReactNode;
 };
 
 export default function UserProfileCard({
@@ -13,12 +14,16 @@ export default function UserProfileCard({
   name,
   location = "Singapore",
   level = "Intermediate Level",
+  editAction,
 }: UserProfileCardProps) {
   const displayName = name?.trim() || "User";
   const fallbackInitial = displayName.charAt(0).toUpperCase();
 
   return (
     <section className="relative flex flex-col items-center border-b pb-6">
+      {editAction && (
+        <div className="absolute right-0 top-0">{editAction}</div>
+      )}
       <Avatar className="mt-4 h-28 w-28 rounded-full border-4 border-background object-cover shadow-md">
         <AvatarImage src={image ?? undefined} alt={displayName} />
         <AvatarFallback className="bg-primary text-4xl text-white">

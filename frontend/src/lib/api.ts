@@ -26,6 +26,8 @@ export interface Activity {
   startTime: string;
   endTime: string;
   location: string;
+  latitude?: number | null;
+  longitude?: number | null;
   skillLevel: string;
   maxParticipants: number;
   requireApproval: boolean;
@@ -38,6 +40,7 @@ export interface Activity {
   myStatus: "CONFIRMED" | "PENDING" | "WAITLISTED" | "CANCELLED" | "REJECTED" | null;
   pendingCount?: number;
   createdAt: string;
+  distance?: number | null; // Distance in km from user (only when lat/lng provided)
 }
 
 export interface ActivityDetail extends Activity {
@@ -68,16 +71,48 @@ export interface CreateActivityPayload {
   startTime: string;
   endTime: string;
   location: string;
+  latitude?: number | null;
+  longitude?: number | null;
   skillLevel: string;
   maxParticipants: number;
   requireApproval: boolean;
-  imageSrc?: string;
+  imageSrc?: string | null;
 }
 
 export interface GuestPayload {
   name: string;
   contactType: "email" | "telegram";
   contact: string;
+}
+
+export interface PaginationInfo {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  pagination: PaginationInfo;
+}
+
+export interface ActivityListParams {
+  search?: string;
+  activityType?: string;
+  skillLevel?: string;
+  region?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  sortBy?: "date" | "createdAt" | "distance";
+  page?: number;
+  limit?: number;
+  // Distance-based filtering
+  lat?: number;
+  lng?: number;
+  maxDistance?: number; // in km
 }
 
 export interface CancelInfo {
@@ -93,8 +128,18 @@ export interface CancelInfo {
 // ── Activity API ────────────────────────────────────────────────────────
 
 export const activityApi = {
-  list: (params?: Record<string, string>) =>
-    request<Activity[]>(`/activities${params ? `?${new URLSearchParams(params)}` : ""}`),
+  list: (params?: ActivityListParams) => {
+    const searchParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== "") {
+          searchParams.set(key, String(value));
+        }
+      });
+    }
+    const query = searchParams.toString();
+    return request<PaginatedResponse<Activity>>(`/activities${query ? `?${query}` : ""}`);
+  },
 
   mine: (tab: string) =>
     request<Activity[]>(`/activities/mine?tab=${tab}`),
@@ -175,4 +220,42 @@ export const activityApi = {
     const data = await res.json();
     return data.url;
   },
+};
+
+// ── User API ────────────────────────────────────────────────────────────
+
+export interface UpdateProfilePayload {
+  name?: string;
+  preferredAreas?: string[];
+  skillLevel?: string;
+  sportInterests?: string[];
+  preferredTimes?: string[];
+  locationSharingEnabled?: boolean;
+  image?: string | null;
+  bio?: string;
+}
+
+export const userApi = {
+  updateLocationSharing: (enabled: boolean) =>
+    request<{ locationSharingEnabled: boolean }>("/users/location-sharing", {
+      method: "PATCH",
+      body: JSON.stringify({ enabled }),
+    }),
+
+  updateProfile: (data: UpdateProfilePayload) =>
+    request<{
+      id: string;
+      name: string;
+      email: string;
+      image: string | null;
+      preferredAreas: string[];
+      skillLevel: string | null;
+      sportInterests: string[];
+      preferredTimes: string[];
+      locationSharingEnabled: boolean;
+      bio: string | null;
+    }>("/users/profile", {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
 };

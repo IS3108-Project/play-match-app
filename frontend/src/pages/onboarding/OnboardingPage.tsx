@@ -4,7 +4,7 @@ import { Navigate, useNavigate } from "react-router";
 import { authClient } from "@/lib/client-auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Zap, CheckCircle, ArrowLeft } from "lucide-react";
+import { Zap, CheckCircle, ArrowLeft, MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Spinner } from "@/components/ui/spinner";
 import { ThemeToggle } from "@/components/navbar/ThemeToggle";
@@ -29,7 +29,8 @@ type Step =
   | "sportInterests"
   | "skillLevel"
   | "preferredTimes"
-  | "preferredAreas";
+  | "preferredAreas"
+  | "locationSharing";
 
 export default function OnboardingPage() {
   const navigate = useNavigate();
@@ -95,10 +96,30 @@ export default function OnboardingPage() {
         setCurrentStep("preferredAreas");
       } else if (currentStep === "preferredAreas") {
         await onboarding.step.preferredAreas({ preferredAreas: selectedAreas });
+        setCurrentStep("locationSharing");
+      } else if (currentStep === "locationSharing") {
+        // Request browser permission first
+        const permission = await navigator.permissions.query({ name: "geolocation" });
+        if (permission.state === "prompt") {
+          // Trigger the browser prompt
+          await new Promise<void>((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(
+              () => resolve(),
+              () => reject(),
+              { timeout: 10000 }
+            );
+          });
+        }
+        await onboarding.step.locationSharing({ locationSharingEnabled: true });
         navigate("/");
       }
     } catch (error) {
       console.error("Onboarding error:", error);
+      // If location permission denied, still proceed but with disabled
+      if (currentStep === "locationSharing") {
+        await onboarding.step.locationSharing({ locationSharingEnabled: false });
+        navigate("/");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -112,6 +133,9 @@ export default function OnboardingPage() {
         setCurrentStep("preferredAreas");
       } else if (currentStep === "preferredAreas") {
         await onboarding.skipStep.preferredAreas();
+        setCurrentStep("locationSharing");
+      } else if (currentStep === "locationSharing") {
+        await onboarding.step.locationSharing({ locationSharingEnabled: false });
         navigate("/");
       }
     } finally {
@@ -126,6 +150,8 @@ export default function OnboardingPage() {
       setCurrentStep("skillLevel");
     } else if (currentStep === "preferredAreas") {
       setCurrentStep("preferredTimes");
+    } else if (currentStep === "locationSharing") {
+      setCurrentStep("preferredAreas");
     }
   };
 
@@ -134,11 +160,12 @@ export default function OnboardingPage() {
     if (currentStep === "skillLevel") return !selectedSkill;
     if (currentStep === "preferredTimes") return selectedTimes.length === 0;
     if (currentStep === "preferredAreas") return selectedAreas.length === 0;
+    if (currentStep === "locationSharing") return false; // Enable/Skip are always available
     return false;
   };
 
   const isOptionalStep =
-    currentStep === "preferredTimes" || currentStep === "preferredAreas";
+    currentStep === "preferredTimes" || currentStep === "preferredAreas" || currentStep === "locationSharing";
 
   return (
     <div className="relative grid min-h-screen place-items-center bg-background p-4">
@@ -306,6 +333,46 @@ export default function OnboardingPage() {
                   </div>
                 </>
               )}
+
+              {/* Step: Location Sharing */}
+              {currentStep === "locationSharing" && (
+                <>
+                  <div className="mb-2 flex items-center gap-2">
+                    <button
+                      onClick={handleBack}
+                      className="text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <ArrowLeft className="h-5 w-5" />
+                    </button>
+                    <MapPin className="h-5 w-5 text-primary" />
+                    <h2 className="text-xl font-semibold">Enable Distance Features</h2>
+                  </div>
+                  <p className="mb-6 text-sm text-muted-foreground">
+                    Share your location to see activities near you and sort by distance. (Optional)
+                  </p>
+                  <div className="space-y-4">
+                    <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+                      <div className="flex items-start gap-3">
+                        <div className="rounded-full bg-primary/10 p-2">
+                          <MapPin className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <h3 className="font-medium">What you'll get:</h3>
+                          <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
+                            <li>• Sort activities by distance from you</li>
+                            <li>• Filter activities within a radius</li>
+                            <li>• See how far activities are</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Your location is only used to calculate distances and is never shared with other users.
+                      You can change this anytime in your profile settings.
+                    </p>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Footer Buttons */}
@@ -324,8 +391,10 @@ export default function OnboardingPage() {
                 onClick={handleNext}
                 disabled={isNextDisabled() || isLoading}
               >
-                {currentStep === "preferredAreas"
-                  ? "Start Exploring →"
+                {currentStep === "locationSharing"
+                  ? "Enable Location →"
+                  : currentStep === "preferredAreas"
+                  ? "Next →"
                   : "Next →"}
               </Button>
             </div>

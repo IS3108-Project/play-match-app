@@ -14,14 +14,27 @@ export async function createActivity(req: AuthRequest, res: Response) {
 
 export async function getActivities(req: AuthRequest, res: Response) {
   try {
-    const { activityType, skillLevel, dateFrom, dateTo } = req.query as Record<string, string | undefined>;
-    const activities = await activityService.getActivities(req.user.id, {
-      ...(activityType ? { activityType: activityType.split(",") } : {}),
-      ...(skillLevel ? { skillLevel } : {}),
-      ...(dateFrom ? { dateFrom: new Date(dateFrom) } : {}),
-      ...(dateTo ? { dateTo: new Date(dateTo) } : {}),
-    });
-    res.json(activities);
+    const { search, activityType, skillLevel, region, dateFrom, dateTo, sortBy, page, limit, lat, lng, maxDistance } = req.query as Record<string, string | undefined>;
+    const result = await activityService.getActivities(
+      req.user.id,
+      {
+        ...(search ? { search } : {}),
+        ...(activityType ? { activityType: activityType.split(",") } : {}),
+        ...(skillLevel ? { skillLevel: skillLevel.split(",") } : {}),
+        ...(region ? { region: region.split(",") } : {}),
+        ...(dateFrom ? { dateFrom: new Date(dateFrom) } : {}),
+        ...(dateTo ? { dateTo: new Date(dateTo) } : {}),
+        ...(sortBy === "date" || sortBy === "createdAt" || sortBy === "distance" ? { sortBy } : {}),
+        ...(lat ? { lat: parseFloat(lat) } : {}),
+        ...(lng ? { lng: parseFloat(lng) } : {}),
+        ...(maxDistance ? { maxDistance: parseFloat(maxDistance) } : {}),
+      },
+      {
+        page: page ? parseInt(page, 10) : undefined,
+        limit: limit ? parseInt(limit, 10) : undefined,
+      },
+    );
+    res.json(result);
   } catch (error) {
     console.error("Failed to fetch activities:", error);
     res.status(500).json({ error: "Failed to fetch activities" });
