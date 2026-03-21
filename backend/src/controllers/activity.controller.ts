@@ -220,6 +220,104 @@ export async function rejectParticipant(req: AuthRequest, res: Response) {
   }
 }
 
+export async function inviteUser(req: AuthRequest, res: Response) {
+  try {
+    const activityId = req.params.id as string;
+    const invitedUserId = req.params.userId as string;
+    const result = await activityService.inviteUser(activityId, req.user.id, invitedUserId);
+    res.json(result);
+  } catch (error: any) {
+    if (error.message === "FORBIDDEN") {
+      res.status(403).json({ error: "Not the host" });
+      return;
+    }
+    if (error.message === "NOT_FOUND") {
+      res.status(404).json({ error: "Activity not found" });
+      return;
+    }
+    if (error.message === "ACTIVITY_CANCELLED") {
+      res.status(400).json({ error: "Activity is cancelled" });
+      return;
+    }
+    if (error.message === "CANNOT_INVITE_SELF") {
+      res.status(400).json({ error: "Cannot invite yourself" });
+      return;
+    }
+    if (error.message === "ALREADY_PARTICIPANT") {
+      res.status(409).json({ error: "User is already a participant" });
+      return;
+    }
+    if (error.message === "ACTIVITY_FULL") {
+      res.status(400).json({ error: "Activity is full" });
+      return;
+    }
+    console.error("Failed to invite user:", error);
+    res.status(500).json({ error: "Failed to invite user" });
+  }
+}
+
+export async function acceptInvitation(req: AuthRequest, res: Response) {
+  try {
+    const activityId = req.params.id as string;
+    const result = await activityService.acceptInvitation(activityId, req.user.id);
+    res.json(result);
+  } catch (error: any) {
+    if (error.message === "NOT_FOUND") {
+      res.status(404).json({ error: "Activity not found" });
+      return;
+    }
+    if (error.message === "ACTIVITY_CANCELLED") {
+      res.status(400).json({ error: "Activity is cancelled" });
+      return;
+    }
+    if (error.message === "NOT_PARTICIPANT") {
+      res.status(404).json({ error: "Not a participant" });
+      return;
+    }
+    if (error.message === "NOT_INVITED") {
+      res.status(400).json({ error: "Not an invited participant" });
+      return;
+    }
+    if (error.message === "NOT_PENDING") {
+      res.status(400).json({ error: "Invitation already responded to" });
+      return;
+    }
+    if (error.message === "ACTIVITY_FULL") {
+      res.status(400).json({ error: "Activity is now full" });
+      return;
+    }
+    console.error("Failed to accept invitation:", error);
+    res.status(500).json({ error: "Failed to accept invitation" });
+  }
+}
+
+export async function declineInvitation(req: AuthRequest, res: Response) {
+  try {
+    const activityId = req.params.id as string;
+    const result = await activityService.declineInvitation(activityId, req.user.id);
+    res.json(result);
+  } catch (error: any) {
+    if (error.message === "NOT_FOUND") {
+      res.status(404).json({ error: "Activity not found" });
+      return;
+    }
+    if (error.message === "NOT_PARTICIPANT") {
+      res.status(404).json({ error: "Not a participant" });
+      return;
+    }
+    if (error.message === "NOT_INVITED") {
+      res.status(400).json({ error: "Not an invited participant" });
+      return;
+    }
+    if (error.message === "NOT_PENDING") {
+      res.status(400).json({ error: "Invitation already responded to" });
+      return;
+    }
+    console.error("Failed to decline invitation:", error);
+    res.status(500).json({ error: "Failed to decline invitation" });
+  }
+}
+
 export async function addGuest(req: AuthRequest, res: Response) {
   try {
     const id = req.params.id as string;

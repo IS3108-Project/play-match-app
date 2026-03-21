@@ -50,6 +50,11 @@ enum ReportStatus {
   DISMISSED
 }
 
+enum ParticipantSource {
+  REQUESTED  // User requested to join
+  INVITED    // Host invited the user
+}
+
 // ── Auth Domain ─────────────────────────────────────────────────────────
 
 model User {
@@ -66,6 +71,12 @@ model User {
   preferredTimes String[]
   preferredAreas String[]
   locationSharingEnabled Boolean @default(false)
+
+  // Buddy matching location (stored snapshot, not live)
+  lastLatitude    Float?
+  lastLongitude   Float?
+  lastLocationAt  DateTime?
+  matchRadius     Int       @default(25) // km - for buddy matching distance preference
 
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
@@ -170,6 +181,7 @@ model Participant {
   userId           String
   activityId       String
   status           ParticipantStatus @default(CONFIRMED)
+  source           ParticipantSource @default(REQUESTED)
   attendanceStatus AttendanceStatus  @default(PENDING)
   joinedAt         DateTime          @default(now())
   rejectionNote    String?

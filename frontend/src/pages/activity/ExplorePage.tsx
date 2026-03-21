@@ -10,6 +10,7 @@ import logo from "@/assets/logo.svg"
 import { activityApi, type Activity, type PaginationInfo } from "@/lib/api"
 import { useDebounce } from "@/hooks/useDebounce"
 import { useUserLocation } from "@/hooks/useUserLocation"
+import { Link } from "react-router"
 
 export default function ExplorePage() {
   const { location, isEnabled: locationEnabled, hasPermission: hasLocationPermission } = useUserLocation()
@@ -84,8 +85,8 @@ export default function ExplorePage() {
         <p className="mt-2 text-muted-foreground">
           Join local activities organized by the community. Or... Try out our new feature:
         </p>
-        <Button type="button" className="bg-primary text-primary-foreground mt-4">
-          Finding Buddies
+        <Button asChild className="bg-primary text-primary-foreground mt-4">
+          <Link to="/buddy">Finding Buddies</Link>
         </Button>
       </div>
 

@@ -35,6 +35,7 @@ interface UpdateProfileInput {
   locationSharingEnabled?: boolean;
   image?: string | null;
   bio?: string;
+  matchRadius?: number;
 }
 
 export const updateProfile = async (
@@ -55,6 +56,7 @@ export const updateProfile = async (
       preferredTimes: true,
       locationSharingEnabled: true,
       bio: true,
+      matchRadius: true,
     },
   });
 };

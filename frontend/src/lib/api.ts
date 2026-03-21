@@ -38,9 +38,11 @@ export interface Activity {
   _count: { confirmed: number };
   slotsLeft: number;
   myStatus: "CONFIRMED" | "PENDING" | "WAITLISTED" | "CANCELLED" | "REJECTED" | null;
+  mySource?: "REQUESTED" | "INVITED" | null;
   pendingCount?: number;
   createdAt: string;
   distance?: number | null; // Distance in km from user (only when lat/lng provided)
+  participantUserIds?: string[]; // User IDs of all participants (for invite tracking)
 }
 
 export interface ActivityDetail extends Activity {
@@ -188,6 +190,21 @@ export const activityApi = {
       body: JSON.stringify({ rejectionNote }),
     }),
 
+  invite: (activityId: string, userId: string) =>
+    request<{ status: string }>(`/activities/${activityId}/invite/${userId}`, {
+      method: "POST",
+    }),
+
+  acceptInvitation: (activityId: string) =>
+    request<{ status: string }>(`/activities/${activityId}/accept-invitation`, {
+      method: "POST",
+    }),
+
+  declineInvitation: (activityId: string) =>
+    request<{ success: boolean }>(`/activities/${activityId}/decline-invitation`, {
+      method: "POST",
+    }),
+
   addGuest: (id: string, data: GuestPayload) =>
     request<{ id: string }>(`/activities/${id}/guests`, {
       method: "POST",
@@ -258,4 +275,35 @@ export const userApi = {
       method: "PATCH",
       body: JSON.stringify(data),
     }),
+};
+
+// ── Buddy Matching API ──────────────────────────────────────────────────
+
+export interface BuddyMatch {
+  id: string;
+  name: string;
+  image: string | null;
+  bio: string | null;
+  sportInterests: string[];
+  skillLevel: string | null;
+  preferredTimes: string[];
+  preferredAreas: string[];
+  compatibilityScore: number;
+  commonSports: string[];
+  commonTimes: string[];
+  commonAreas: string[];
+  upcomingActivities: Array<{
+    id: string;
+    title: string;
+    activityType: string;
+    date: string;
+    startTime: string;
+    location: string;
+    slotsLeft: number;
+  }>;
+}
+
+export const buddyApi = {
+  /** Get potential buddy matches */
+  getPotentialMatches: () => request<BuddyMatch[]>("/buddy/matches"),
 };

@@ -13,6 +13,7 @@ import RegisterPage from "@/pages/auth/RegisterPage";
 import ResetPasswordPage from "@/pages/auth/ResetPasswordPage";
 import OnboardingPage from "@/pages/onboarding/OnboardingPage";
 import UsersPage from "@/pages/admin/UsersPage";
+import BuddyMatchingPage from "@/pages/buddy/BuddyMatchingPage";
 import { createBrowserRouter } from "react-router";
 
 export const router = createBrowserRouter([
@@ -38,6 +39,7 @@ export const router = createBrowserRouter([
       { index: true, element: <ExplorePage /> },
       { path: "explore", element: <ExplorePage /> },
       { path: "my-activities", element: <MyActivitiesPage /> },
+      { path: "buddy", element: <BuddyMatchingPage /> },
       { path: "community", element: <CommunityPage /> },
       { path: "community/discussions", element: <CommunityPage /> },
       { path: "community/discussions/:discussionId", element: <DiscussionPostPage /> },

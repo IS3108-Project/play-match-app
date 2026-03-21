@@ -26,6 +26,13 @@ router.post("/:id/leave", ctrl.leaveActivity as any);
 router.post("/:id/approve/:participantId", ctrl.approveParticipant as any);
 router.post("/:id/reject/:participantId", ctrl.rejectParticipant as any);
 
+// Invite user (host only)
+router.post("/:id/invite/:userId", ctrl.inviteUser as any);
+
+// Invitation response (invitee only)
+router.post("/:id/accept-invitation", ctrl.acceptInvitation as any);
+router.post("/:id/decline-invitation", ctrl.declineInvitation as any);
+
 // Guests
 router.post("/:id/guests", ctrl.addGuest as any);
 router.delete("/:id/guests/:guestId", ctrl.removeGuest as any);

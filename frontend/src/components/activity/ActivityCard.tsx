@@ -82,6 +82,7 @@ export default function ActivityCard({ activity, isHosted, onRefresh }: Activity
 
     const isJoined = activity.myStatus === "CONFIRMED"
     const isPending = activity.myStatus === "PENDING"
+    const isInvited = isPending && activity.mySource === "INVITED"
     const isWaitlisted = activity.myStatus === "WAITLISTED"
     const isNotJoined = !activity.myStatus
 
@@ -197,9 +198,17 @@ export default function ActivityCard({ activity, isHosted, onRefresh }: Activity
                         )}
 
                         {isPending && (
-                            <Button className="mt-3 w-full" size="sm" variant="secondary" disabled>
-                                Pending Approval
-                            </Button>
+                            isInvited ? (
+                                <ActivityDetailsCard activityId={activity.id} onRefresh={onRefresh}>
+                                    <Button className="mt-3 w-full" size="sm" variant="default">
+                                        View Invitation
+                                    </Button>
+                                </ActivityDetailsCard>
+                            ) : (
+                                <Button className="mt-3 w-full" size="sm" variant="secondary" disabled>
+                                    Pending Approval
+                                </Button>
+                            )
                         )}
 
                         {isWaitlisted && (

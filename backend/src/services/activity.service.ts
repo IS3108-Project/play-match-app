@@ -398,7 +398,7 @@ export async function getMyActivities(
       include: {
         host: { select: { id: true, name: true, image: true } },
         participants: {
-          select: { id: true, userId: true, status: true },
+          select: { id: true, userId: true, status: true, source: true },
         },
         _count: { select: { guests: true } },
       },
@@ -422,7 +422,7 @@ export async function getMyActivities(
     include: {
       host: { select: { id: true, name: true, image: true } },
       participants: {
-        select: { id: true, userId: true, status: true },
+        select: { id: true, userId: true, status: true, source: true },
       },
       _count: { select: { guests: true } },
     },
@@ -457,8 +457,11 @@ function mapActivityResponse(a: any, userId: string) {
     _count: { confirmed },
     slotsLeft: a.maxParticipants - confirmed - guestCount,
     myStatus: myParticipant?.status ?? null,
+    mySource: myParticipant?.source ?? null,
     pendingCount: a.participants.filter((p: any) => p.status === "PENDING").length,
     createdAt: a.createdAt.toISOString(),
+    // Include participant user IDs for invite tracking
+    participantUserIds: a.participants.map((p: any) => p.userId),
   };
 }
 
@@ -496,6 +499,7 @@ export async function getActivityById(activityId: string, userId: string) {
     _count: { confirmed },
     slotsLeft: activity.maxParticipants - confirmed - activity.guests.length,
     myStatus: myParticipant?.status ?? null,
+    mySource: myParticipant?.source ?? null,
   };
 }
 
@@ -716,7 +720,7 @@ export async function joinActivity(
     }
 
     const participant = await tx.participant.create({
-      data: { userId, activityId, status },
+      data: { userId, activityId, status, source: "REQUESTED" },
     });
 
     return { status: participant.status };
@@ -731,6 +735,136 @@ export async function joinActivity(
   }
 
   return result;
+}
+
+// ── Invite User (Host invites another user) ─────────────────────────────
+
+export async function inviteUser(
+  activityId: string,
+  hostId: string,
+  invitedUserId: string,
+) {
+  const activity = await prisma.activity.findUnique({
+    where: { id: activityId },
+  });
+
+  if (!activity) throw new Error("NOT_FOUND");
+  if (activity.hostId !== hostId) throw new Error("FORBIDDEN");
+  if (activity.status !== "ACTIVE") throw new Error("ACTIVITY_CANCELLED");
+  if (hostId === invitedUserId) throw new Error("CANNOT_INVITE_SELF");
+
+  // Check if already a participant
+  const existing = await prisma.participant.findUnique({
+    where: { userId_activityId: { userId: invitedUserId, activityId } },
+  });
+
+  if (existing) {
+    throw new Error("ALREADY_PARTICIPANT");
+  }
+
+  // Check if there's room
+  const confirmedCount = await prisma.participant.count({
+    where: { activityId, status: "CONFIRMED" },
+  });
+  const guestCount = await prisma.guest.count({
+    where: { activityId },
+  });
+
+  if (confirmedCount + guestCount >= activity.maxParticipants) {
+    throw new Error("ACTIVITY_FULL");
+  }
+
+  // Add as PENDING participant - invitee must accept the invitation
+  const participant = await prisma.participant.create({
+    data: {
+      userId: invitedUserId,
+      activityId,
+      status: "PENDING",
+      source: "INVITED",
+    },
+  });
+
+  // TODO: Send invite notification to the invited user
+  // For now, they'll see it in their pending activities
+
+  return { status: participant.status };
+}
+
+// ── Accept Invitation (Invitee accepts host's invite) ───────────────────
+
+export async function acceptInvitation(activityId: string, userId: string) {
+  const activity = await prisma.activity.findUnique({
+    where: { id: activityId },
+  });
+
+  if (!activity) throw new Error("NOT_FOUND");
+  if (activity.status !== "ACTIVE") throw new Error("ACTIVITY_CANCELLED");
+
+  const participant = await prisma.participant.findUnique({
+    where: { userId_activityId: { userId, activityId } },
+  });
+
+  if (!participant) throw new Error("NOT_PARTICIPANT");
+  if (participant.source !== "INVITED") throw new Error("NOT_INVITED");
+  if (participant.status !== "PENDING") throw new Error("NOT_PENDING");
+
+  // Check if there's still room
+  const confirmedCount = await prisma.participant.count({
+    where: { activityId, status: "CONFIRMED" },
+  });
+  const guestCount = await prisma.guest.count({
+    where: { activityId },
+  });
+
+  if (confirmedCount + guestCount >= activity.maxParticipants) {
+    throw new Error("ACTIVITY_FULL");
+  }
+
+  // Update to CONFIRMED
+  await prisma.participant.update({
+    where: { userId_activityId: { userId, activityId } },
+    data: { status: "CONFIRMED" },
+  });
+
+  // Get user info for confirmation email
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { name: true, email: true },
+  });
+
+  if (user) {
+    const activityDetails = activityToNotification(activity);
+    notificationService
+      .sendRsvpConfirmation({ name: user.name, email: user.email }, activityDetails)
+      .catch(console.error);
+  }
+
+  return { status: "CONFIRMED" };
+}
+
+// ── Decline Invitation (Invitee declines host's invite) ─────────────────
+
+export async function declineInvitation(activityId: string, userId: string) {
+  const activity = await prisma.activity.findUnique({
+    where: { id: activityId },
+  });
+
+  if (!activity) throw new Error("NOT_FOUND");
+
+  const participant = await prisma.participant.findUnique({
+    where: { userId_activityId: { userId, activityId } },
+  });
+
+  if (!participant) throw new Error("NOT_PARTICIPANT");
+  if (participant.source !== "INVITED") throw new Error("NOT_INVITED");
+  if (participant.status !== "PENDING") throw new Error("NOT_PENDING");
+
+  // Delete the participant record
+  await prisma.participant.delete({
+    where: { userId_activityId: { userId, activityId } },
+  });
+
+  return { success: true };
 }
 
 // ── Leave ────────────────────────────────────────────────────────────────

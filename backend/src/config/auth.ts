@@ -71,6 +71,10 @@ export const auth = betterAuth({
         type: "string",
         input: false,
       },
+      matchRadius: {
+        type: "number",
+        input: false,
+      },
     },
   },
   plugins: [

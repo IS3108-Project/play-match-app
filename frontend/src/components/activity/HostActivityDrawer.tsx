@@ -53,6 +53,7 @@ type HostActivityFormProps = {
     initialValues?: HostActivityValues
     mode?: "create" | "edit"
     className?: string
+    triggerLabel?: string
 }
 
 const INITIAL_VALUES: HostActivityValues = {
@@ -74,6 +75,7 @@ export default function HostActivityForm({
     initialValues,
     mode = "create",
     className,
+    triggerLabel,
 }: HostActivityFormProps) {
     const defaults = initialValues ?? INITIAL_VALUES
     const [open, setOpen] = React.useState(false)
@@ -228,7 +230,7 @@ export default function HostActivityForm({
                 ) : (
                     <Button type="button" className={cn("bg-primary text-primary-foreground", className)}>
                         <PlusIcon className="size-4" />
-                        Host Activity
+                        {triggerLabel || "Host Activity"}
                     </Button>
                 )}
             </DrawerTrigger>

@@ -97,6 +97,28 @@ export default function ActivityDetailsCard({ activityId, children, onRefresh }:
         }
     }
 
+    const handleAcceptInvitation = async () => {
+        try {
+            await activityApi.acceptInvitation(activityId)
+            toast.success("Invitation accepted! You're in!")
+            fetchDetail()
+            onRefresh?.()
+        } catch (err: any) {
+            toast.error(err.message)
+        }
+    }
+
+    const handleDeclineInvitation = async () => {
+        try {
+            await activityApi.declineInvitation(activityId)
+            toast.success("Invitation declined")
+            setOpen(false)
+            onRefresh?.()
+        } catch (err: any) {
+            toast.error(err.message)
+        }
+    }
+
     const handleGuestSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
         try {
@@ -124,6 +146,8 @@ export default function ActivityDetailsCard({ activityId, children, onRefresh }:
     }
 
     const isJoined = detail?.myStatus === "CONFIRMED"
+    const isPending = detail?.myStatus === "PENDING"
+    const isInvited = isPending && detail?.mySource === "INVITED"
     const isRejected = detail?.myStatus === "REJECTED"
     const isNotJoined = !detail?.myStatus
     const isHost = detail?.hostId === userId
@@ -354,6 +378,21 @@ export default function ActivityDetailsCard({ activityId, children, onRefresh }:
                                         Withdraw
                                     </Button>
                                 )
+                            )}
+                            {isInvited && (
+                                <div className="space-y-3">
+                                    <p className="text-sm text-center text-muted-foreground">
+                                        You've been invited to join this activity
+                                    </p>
+                                    <div className="flex gap-2">
+                                        <Button className="flex-1" variant="outline" onClick={handleDeclineInvitation}>
+                                            Decline
+                                        </Button>
+                                        <Button className="flex-1" onClick={handleAcceptInvitation}>
+                                            Accept
+                                        </Button>
+                                    </div>
+                                </div>
                             )}
                             {isRejected && (
                                 <div className="space-y-2">
