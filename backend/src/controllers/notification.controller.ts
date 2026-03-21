@@ -16,6 +16,18 @@ export async function sendRsvpConfirmation(req: Request, res: Response) {
   }
 }
 
+// POST /api/notifications/withdrawal
+export async function sendWithdrawalNotification(req: Request, res: Response) {
+  const { details } = req.body;
+  try {
+    await notificationService.sendWithdrawalNotification(details);
+    res.status(200).json({ message: "Withdrawal notification sent to host" });
+  } catch (error) {
+    console.error("Failed to send withdrawal notification:", error);
+    res.status(500).json({ error: "Failed to send email" });
+  }
+}
+
 // POST /api/notifications/activity-cancelled
 export async function sendActivityCancelled(req: Request, res: Response) {
   const { users, activity } = req.body;

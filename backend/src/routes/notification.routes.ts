@@ -5,6 +5,7 @@
 import { Router } from "express";
 import {
   sendRsvpConfirmation,
+  sendWithdrawalNotification,
   sendActivityCancelled,
   sendPendingRequestToHost,
   sendRequestOutcome,
@@ -14,6 +15,7 @@ import {
 const router = Router();
 
 router.post("/rsvp-confirmation", sendRsvpConfirmation);
+router.post("/withdrawal", sendWithdrawalNotification);
 router.post("/activity-cancelled", sendActivityCancelled);
 router.post("/pending-request", sendPendingRequestToHost);
 router.post("/request-outcome", sendRequestOutcome);

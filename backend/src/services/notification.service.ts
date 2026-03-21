@@ -5,6 +5,8 @@
 import { sendEmail } from "../email/send-email";
 import ReminderEmail from "../email/email_templates/reminder-email";
 import RsvpConfirmationEmail from "../email/email_templates/rsvp-confirmation-email";
+import WithdrawalEmail from "../email/email_templates/withdrawal-email";
+import NewParticipantEmail from "../email/email_templates/new-participant-email";
 import CancelledActivityEmail from "../email/email_templates/cancelled-activity-email";
 import PendingRequestEmail from "../email/email_templates/pending-request-email";
 import RequestOutcomeEmail from "../email/email_templates/request-outcome-email";
@@ -53,7 +55,63 @@ export async function sendRsvpConfirmation(
   });
 }
 
-// ── 2. Activity Cancelled ────────────────────────────────────────────────────
+// ── 2. New Participant (to host) ─────────────────────────────────────────────
+// Called when a user joins an activity directly (no approval required).
+// Sends one email to the host.
+
+export interface NewParticipantDetails {
+  hostName: string;
+  hostEmail: string;
+  participantName: string;
+  activityName: string;
+  activityDate: string;
+  activityLocation: string;
+}
+
+export async function sendNewParticipantNotification(
+  details: NewParticipantDetails,
+): Promise<void> {
+  await sendEmail({
+    to: details.hostEmail,
+    subject: `${details.participantName} just joined ${details.activityName}`,
+    react: NewParticipantEmail({
+      hostName: details.hostName,
+      participantName: details.participantName,
+      activityName: details.activityName,
+      activityDate: details.activityDate,
+      activityLocation: details.activityLocation,
+    }),
+  });
+}
+
+// ── 3. Withdrawal (to host) ──────────────────────────────────────────────────
+// Called when a confirmed participant leaves an activity.
+// Sends one email to the host.
+
+export interface WithdrawalDetails {
+  hostName: string;
+  hostEmail: string;
+  participantName: string;
+  activityName: string;
+  activityDate: string;
+}
+
+export async function sendWithdrawalNotification(
+  details: WithdrawalDetails,
+): Promise<void> {
+  await sendEmail({
+    to: details.hostEmail,
+    subject: `${details.participantName} has withdrawn from ${details.activityName}`,
+    react: WithdrawalEmail({
+      hostName: details.hostName,
+      participantName: details.participantName,
+      activityName: details.activityName,
+      activityDate: details.activityDate,
+    }),
+  });
+}
+
+// ── 3. Activity Cancelled ────────────────────────────────────────────────────
 // Called when a host cancels an activity.
 // Notifies ALL participants (CONFIRMED, PENDING, WAITLISTED).
 

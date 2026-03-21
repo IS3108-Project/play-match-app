@@ -703,11 +703,30 @@ export async function joinActivity(
     return { status: participant.status };
   });
 
-  // Send RSVP confirmation if joined and confirmed immediately (no approval required)
+  // Send emails if joined and confirmed immediately (no approval required)
   if (result.status === "CONFIRMED") {
     const activityDetails = activityToNotification(activity);
+    // Confirm to the joining user
     notificationService
       .sendRsvpConfirmation({ name: userName, email: userEmail }, activityDetails)
+      .catch(console.error);
+    // Notify the host
+    prisma.user
+      .findUnique({ where: { id: activity.hostId }, select: { name: true, email: true } })
+      .then((host) => {
+        if (host) {
+          notificationService
+            .sendNewParticipantNotification({
+              hostName: host.name,
+              hostEmail: host.email,
+              participantName: userName,
+              activityName: activity.title,
+              activityDate: format(activity.date, "EEEE, d MMM yyyy") + ", " + activity.startTime,
+              activityLocation: activity.location,
+            })
+            .catch(console.error);
+        }
+      })
       .catch(console.error);
   }
 
@@ -823,18 +842,6 @@ export async function acceptInvitation(activityId: string, userId: string) {
     data: { status: "CONFIRMED" },
   });
 
-  // Send RSVP confirmation to the invited user
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { name: true, email: true },
-  });
-  if (user) {
-    const activityDetails = activityToNotification(activity);
-    notificationService
-      .sendRsvpConfirmation({ name: user.name, email: user.email }, activityDetails)
-      .catch(console.error);
-  }
-
   return { status: "CONFIRMED" };
 }
 
@@ -881,6 +888,12 @@ export async function leaveActivity(activityId: string, userId: string) {
 
   const wasConfirmed = participant.status === "CONFIRMED";
 
+  // Fetch leaving user's name before deleting
+  const leavingUser = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { name: true },
+  });
+
   // Delete participant + their guests
   await prisma.$transaction([
     prisma.guest.deleteMany({ where: { activityId, invitedById: userId } }),
@@ -888,6 +901,26 @@ export async function leaveActivity(activityId: string, userId: string) {
       where: { userId_activityId: { userId, activityId } },
     }),
   ]);
+
+  // Notify host that a participant withdrew
+  if (leavingUser) {
+    prisma.user
+      .findUnique({ where: { id: activity.hostId }, select: { name: true, email: true } })
+      .then((host) => {
+        if (host) {
+          notificationService
+            .sendWithdrawalNotification({
+              hostName: host.name,
+              hostEmail: host.email,
+              participantName: leavingUser.name,
+              activityName: activity.title,
+              activityDate: format(activity.date, "EEEE, d MMM yyyy") + ", " + activity.startTime,
+            })
+            .catch(console.error);
+        }
+      })
+      .catch(console.error);
+  }
 
   // Auto-promote from waitlist if a confirmed spot opened
   if (wasConfirmed) {

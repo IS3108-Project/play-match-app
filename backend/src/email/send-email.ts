@@ -25,7 +25,7 @@ interface SendEmailOptions {
 // It returns the result from Resend (contains an id if successful, or an error).
 export async function sendEmail({ to, subject, react }: SendEmailOptions) {
   const { data, error } = await resend.emails.send({
-    from: "PlayMatch <onboarding@resend.dev>", // sender address shown in the inbox
+    from: "PlayMatch <noreply@contact.nusfriends.com>", // sender address shown in the inbox
     to,                                          // recipient(s)
     subject,                                     // email subject
     react,                                       // Resend renders this React component into HTML
