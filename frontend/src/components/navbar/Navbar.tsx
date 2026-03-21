@@ -18,7 +18,7 @@ import { authClient } from "@/lib/client-auth";
 
 const navLinks = [
   { name: "Explore", href: "/" },
-  { name: "Activities", href: "/my-activities" },
+  { name: "My Activities", href: "/my-activities" },
   { name: "Buddies", href: "/buddy" },
   { name: "Community", href: "/community" },
 ];
