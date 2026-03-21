@@ -4,6 +4,7 @@
 
 import { sendEmail } from "../email/send-email";
 import ReminderEmail from "../email/email_templates/reminder-email";
+import RsvpConfirmationEmail from "../email/email_templates/rsvp-confirmation-email";
 import CancelledActivityEmail from "../email/email_templates/cancelled-activity-email";
 import PendingRequestEmail from "../email/email_templates/pending-request-email";
 import RequestOutcomeEmail from "../email/email_templates/request-outcome-email";
@@ -32,7 +33,27 @@ export interface PendingRequestDetails {
   activityDate: string;
 }
 
-// ── 1. Activity Cancelled ────────────────────────────────────────────────────
+// ── 1. RSVP Confirmation ────────────────────────────────────────────────────
+// Called when a user joins an activity and is confirmed immediately (no approval required).
+// Also called when an invited user accepts an invitation.
+
+export async function sendRsvpConfirmation(
+  user: NotificationUser,
+  activity: ActivityDetails,
+): Promise<void> {
+  await sendEmail({
+    to: user.email,
+    subject: `You're confirmed for ${activity.name}!`,
+    react: RsvpConfirmationEmail({
+      userName: user.name,
+      activityName: activity.name,
+      activityDate: activity.date,
+      activityLocation: activity.location,
+    }),
+  });
+}
+
+// ── 2. Activity Cancelled ────────────────────────────────────────────────────
 // Called when a host cancels an activity.
 // Notifies ALL participants (CONFIRMED, PENDING, WAITLISTED).
 

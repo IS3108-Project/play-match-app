@@ -703,6 +703,14 @@ export async function joinActivity(
     return { status: participant.status };
   });
 
+  // Send RSVP confirmation if joined and confirmed immediately (no approval required)
+  if (result.status === "CONFIRMED") {
+    const activityDetails = activityToNotification(activity);
+    notificationService
+      .sendRsvpConfirmation({ name: userName, email: userEmail }, activityDetails)
+      .catch(console.error);
+  }
+
   // Notify host when a user requests to join (approval-required activity)
   if (result.status === "PENDING") {
     prisma.user
@@ -814,6 +822,18 @@ export async function acceptInvitation(activityId: string, userId: string) {
     where: { userId_activityId: { userId, activityId } },
     data: { status: "CONFIRMED" },
   });
+
+  // Send RSVP confirmation to the invited user
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { name: true, email: true },
+  });
+  if (user) {
+    const activityDetails = activityToNotification(activity);
+    notificationService
+      .sendRsvpConfirmation({ name: user.name, email: user.email }, activityDetails)
+      .catch(console.error);
+  }
 
   return { status: "CONFIRMED" };
 }

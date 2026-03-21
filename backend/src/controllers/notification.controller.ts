@@ -4,6 +4,18 @@
 import { Request, Response } from "express";
 import * as notificationService from "../services/notification.service";
 
+// POST /api/notifications/rsvp-confirmation
+export async function sendRsvpConfirmation(req: Request, res: Response) {
+  const { user, activity } = req.body;
+  try {
+    await notificationService.sendRsvpConfirmation(user, activity);
+    res.status(200).json({ message: "RSVP confirmation email sent" });
+  } catch (error) {
+    console.error("Failed to send RSVP confirmation:", error);
+    res.status(500).json({ error: "Failed to send email" });
+  }
+}
+
 // POST /api/notifications/activity-cancelled
 export async function sendActivityCancelled(req: Request, res: Response) {
   const { users, activity } = req.body;
