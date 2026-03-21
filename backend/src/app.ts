@@ -8,6 +8,7 @@ import path from "path";
 import routes from "./routes/index";
 import { toNodeHandler } from "better-auth/node";
 import { auth } from "./config/auth";
+import { startReminderJob } from "./jobs/reminder.job";
 
 const app = express();
 
@@ -25,5 +26,8 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, "../public")));
 
 app.use("/api", routes);
+
+// Start background jobs
+startReminderJob();
 
 export default app;

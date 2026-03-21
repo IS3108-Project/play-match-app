@@ -551,29 +551,6 @@ export async function updateActivity(
     include: { host: { select: { id: true, name: true, image: true } } },
   });
 
-  // Send change alerts
-  const users = activity.participants.map((p) => ({
-    name: p.user.name,
-    email: p.user.email,
-  }));
-  const activityDetails = activityToNotification(updated);
-
-  if (input.location && input.location !== activity.location) {
-    notificationService
-      .sendChangeAlert(users, activityDetails, "location", activity.location, input.location)
-      .catch(console.error);
-  }
-  if (
-    (input.date && input.date !== activity.date.toISOString().split("T")[0]) ||
-    (input.startTime && input.startTime !== activity.startTime)
-  ) {
-    const oldTime = `${activity.date.toISOString().split("T")[0]} ${activity.startTime}`;
-    const newTime = `${input.date ?? activity.date.toISOString().split("T")[0]} ${input.startTime ?? activity.startTime}`;
-    notificationService
-      .sendChangeAlert(users, activityDetails, "time", oldTime, newTime)
-      .catch(console.error);
-  }
-
   // If maxParticipants increased, auto-promote from waitlist
   if (input.maxParticipants && input.maxParticipants > activity.maxParticipants) {
     const currentConfirmed = activity.participants.length;
@@ -659,14 +636,14 @@ export async function cancelActivity(
     data: { status: "CANCELLED" },
   });
 
-  // Notify all participants
+  // Notify all participants (CONFIRMED, PENDING, WAITLISTED)
   const users = activity.participants.map((p) => ({
     name: p.user.name,
     email: p.user.email,
   }));
   const activityDetails = activityToNotification(activity);
   notificationService
-    .sendChangeAlert(users, activityDetails, "cancelled")
+    .sendActivityCancelled(users, activityDetails)
     .catch(console.error);
 
   return { action: "cancelled" as const };
@@ -726,11 +703,23 @@ export async function joinActivity(
     return { status: participant.status };
   });
 
-  // Send RSVP email if confirmed immediately
-  if (result.status === "CONFIRMED") {
-    const activityDetails = activityToNotification(activity);
-    notificationService
-      .sendRsvpConfirmation({ name: userName, email: userEmail }, activityDetails)
+  // Notify host when a user requests to join (approval-required activity)
+  if (result.status === "PENDING") {
+    prisma.user
+      .findUnique({ where: { id: activity.hostId }, select: { name: true, email: true } })
+      .then((host) => {
+        if (host) {
+          notificationService
+            .sendPendingRequestToHost({
+              hostName: host.name,
+              hostEmail: host.email,
+              requesterName: userName,
+              activityName: activity.title,
+              activityDate: format(activity.date, "EEEE, d MMM yyyy") + ", " + activity.startTime,
+            })
+            .catch(console.error);
+        }
+      })
       .catch(console.error);
   }
 
@@ -825,19 +814,6 @@ export async function acceptInvitation(activityId: string, userId: string) {
     where: { userId_activityId: { userId, activityId } },
     data: { status: "CONFIRMED" },
   });
-
-  // Get user info for confirmation email
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { name: true, email: true },
-  });
-
-  if (user) {
-    const activityDetails = activityToNotification(activity);
-    notificationService
-      .sendRsvpConfirmation({ name: user.name, email: user.email }, activityDetails)
-      .catch(console.error);
-  }
 
   return { status: "CONFIRMED" };
 }
@@ -939,12 +915,13 @@ export async function approveParticipant(
     data: { status: "CONFIRMED" },
   });
 
-  // Send RSVP confirmation
+  // Notify user their request was approved
   const activityDetails = activityToNotification(activity);
   notificationService
-    .sendRsvpConfirmation(
+    .sendRequestOutcome(
       { name: participant.user.name, email: participant.user.email },
       activityDetails,
+      "approved",
     )
     .catch(console.error);
 
@@ -963,8 +940,20 @@ export async function rejectParticipant(
   if (!activity) throw new Error("NOT_FOUND");
   if (activity.hostId !== hostId) throw new Error("FORBIDDEN");
 
+  /**
+   * Retrieves a participant by their ID and includes related user information.
+   * 
+   * @param participantId - The unique identifier of the participant to find
+   * @returns Promise resolving to the participant object with nested user data (name and email),
+   *          or null if the participant doesn't exist
+   * 
+   * @remarks
+   * The `include` option fetches the associated user record and selects only the `name` and `email`
+   * fields from the user object, reducing the payload by excluding other user properties.
+   */
   const participant = await prisma.participant.findUnique({
     where: { id: participantId },
+    include: { user: { select: { name: true, email: true } } },
   });
   if (!participant || participant.activityId !== activityId)
     throw new Error("NOT_FOUND");
@@ -977,6 +966,17 @@ export async function rejectParticipant(
       rejectionNote: rejectionNote ?? null,
     },
   });
+
+  // Notify user their request was rejected
+  const activityDetails = activityToNotification(activity);
+  notificationService
+    .sendRequestOutcome(
+      { name: participant.user.name, email: participant.user.email },
+      activityDetails,
+      "rejected",
+      rejectionNote,
+    )
+    .catch(console.error);
 }
 
 // ── Guests ──────────────────────────────────────────────────────────────
@@ -1102,14 +1102,5 @@ async function promoteFromWaitlist(
       data: { status: newStatus },
     });
 
-    if (newStatus === "CONFIRMED") {
-      const activityDetails = activityToNotification(activity);
-      notificationService
-        .sendWaitlistNotification(
-          { name: p.user.name, email: p.user.email },
-          activityDetails,
-        )
-        .catch(console.error);
-    }
   }
 }
