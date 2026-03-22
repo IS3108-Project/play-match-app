@@ -1,5 +1,5 @@
-// rsvp-confirmation-email.tsx
-// Sent to a user immediately after they successfully join an activity and are confirmed.
+// request-outcome-email.tsx
+// Sent to a user when the host approves or rejects their join request.
 
 import {
   Body,
@@ -13,32 +13,44 @@ import {
   Tailwind,
 } from "@react-email/components";
 
-interface RsvpConfirmationEmailProps {
+interface RequestOutcomeEmailProps {
   userName: string;
   activityName: string;
   activityDate: string;
   activityLocation: string;
+  outcome: "approved" | "rejected";
+  rejectionNote?: string | undefined;
 }
 
-const RsvpConfirmationEmail = ({
+const RequestOutcomeEmail = ({
   userName,
   activityName,
   activityDate,
   activityLocation,
-}: RsvpConfirmationEmailProps) => {
+  outcome,
+  rejectionNote,
+}: RequestOutcomeEmailProps) => {
+  const isApproved = outcome === "approved";
+
   return (
     <Html lang="en" dir="ltr">
       <Tailwind>
         <Head />
-        <Preview>You&apos;re confirmed for {activityName}!</Preview>
+        <Preview>
+          {isApproved
+            ? `Your request to join ${activityName} was approved!`
+            : `Your request to join ${activityName} was not accepted`}
+        </Preview>
 
         <Body className="bg-gray-100 font-sans py-[40px]">
           <Container className="bg-white rounded-[8px] shadow-sm max-w-[580px] mx-auto">
 
-            {/* Green header — signals success/confirmation */}
-            <Section className="bg-green-600 rounded-t-[8px] px-[32px] py-[24px]">
+            {/* Green for approved, red for rejected */}
+            <Section
+              className={`${isApproved ? "bg-green-600" : "bg-red-500"} rounded-t-[8px] px-[32px] py-[24px]`}
+            >
               <Heading className="text-white text-[24px] font-bold m-0 text-center">
-                You&apos;re Confirmed! 🎉
+                {isApproved ? "You're In! 🎉" : "Request Declined"}
               </Heading>
             </Section>
 
@@ -48,9 +60,12 @@ const RsvpConfirmationEmail = ({
               </Text>
 
               <Text className="text-gray-800 text-[16px] leading-[24px] mb-[24px]">
-                You&apos;re all set! Your spot for <strong>{activityName}</strong> has been confirmed.
+                {isApproved
+                  ? `Great news! Your request to join <strong>${activityName}</strong> has been approved. We'll see you there!`
+                  : `Unfortunately, your request to join <strong>${activityName}</strong> was not accepted by the host.`}
               </Text>
 
+              {/* Activity details */}
               <Section className="bg-gray-50 rounded-[8px] px-[24px] py-[20px] mb-[32px]">
                 <Text className="text-gray-800 text-[14px] font-semibold m-0 mb-[8px]">
                   Activity Details
@@ -63,8 +78,23 @@ const RsvpConfirmationEmail = ({
                 </Text>
               </Section>
 
+              {/* Show rejection note if the host provided one */}
+              {!isApproved && rejectionNote && (
+                <Section className="bg-gray-50 rounded-[8px] px-[24px] py-[20px] mb-[32px]">
+                  <Text className="text-gray-800 text-[14px] font-semibold m-0 mb-[8px]">
+                    Note from host
+                  </Text>
+                  <Text className="text-gray-600 text-[14px] leading-[20px] m-0">
+                    {rejectionNote}
+                  </Text>
+                </Section>
+              )}
+
               <Text className="text-gray-800 text-[16px] leading-[24px]">
-                Best regards,
+                {isApproved
+                  ? "See you on the court!"
+                  : "We hope to see you at another activity soon."}
+                <br />
                 <br />
                 The PlayMatch Team
               </Text>
@@ -83,4 +113,4 @@ const RsvpConfirmationEmail = ({
   );
 };
 
-export default RsvpConfirmationEmail;
+export default RequestOutcomeEmail;

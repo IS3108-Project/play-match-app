@@ -1,5 +1,5 @@
-// rsvp-confirmation-email.tsx
-// Sent to a user immediately after they successfully join an activity and are confirmed.
+// withdrawal-email.tsx
+// Sent to the host when a confirmed participant withdraws from their activity.
 
 import {
   Body,
@@ -13,42 +13,43 @@ import {
   Tailwind,
 } from "@react-email/components";
 
-interface RsvpConfirmationEmailProps {
-  userName: string;
+interface WithdrawalEmailProps {
+  hostName: string;
+  participantName: string;
   activityName: string;
   activityDate: string;
-  activityLocation: string;
 }
 
-const RsvpConfirmationEmail = ({
-  userName,
+const WithdrawalEmail = ({
+  hostName,
+  participantName,
   activityName,
   activityDate,
-  activityLocation,
-}: RsvpConfirmationEmailProps) => {
+}: WithdrawalEmailProps) => {
   return (
     <Html lang="en" dir="ltr">
       <Tailwind>
         <Head />
-        <Preview>You&apos;re confirmed for {activityName}!</Preview>
+        <Preview>{participantName} has withdrawn from {activityName}</Preview>
 
         <Body className="bg-gray-100 font-sans py-[40px]">
           <Container className="bg-white rounded-[8px] shadow-sm max-w-[580px] mx-auto">
 
-            {/* Green header — signals success/confirmation */}
-            <Section className="bg-green-600 rounded-t-[8px] px-[32px] py-[24px]">
+            {/* Orange header — informational alert */}
+            <Section className="bg-orange-500 rounded-t-[8px] px-[32px] py-[24px]">
               <Heading className="text-white text-[24px] font-bold m-0 text-center">
-                You&apos;re Confirmed! 🎉
+                Participant Withdrew
               </Heading>
             </Section>
 
             <Section className="px-[32px] py-[32px]">
               <Text className="text-gray-800 text-[16px] leading-[24px] mb-[24px]">
-                Hi {userName},
+                Hi {hostName},
               </Text>
 
               <Text className="text-gray-800 text-[16px] leading-[24px] mb-[24px]">
-                You&apos;re all set! Your spot for <strong>{activityName}</strong> has been confirmed.
+                <strong>{participantName}</strong> has withdrawn from your activity{" "}
+                <strong>{activityName}</strong>.
               </Text>
 
               <Section className="bg-gray-50 rounded-[8px] px-[24px] py-[20px] mb-[32px]">
@@ -56,15 +57,16 @@ const RsvpConfirmationEmail = ({
                   Activity Details
                 </Text>
                 <Text className="text-gray-600 text-[14px] leading-[20px] m-0 mb-[4px]">
-                  📅 {activityDate}
+                  🏃 {activityName}
                 </Text>
                 <Text className="text-gray-600 text-[14px] leading-[20px] m-0">
-                  📍 {activityLocation}
+                  📅 {activityDate}
                 </Text>
               </Section>
 
               <Text className="text-gray-800 text-[16px] leading-[24px]">
-                Best regards,
+                A spot may have opened up for other participants.
+                <br />
                 <br />
                 The PlayMatch Team
               </Text>
@@ -83,4 +85,4 @@ const RsvpConfirmationEmail = ({
   );
 };
 
-export default RsvpConfirmationEmail;
+export default WithdrawalEmail;

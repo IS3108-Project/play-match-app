@@ -1,23 +1,17 @@
 // notification.service.ts
 // Contains all the business logic for sending notification emails.
 // Each function handles one type of notification.
-//
-// NOTE ON "PLACEHOLDER" PATTERN:
-// The Activity model doesn't exist in the DB yet (your friend is building it).
-// So instead of querying Prisma, each function takes the data it needs as arguments.
-// When your friend finishes the Activity model, they can call these functions
-// directly from their activity.service.ts, passing in the right data.
-// Nothing in THIS file needs to change.
 
 import { sendEmail } from "../email/send-email";
-import RsvpConfirmationEmail from "../email/email_templates/rsvp-confirmation-email";
 import ReminderEmail from "../email/email_templates/reminder-email";
-import ChangeAlertEmail from "../email/email_templates/change-alert-email";
-import WaitlistEmail from "../email/email_templates/waitlist-email";
+import RsvpConfirmationEmail from "../email/email_templates/rsvp-confirmation-email";
+import WithdrawalEmail from "../email/email_templates/withdrawal-email";
+import NewParticipantEmail from "../email/email_templates/new-participant-email";
+import CancelledActivityEmail from "../email/email_templates/cancelled-activity-email";
+import PendingRequestEmail from "../email/email_templates/pending-request-email";
+import RequestOutcomeEmail from "../email/email_templates/request-outcome-email";
 
 // ── Shared types ────────────────────────────────────────────────────────────
-// These two interfaces are the "contract" this service exposes to the rest of
-// the backend. Any code that calls these functions must provide data in this shape.
 
 export interface NotificationUser {
   name: string;
@@ -28,16 +22,22 @@ export interface ActivityDetails {
   name: string;
   date: string;     // pre-formatted string, e.g. "Saturday, 25 Feb 2026, 7:00 AM"
   location: string;
-  url?: string;     // optional — needed for waitlist email CTA button
+  url?: string;
+}
+
+// ── Pending request type ─────────────────────────────────────────────────────
+
+export interface PendingRequestDetails {
+  hostName: string;
+  hostEmail: string;
+  requesterName: string;
+  activityName: string;
+  activityDate: string;
 }
 
 // ── 1. RSVP Confirmation ────────────────────────────────────────────────────
-// Called after a single user successfully RSVPs.
-// Typically called FROM activity.service.ts right after the RSVP is saved to DB.
-//
-// Arguments:
-//   user     — the user who just RSVPed (their name + email)
-//   activity — the activity they joined
+// Called when a user joins an activity and is confirmed immediately (no approval required).
+// Also called when an invited user accepts an invitation.
 
 export async function sendRsvpConfirmation(
   user: NotificationUser,
@@ -46,8 +46,6 @@ export async function sendRsvpConfirmation(
   await sendEmail({
     to: user.email,
     subject: `You're confirmed for ${activity.name}!`,
-    // We call the template as a regular function, passing in the props.
-    // Resend will render this React component into HTML before sending.
     react: RsvpConfirmationEmail({
       userName: user.name,
       activityName: activity.name,
@@ -57,12 +55,139 @@ export async function sendRsvpConfirmation(
   });
 }
 
-// ── 2. Reminder ─────────────────────────────────────────────────────────────
-// Called to remind ALL participants before the activity.
-// Same function handles both the 24-hour and 1-hour reminder — just pass a different `type`.
+// ── 2. New Participant (to host) ─────────────────────────────────────────────
+// Called when a user joins an activity directly (no approval required).
+// Sends one email to the host.
+
+export interface NewParticipantDetails {
+  hostName: string;
+  hostEmail: string;
+  participantName: string;
+  activityName: string;
+  activityDate: string;
+  activityLocation: string;
+}
+
+export async function sendNewParticipantNotification(
+  details: NewParticipantDetails,
+): Promise<void> {
+  await sendEmail({
+    to: details.hostEmail,
+    subject: `${details.participantName} just joined ${details.activityName}`,
+    react: NewParticipantEmail({
+      hostName: details.hostName,
+      participantName: details.participantName,
+      activityName: details.activityName,
+      activityDate: details.activityDate,
+      activityLocation: details.activityLocation,
+    }),
+  });
+}
+
+// ── 3. Withdrawal (to host) ──────────────────────────────────────────────────
+// Called when a confirmed participant leaves an activity.
+// Sends one email to the host.
+
+export interface WithdrawalDetails {
+  hostName: string;
+  hostEmail: string;
+  participantName: string;
+  activityName: string;
+  activityDate: string;
+}
+
+export async function sendWithdrawalNotification(
+  details: WithdrawalDetails,
+): Promise<void> {
+  await sendEmail({
+    to: details.hostEmail,
+    subject: `${details.participantName} has withdrawn from ${details.activityName}`,
+    react: WithdrawalEmail({
+      hostName: details.hostName,
+      participantName: details.participantName,
+      activityName: details.activityName,
+      activityDate: details.activityDate,
+    }),
+  });
+}
+
+// ── 3. Activity Cancelled ────────────────────────────────────────────────────
+// Called when a host cancels an activity.
+// Notifies ALL participants (CONFIRMED, PENDING, WAITLISTED).
+
+export async function sendActivityCancelled(
+  users: NotificationUser[],
+  activity: ActivityDetails,
+): Promise<void> {
+  await Promise.all(
+    users.map((user) =>
+      sendEmail({
+        to: user.email,
+        subject: `${activity.name} has been cancelled`,
+        react: CancelledActivityEmail({
+          userName: user.name,
+          activityName: activity.name,
+          activityDate: activity.date,
+          activityLocation: activity.location,
+        }),
+      }),
+    ),
+  );
+}
+
+// ── 2. Pending Request (to host) ─────────────────────────────────────────────
+// Called when a user requests to join an approval-required activity.
+// Sends one email to the host.
+
+export async function sendPendingRequestToHost(
+  details: PendingRequestDetails,
+): Promise<void> {
+  await sendEmail({
+    to: details.hostEmail,
+    subject: `${details.requesterName} wants to join ${details.activityName}`,
+    react: PendingRequestEmail({
+      hostName: details.hostName,
+      requesterName: details.requesterName,
+      activityName: details.activityName,
+      activityDate: details.activityDate,
+    }),
+  });
+}
+
+// ── 3. Request Outcome (to user) ─────────────────────────────────────────────
+// Called when a host approves or rejects a pending join request.
+// Sends one email to the requesting user.
+
+export async function sendRequestOutcome(
+  user: NotificationUser,
+  activity: ActivityDetails,
+  outcome: "approved" | "rejected",
+  rejectionNote?: string,
+): Promise<void> {
+  const subject = outcome === "approved"
+    ? `You're in! Request approved for ${activity.name}`
+    : `Your request to join ${activity.name} was not accepted`;
+
+  await sendEmail({
+    to: user.email,
+    subject,
+    react: RequestOutcomeEmail({
+      userName: user.name,
+      activityName: activity.name,
+      activityDate: activity.date,
+      activityLocation: activity.location,
+      outcome,
+      rejectionNote,
+    }),
+  });
+}
+
+// ── 4. Reminder ─────────────────────────────────────────────────────────────
+// Called to remind ALL participants (+ host) before the activity.
+// type "24h" sends "tomorrow" reminder.
 //
 // Arguments:
-//   users    — array of all confirmed participants (your friend queries these from DB)
+//   users    — array of all confirmed participants + host
 //   activity — the activity details
 //   type     — "24h" sends "tomorrow" reminder, "1h" sends "starting soon" reminder
 
@@ -71,12 +196,8 @@ export async function sendReminder(
   activity: ActivityDetails,
   type: "24h" | "1h",
 ): Promise<void> {
-  // Convert type to a human-readable string used in the email template
   const timeUntil = type === "1h" ? "1 hour" : "24 hours";
 
-  // Promise.all sends ALL the emails concurrently (in parallel) instead of
-  // one by one. Much faster when there are many participants.
-  // users.map() creates an array of Promises, then Promise.all waits for all of them.
   await Promise.all(
     users.map((user) =>
       sendEmail({
@@ -92,71 +213,4 @@ export async function sendReminder(
       }),
     ),
   );
-}
-
-// ── 3. Change Alert ──────────────────────────────────────────────────────────
-// Called when an organiser updates or cancels an activity.
-// Notifies ALL participants of the change.
-//
-// Arguments:
-//   users      — all confirmed participants
-//   activity   — the activity (with updated details already applied)
-//   changeType — what changed: "time", "location", or "cancelled"
-//   oldValue   — what it was before (not needed if cancelled)
-//   newValue   — what it changed to  (not needed if cancelled)
-
-export async function sendChangeAlert(
-  users: NotificationUser[],
-  activity: ActivityDetails,
-  changeType: "time" | "location" | "cancelled",
-  oldValue?: string,
-  newValue?: string,
-): Promise<void> {
-  const subjectMap = {
-    time: `Update: ${activity.name} has a new time`,
-    location: `Update: ${activity.name} has a new location`,
-    cancelled: `${activity.name} has been cancelled`,
-  };
-
-  await Promise.all(
-    users.map((user) =>
-      sendEmail({
-        to: user.email,
-        subject: subjectMap[changeType],
-        react: ChangeAlertEmail({
-          userName: user.name,
-          activityName: activity.name,
-          changeType,
-          oldValue,
-          newValue,
-        }),
-      }),
-    ),
-  );
-}
-
-// ── 4. Waitlist Notification ─────────────────────────────────────────────────
-// Called when a confirmed participant cancels and a waitlisted user gets their spot.
-// Only sent to the ONE user who just moved off the waitlist.
-//
-// Arguments:
-//   user     — the waitlisted user who now has a spot
-//   activity — must include `url` so the email button links to the activity page
-
-export async function sendWaitlistNotification(
-  user: NotificationUser,
-  activity: ActivityDetails,
-): Promise<void> {
-  await sendEmail({
-    to: user.email,
-    subject: `A spot just opened up for ${activity.name}!`,
-    react: WaitlistEmail({
-      userName: user.name,
-      activityName: activity.name,
-      activityDate: activity.date,
-      activityLocation: activity.location,
-      // Fall back to a generic URL if none is provided
-      activityUrl: activity.url ?? "http://localhost:5173",
-    }),
-  });
 }

@@ -1,5 +1,5 @@
-// rsvp-confirmation-email.tsx
-// Sent to a user immediately after they successfully join an activity and are confirmed.
+// new-participant-email.tsx
+// Sent to the host when a user joins their activity directly (no approval required).
 
 import {
   Body,
@@ -13,42 +13,45 @@ import {
   Tailwind,
 } from "@react-email/components";
 
-interface RsvpConfirmationEmailProps {
-  userName: string;
+interface NewParticipantEmailProps {
+  hostName: string;
+  participantName: string;
   activityName: string;
   activityDate: string;
   activityLocation: string;
 }
 
-const RsvpConfirmationEmail = ({
-  userName,
+const NewParticipantEmail = ({
+  hostName,
+  participantName,
   activityName,
   activityDate,
   activityLocation,
-}: RsvpConfirmationEmailProps) => {
+}: NewParticipantEmailProps) => {
   return (
     <Html lang="en" dir="ltr">
       <Tailwind>
         <Head />
-        <Preview>You&apos;re confirmed for {activityName}!</Preview>
+        <Preview>{participantName} just joined {activityName}</Preview>
 
         <Body className="bg-gray-100 font-sans py-[40px]">
           <Container className="bg-white rounded-[8px] shadow-sm max-w-[580px] mx-auto">
 
-            {/* Green header — signals success/confirmation */}
+            {/* Green header — positive news */}
             <Section className="bg-green-600 rounded-t-[8px] px-[32px] py-[24px]">
               <Heading className="text-white text-[24px] font-bold m-0 text-center">
-                You&apos;re Confirmed! 🎉
+                New Participant Joined!
               </Heading>
             </Section>
 
             <Section className="px-[32px] py-[32px]">
               <Text className="text-gray-800 text-[16px] leading-[24px] mb-[24px]">
-                Hi {userName},
+                Hi {hostName},
               </Text>
 
               <Text className="text-gray-800 text-[16px] leading-[24px] mb-[24px]">
-                You&apos;re all set! Your spot for <strong>{activityName}</strong> has been confirmed.
+                <strong>{participantName}</strong> has joined your activity{" "}
+                <strong>{activityName}</strong>.
               </Text>
 
               <Section className="bg-gray-50 rounded-[8px] px-[24px] py-[20px] mb-[32px]">
@@ -64,8 +67,6 @@ const RsvpConfirmationEmail = ({
               </Section>
 
               <Text className="text-gray-800 text-[16px] leading-[24px]">
-                Best regards,
-                <br />
                 The PlayMatch Team
               </Text>
             </Section>
@@ -83,4 +84,4 @@ const RsvpConfirmationEmail = ({
   );
 };
 
-export default RsvpConfirmationEmail;
+export default NewParticipantEmail;

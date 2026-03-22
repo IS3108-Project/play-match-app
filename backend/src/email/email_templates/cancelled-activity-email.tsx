@@ -1,5 +1,5 @@
-// rsvp-confirmation-email.tsx
-// Sent to a user immediately after they successfully join an activity and are confirmed.
+// cancelled-activity-email.tsx
+// Sent to all participants (CONFIRMED, PENDING, WAITLISTED) when a host cancels an activity.
 
 import {
   Body,
@@ -13,32 +13,32 @@ import {
   Tailwind,
 } from "@react-email/components";
 
-interface RsvpConfirmationEmailProps {
+interface CancelledActivityEmailProps {
   userName: string;
   activityName: string;
   activityDate: string;
   activityLocation: string;
 }
 
-const RsvpConfirmationEmail = ({
+const CancelledActivityEmail = ({
   userName,
   activityName,
   activityDate,
   activityLocation,
-}: RsvpConfirmationEmailProps) => {
+}: CancelledActivityEmailProps) => {
   return (
     <Html lang="en" dir="ltr">
       <Tailwind>
         <Head />
-        <Preview>You&apos;re confirmed for {activityName}!</Preview>
+        <Preview>{activityName} has been cancelled</Preview>
 
         <Body className="bg-gray-100 font-sans py-[40px]">
           <Container className="bg-white rounded-[8px] shadow-sm max-w-[580px] mx-auto">
 
-            {/* Green header — signals success/confirmation */}
-            <Section className="bg-green-600 rounded-t-[8px] px-[32px] py-[24px]">
+            {/* Red header — signals cancellation */}
+            <Section className="bg-red-500 rounded-t-[8px] px-[32px] py-[24px]">
               <Heading className="text-white text-[24px] font-bold m-0 text-center">
-                You&apos;re Confirmed! 🎉
+                Activity Cancelled
               </Heading>
             </Section>
 
@@ -48,12 +48,14 @@ const RsvpConfirmationEmail = ({
               </Text>
 
               <Text className="text-gray-800 text-[16px] leading-[24px] mb-[24px]">
-                You&apos;re all set! Your spot for <strong>{activityName}</strong> has been confirmed.
+                Unfortunately, <strong>{activityName}</strong> has been cancelled by the organiser.
+                We&apos;re sorry for the inconvenience.
               </Text>
 
+              {/* Activity details so the user knows which event this refers to */}
               <Section className="bg-gray-50 rounded-[8px] px-[24px] py-[20px] mb-[32px]">
                 <Text className="text-gray-800 text-[14px] font-semibold m-0 mb-[8px]">
-                  Activity Details
+                  Cancelled Activity
                 </Text>
                 <Text className="text-gray-600 text-[14px] leading-[20px] m-0 mb-[4px]">
                   📅 {activityDate}
@@ -64,7 +66,8 @@ const RsvpConfirmationEmail = ({
               </Section>
 
               <Text className="text-gray-800 text-[16px] leading-[24px]">
-                Best regards,
+                We hope to see you at another activity soon.
+                <br />
                 <br />
                 The PlayMatch Team
               </Text>
@@ -83,4 +86,4 @@ const RsvpConfirmationEmail = ({
   );
 };
 
-export default RsvpConfirmationEmail;
+export default CancelledActivityEmail;
