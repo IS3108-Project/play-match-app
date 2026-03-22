@@ -4,6 +4,30 @@
 import { Request, Response } from "express";
 import * as notificationService from "../services/notification.service";
 
+// POST /api/notifications/invitation
+export async function sendInvitation(req: Request, res: Response) {
+  const { details } = req.body;
+  try {
+    await notificationService.sendInvitation(details);
+    res.status(200).json({ message: "Invitation email sent" });
+  } catch (error) {
+    console.error("Failed to send invitation email:", error);
+    res.status(500).json({ error: "Failed to send email" });
+  }
+}
+
+// POST /api/notifications/invitation-outcome
+export async function sendInvitationOutcome(req: Request, res: Response) {
+  const { details } = req.body;
+  try {
+    await notificationService.sendInvitationOutcome(details);
+    res.status(200).json({ message: "Invitation outcome email sent to host" });
+  } catch (error) {
+    console.error("Failed to send invitation outcome email:", error);
+    res.status(500).json({ error: "Failed to send email" });
+  }
+}
+
 // POST /api/notifications/rsvp-confirmation
 export async function sendRsvpConfirmation(req: Request, res: Response) {
   const { user, activity } = req.body;
