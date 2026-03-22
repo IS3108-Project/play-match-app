@@ -10,16 +10,18 @@ import { format } from "date-fns";
 async function sendUpcomingReminders(): Promise<void> {
   const now = new Date();
 
-  // Target window: activities starting between 23h and 25h from now
-  const windowStart = new Date(now.getTime() + 23 * 60 * 60 * 1000);
-  const windowEnd = new Date(now.getTime() + 25 * 60 * 60 * 1000);
+  // Widen the DB query to catch the full day around the 24h mark.
+  // date is stored as midnight, so we can't rely on it alone — we combine
+  // with startTime in JS to get the real activity start datetime.
+  const queryStart = new Date(now.getTime() + 22 * 60 * 60 * 1000);
+  const queryEnd = new Date(now.getTime() + 26 * 60 * 60 * 1000);
 
-  const activities = await prisma.activity.findMany({
+  const candidates = await prisma.activity.findMany({
     where: {
       status: "ACTIVE",
       date: {
-        gte: windowStart,
-        lte: windowEnd,
+        gte: queryStart,
+        lte: queryEnd,
       },
     },
     include: {
@@ -29,6 +31,18 @@ async function sendUpcomingReminders(): Promise<void> {
         include: { user: { select: { name: true, email: true } } },
       },
     },
+  });
+
+  // Post-filter by combining date + startTime to get the real start datetime,
+  // then check if it falls within the 23-25h window.
+  const activities = candidates.filter((activity) => {
+    const parts = activity.startTime.split(":");
+    const hours = parseInt(parts[0] ?? "0", 10);
+    const minutes = parseInt(parts[1] ?? "0", 10);
+    const activityStart = new Date(activity.date);
+    activityStart.setHours(hours, minutes, 0, 0);
+    const hoursUntil = (activityStart.getTime() - now.getTime()) / (1000 * 60 * 60);
+    return hoursUntil >= 23 && hoursUntil <= 25;
   });
 
   for (const activity of activities) {
