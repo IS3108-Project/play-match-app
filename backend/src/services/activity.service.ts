@@ -800,8 +800,29 @@ export async function inviteUser(
     },
   });
 
-  // TODO: Send invite notification to the invited user
-  // For now, they'll see it in their pending activities
+  // Notify the invited user
+  prisma.user
+    .findMany({
+      where: { id: { in: [invitedUserId, hostId] } },
+      select: { id: true, name: true, email: true },
+    })
+    .then((users) => {
+      const invitee = users.find((u) => u.id === invitedUserId);
+      const host = users.find((u) => u.id === hostId);
+      if (invitee && host) {
+        notificationService
+          .sendInvitation({
+            inviteeName: invitee.name,
+            inviteeEmail: invitee.email,
+            hostName: host.name,
+            activityName: activity.title,
+            activityDate: format(activity.date, "EEEE, d MMM yyyy") + ", " + activity.startTime,
+            activityLocation: activity.location,
+          })
+          .catch(console.error);
+      }
+    })
+    .catch(console.error);
 
   return { status: participant.status };
 }
@@ -842,6 +863,30 @@ export async function acceptInvitation(activityId: string, userId: string) {
     data: { status: "CONFIRMED" },
   });
 
+  // Notify host that the invitee accepted
+  prisma.user
+    .findMany({
+      where: { id: { in: [userId, activity.hostId] } },
+      select: { id: true, name: true, email: true },
+    })
+    .then((users) => {
+      const invitee = users.find((u) => u.id === userId);
+      const host = users.find((u) => u.id === activity.hostId);
+      if (invitee && host) {
+        notificationService
+          .sendInvitationOutcome({
+            hostName: host.name,
+            hostEmail: host.email,
+            inviteeName: invitee.name,
+            activityName: activity.title,
+            activityDate: format(activity.date, "EEEE, d MMM yyyy") + ", " + activity.startTime,
+            outcome: "accepted",
+          })
+          .catch(console.error);
+      }
+    })
+    .catch(console.error);
+
   return { status: "CONFIRMED" };
 }
 
@@ -866,6 +911,30 @@ export async function declineInvitation(activityId: string, userId: string) {
   await prisma.participant.delete({
     where: { userId_activityId: { userId, activityId } },
   });
+
+  // Notify host that the invitee declined
+  prisma.user
+    .findMany({
+      where: { id: { in: [userId, activity.hostId] } },
+      select: { id: true, name: true, email: true },
+    })
+    .then((users) => {
+      const invitee = users.find((u) => u.id === userId);
+      const host = users.find((u) => u.id === activity.hostId);
+      if (invitee && host) {
+        notificationService
+          .sendInvitationOutcome({
+            hostName: host.name,
+            hostEmail: host.email,
+            inviteeName: invitee.name,
+            activityName: activity.title,
+            activityDate: format(activity.date, "EEEE, d MMM yyyy") + ", " + activity.startTime,
+            outcome: "declined",
+          })
+          .catch(console.error);
+      }
+    })
+    .catch(console.error);
 
   return { success: true };
 }

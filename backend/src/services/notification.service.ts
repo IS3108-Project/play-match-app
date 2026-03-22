@@ -7,6 +7,8 @@ import ReminderEmail from "../email/email_templates/reminder-email";
 import RsvpConfirmationEmail from "../email/email_templates/rsvp-confirmation-email";
 import WithdrawalEmail from "../email/email_templates/withdrawal-email";
 import NewParticipantEmail from "../email/email_templates/new-participant-email";
+import InvitationEmail from "../email/email_templates/invitation-email";
+import InvitationOutcomeEmail from "../email/email_templates/invitation-outcome-email";
 import CancelledActivityEmail from "../email/email_templates/cancelled-activity-email";
 import PendingRequestEmail from "../email/email_templates/pending-request-email";
 import RequestOutcomeEmail from "../email/email_templates/request-outcome-email";
@@ -55,7 +57,65 @@ export async function sendRsvpConfirmation(
   });
 }
 
-// ── 2. New Participant (to host) ─────────────────────────────────────────────
+// ── 2. Invitation (to invited user) ─────────────────────────────────────────
+// Called when a host invites a user to their activity via buddy matching.
+
+export interface InvitationDetails {
+  inviteeName: string;
+  inviteeEmail: string;
+  hostName: string;
+  activityName: string;
+  activityDate: string;
+  activityLocation: string;
+}
+
+export async function sendInvitation(details: InvitationDetails): Promise<void> {
+  await sendEmail({
+    to: details.inviteeEmail,
+    subject: `${details.hostName} invited you to join ${details.activityName}`,
+    react: InvitationEmail({
+      inviteeName: details.inviteeName,
+      hostName: details.hostName,
+      activityName: details.activityName,
+      activityDate: details.activityDate,
+      activityLocation: details.activityLocation,
+    }),
+  });
+}
+
+// ── 3. Invitation Outcome (to host) ──────────────────────────────────────────
+// Called when an invitee accepts or declines a buddy matching invitation.
+
+export interface InvitationOutcomeDetails {
+  hostName: string;
+  hostEmail: string;
+  inviteeName: string;
+  activityName: string;
+  activityDate: string;
+  outcome: "accepted" | "declined";
+}
+
+export async function sendInvitationOutcome(
+  details: InvitationOutcomeDetails,
+): Promise<void> {
+  const subject = details.outcome === "accepted"
+    ? `${details.inviteeName} accepted your invitation to ${details.activityName}`
+    : `${details.inviteeName} declined your invitation to ${details.activityName}`;
+
+  await sendEmail({
+    to: details.hostEmail,
+    subject,
+    react: InvitationOutcomeEmail({
+      hostName: details.hostName,
+      inviteeName: details.inviteeName,
+      activityName: details.activityName,
+      activityDate: details.activityDate,
+      outcome: details.outcome,
+    }),
+  });
+}
+
+// ── 4. New Participant (to host) ─────────────────────────────────────────────
 // Called when a user joins an activity directly (no approval required).
 // Sends one email to the host.
 
