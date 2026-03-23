@@ -1,7 +1,8 @@
 "use client"
 
 import * as React from "react"
-import { ChevronDown, PlusIcon } from "lucide-react"
+import { ChevronDown, ImagePlus, PencilIcon, PlusIcon, X } from "lucide-react"
+import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -23,55 +24,103 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
+import { communityApi } from "@/lib/api"
 
 export type CreatePostValues = {
     title: string
     content: string
-    imageUrl: string
-    groupName: string | null
+    imageUrl: string | null
+    groupId: string | null
     isPublic: boolean
 }
 
+type GroupOption = { id: string; name: string }
+
 type CreatePostDrawerProps = {
     onSubmit?: (values: CreatePostValues) => Promise<void> | void
-    groupOptions?: string[]
+    groupOptions?: GroupOption[]
+    defaultGroupId?: string | null
+    triggerLabel?: string
+    initialValues?: CreatePostValues
+    mode?: "create" | "edit"
 }
 
 const INITIAL_VALUES: CreatePostValues = {
     title: "",
     content: "",
-    imageUrl: "",
-    groupName: null,
-    isPublic: false,
+    imageUrl: null,
+    groupId: null,
+    isPublic: true,
 }
 
 export default function CreatePostDrawer({
     onSubmit,
     groupOptions = [],
+    defaultGroupId = null,
+    triggerLabel,
+    initialValues,
+    mode = "create",
 }: CreatePostDrawerProps) {
     const [open, setOpen] = React.useState(false)
-    const [form, setForm] = React.useState<CreatePostValues>(INITIAL_VALUES)
+    const [form, setForm] = React.useState<CreatePostValues>(initialValues ?? { ...INITIAL_VALUES, groupId: defaultGroupId })
     const [isSubmitting, setIsSubmitting] = React.useState(false)
+    const [uploading, setUploading] = React.useState(false)
+    const fileInputRef = React.useRef<HTMLInputElement>(null)
+
+    React.useEffect(() => {
+        if (open) {
+            setForm(initialValues ?? { ...INITIAL_VALUES, groupId: defaultGroupId })
+        }
+    }, [open, defaultGroupId, initialValues])
 
     const handleChange = <K extends keyof CreatePostValues>(key: K, value: CreatePostValues[K]) => {
         setForm((prev) => ({ ...prev, [key]: value }))
     }
 
+    const selectedGroup = groupOptions.find((g) => g.id === form.groupId) ?? null
+
+    const handleImageUpload = async (file: File) => {
+        setUploading(true)
+        try {
+            const url = await communityApi.uploadImage(file)
+            handleChange("imageUrl", url)
+        } catch (err: unknown) {
+            toast.error(err instanceof Error ? err.message : "Failed to upload image")
+        } finally {
+            setUploading(false)
+        }
+    }
+
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (file) handleImageUpload(file)
+        e.target.value = ""
+    }
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault()
+        const file = e.dataTransfer.files[0]
+        if (file && file.type.startsWith("image/")) handleImageUpload(file)
+    }
+
+    const previewSrc = form.imageUrl
+        ? form.imageUrl.startsWith("/uploads/")
+            ? `http://localhost:3000${form.imageUrl}`
+            : form.imageUrl
+        : null
+
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
         setIsSubmitting(true)
-
         try {
             if (onSubmit) {
                 await onSubmit(form)
             } else {
-                // TODO: implememt form submissoin to backend
                 await new Promise((resolve) => setTimeout(resolve, 500))
                 console.log("Create discussion payload:", form)
             }
-
             setOpen(false)
-            setForm(INITIAL_VALUES)
+            setForm({ ...INITIAL_VALUES, groupId: defaultGroupId })
         } finally {
             setIsSubmitting(false)
         }
@@ -80,15 +129,22 @@ export default function CreatePostDrawer({
     return (
         <Drawer direction="bottom" open={open} onOpenChange={setOpen}>
             <DrawerTrigger asChild>
-                <Button type="button" className="bg-primary text-primary-foreground">
-                    <PlusIcon className="size-4" />
-                    New Post
-                </Button>
+                {mode === "edit" ? (
+                    <Button type="button" variant="outline" size="sm">
+                        <PencilIcon className="size-4" />
+                        {triggerLabel ?? "Edit Post"}
+                    </Button>
+                ) : (
+                    <Button type="button" className="bg-primary text-primary-foreground">
+                        <PlusIcon className="size-4" />
+                        {triggerLabel ?? "New Post"}
+                    </Button>
+                )}
             </DrawerTrigger>
 
             <DrawerContent className="h-[88vh] flex flex-col">
                 <DrawerHeader className="border-b shrink-0">
-                    <DrawerTitle className="text-center">Create Discussion Post</DrawerTitle>
+                    <DrawerTitle className="text-center">{mode === "edit" ? "Edit Discussion" : "Create Discussion Post"}</DrawerTitle>
                 </DrawerHeader>
 
                 <form onSubmit={handleSubmit} className="flex-1 min-h-0 flex flex-col">
@@ -120,44 +176,78 @@ export default function CreatePostDrawer({
                         </div>
 
                         <div className="space-y-3">
-                            <Label htmlFor="post-image-url">Image URL (Optional)</Label>
-                            <Input
-                                id="post-image-url"
-                                value={form.imageUrl}
-                                onChange={(e) => handleChange("imageUrl", e.target.value)}
-                                placeholder="https://..."
+                            <Label>Post Image (Optional)</Label>
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp"
+                                className="hidden"
+                                onChange={handleFileSelect}
                             />
+                            {previewSrc ? (
+                                <div className="relative rounded-lg overflow-hidden">
+                                    <img
+                                        src={previewSrc}
+                                        alt="Post image"
+                                        className="w-full h-40 object-cover"
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="destructive"
+                                        size="icon"
+                                        className="absolute top-2 right-2 h-7 w-7"
+                                        onClick={() => handleChange("imageUrl", null)}
+                                    >
+                                        <X className="size-4" />
+                                    </Button>
+                                </div>
+                            ) : (
+                                <div
+                                    className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-muted-foreground/25 p-6 cursor-pointer hover:border-muted-foreground/50 transition-colors"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    onDrop={handleDrop}
+                                    onDragOver={(e) => e.preventDefault()}
+                                >
+                                    <ImagePlus className="size-8 text-muted-foreground/50" />
+                                    <p className="text-sm text-muted-foreground">
+                                        {uploading ? "Uploading..." : "Click or drag to upload"}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground/70">JPG, PNG or WebP</p>
+                                </div>
+                            )}
                         </div>
 
-                        <div className="space-y-3">
-                            <Label htmlFor="post-group-trigger">Tag to Group (Optional)</Label>
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button
-                                        id="post-group-trigger"
-                                        type="button"
-                                        variant="outline"
-                                        className="w-full justify-between"
-                                    >
-                                        {form.groupName || "No group tag"}
-                                        <ChevronDown className="size-4 opacity-70" />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent className="w-(--radix-dropdown-menu-trigger-width)">
-                                    <DropdownMenuItem onClick={() => handleChange("groupName", null)}>
-                                        No group tag
-                                    </DropdownMenuItem>
-                                    {groupOptions.map((groupName) => (
-                                        <DropdownMenuItem
-                                            key={groupName}
-                                            onClick={() => handleChange("groupName", groupName)}
+                        {groupOptions.length > 0 && (
+                            <div className="space-y-3">
+                                <Label htmlFor="post-group-trigger">Tag to Group (Optional)</Label>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button
+                                            id="post-group-trigger"
+                                            type="button"
+                                            variant="outline"
+                                            className="w-full justify-between"
                                         >
-                                            {groupName}
+                                            {selectedGroup ? selectedGroup.name : "No group tag"}
+                                            <ChevronDown className="size-4 opacity-70" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent className="w-(--radix-dropdown-menu-trigger-width)">
+                                        <DropdownMenuItem onClick={() => handleChange("groupId", null)}>
+                                            No group tag
                                         </DropdownMenuItem>
-                                    ))}
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        </div>
+                                        {groupOptions.map((group) => (
+                                            <DropdownMenuItem
+                                                key={group.id}
+                                                onClick={() => handleChange("groupId", group.id)}
+                                            >
+                                                {group.name}
+                                            </DropdownMenuItem>
+                                        ))}
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
+                        )}
 
                         <div className="space-y-3">
                             <Label htmlFor="post-public-switch">Post Visibility</Label>
@@ -173,8 +263,8 @@ export default function CreatePostDrawer({
                     </div>
 
                     <DrawerFooter className="border-t">
-                        <Button type="submit" className="w-full" disabled={isSubmitting}>
-                            {isSubmitting ? "Posting..." : "Post Discussion"}
+                        <Button type="submit" className="w-full" disabled={isSubmitting || uploading}>
+                            {isSubmitting ? (mode === "edit" ? "Saving..." : "Posting...") : (mode === "edit" ? "Save Changes" : "Post Discussion")}
                         </Button>
                         <DrawerClose asChild>
                             <Button type="button" variant="outline" className="w-full">

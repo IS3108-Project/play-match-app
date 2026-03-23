@@ -7,6 +7,7 @@ import activityRoutes from './activity.routes';
 import uploadRoutes from './upload.routes';
 import configRoutes from './config.routes';
 import buddyRoutes from './buddy.routes';
+import communityRoutes from './community.routes';
 
 const router = Router();
 
@@ -16,5 +17,6 @@ router.use('/notifications', notificationRoutes);
 router.use('/activities', activityRoutes);
 router.use('/upload', uploadRoutes);
 router.use('/buddy', buddyRoutes);
+router.use('/community', communityRoutes);
 
 export default router;

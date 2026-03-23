@@ -5,14 +5,16 @@ import { Image } from "@/components/ui/image"
 
 type DiscussionPostContentProps = {
     authorName: string
-    authorAvatar: string
+    authorImage?: string | null
     timeAgo: string
     title: string
     content: string
     imgSrc?: string | null
     likes: number
+    isLiked: boolean
     commentsCount: number
     onShare: () => void
+    onLike: () => void
 }
 
 function getInitials(name: string) {
@@ -26,20 +28,22 @@ function getInitials(name: string) {
 
 export default function DiscussionPostContent({
     authorName,
-    authorAvatar,
+    authorImage,
     timeAgo,
     title,
     content,
     imgSrc,
     likes,
+    isLiked,
     commentsCount,
     onShare,
+    onLike,
 }: DiscussionPostContentProps) {
     return (
         <article className="space-y-4 px-4 py-5">
             <div className="flex items-start gap-3">
                 <Avatar className="h-10 w-10">
-                    <AvatarImage src={authorAvatar} alt={authorName} />
+                    <AvatarImage src={authorImage ?? undefined} alt={authorName} />
                     <AvatarFallback>{getInitials(authorName)}</AvatarFallback>
                 </Avatar>
                 <div>
@@ -60,10 +64,15 @@ export default function DiscussionPostContent({
             ) : null}
 
             <div className="flex items-center gap-6 border-t pt-3 text-sm text-muted-foreground">
-                <div className="inline-flex items-center gap-1.5">
-                    <ThumbsUp className="h-4 w-4" />
+                <button
+                    type="button"
+                    onClick={onLike}
+                    className={`inline-flex items-center gap-1.5 transition-colors ${isLiked ? "text-primary" : "hover:text-foreground"}`}
+                    aria-label="Like post"
+                >
+                    <ThumbsUp className={`h-4 w-4 ${isLiked ? "fill-primary" : ""}`} />
                     <span>{likes}</span>
-                </div>
+                </button>
                 <div className="inline-flex items-center gap-1.5">
                     <MessageCircle className="h-4 w-4" />
                     <span>{commentsCount}</span>
