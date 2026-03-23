@@ -1,3 +1,5 @@
+import { Switch } from "@/components/ui/switch";
+
 export default function NotificationsPage() {
   return (
     <div className="rounded-3xl border bg-card px-6 py-4 shadow-sm">
@@ -11,7 +13,7 @@ export default function NotificationsPage() {
             >
               {/* TODO: Add toggle switch (FE) */}
               <span className="font-medium">{label}</span>
-              <span className="text-muted-foreground">Off</span>
+              <Switch />
             </div>
           ),
         )}
