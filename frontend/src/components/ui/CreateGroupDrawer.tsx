@@ -1,7 +1,8 @@
 "use client"
 
 import * as React from "react"
-import { ChevronDown, PlusIcon } from "lucide-react"
+import { ChevronDown, ImagePlus, PencilIcon, PlusIcon, X } from "lucide-react"
+import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -17,9 +18,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
-import { Image } from "@/components/ui/image"
+import { communityApi } from "@/lib/api"
 
-// TODO: maybe have enum in database
 const EMOJI_OPTIONS = ["🏃", "🏸", "🧘", "🚴", "🏀", "⚽", "🎾", "🏊", "💪", "🥾", "🧗", "🛼"] as const
 const ICON_BG_COLOR_OPTIONS = ["chart-1", "chart-2", "chart-3", "chart-4", "chart-5"] as const
 
@@ -28,12 +28,14 @@ export type CreateGroupValues = {
     description: string
     icon: string
     iconBgColor: string
-    headerImageFile: File | null
     profileImageUrl: string | null
 }
 
 type CreateGroupDrawerProps = {
     onSubmit?: (values: CreateGroupValues) => Promise<void> | void
+    initialValues?: CreateGroupValues
+    mode?: "create" | "edit"
+    triggerLabel?: string
 }
 
 const INITIAL_VALUES: CreateGroupValues = {
@@ -41,73 +43,71 @@ const INITIAL_VALUES: CreateGroupValues = {
     description: "",
     icon: "🏃",
     iconBgColor: "chart-1",
-    headerImageFile: null,
     profileImageUrl: null,
 }
 
-export default function CreateGroupDrawer({ onSubmit }: CreateGroupDrawerProps) {
+export default function CreateGroupDrawer({ onSubmit, initialValues, mode = "create", triggerLabel }: CreateGroupDrawerProps) {
     const [open, setOpen] = React.useState(false)
     const [emojiPickerOpen, setEmojiPickerOpen] = React.useState(false)
     const [isSubmitting, setIsSubmitting] = React.useState(false)
-    const [form, setForm] = React.useState<CreateGroupValues>(INITIAL_VALUES)
-    const [headerImagePreview, setHeaderImagePreview] = React.useState<string | null>(null)
-
-    // TODO: add character limit to group name & description?
+    const [uploading, setUploading] = React.useState(false)
+    const [form, setForm] = React.useState<CreateGroupValues>(initialValues ?? INITIAL_VALUES)
+    const fileInputRef = React.useRef<HTMLInputElement>(null)
 
     React.useEffect(() => {
-        return () => {
-            if (headerImagePreview) {
-                URL.revokeObjectURL(headerImagePreview)
-            }
+        if (open) {
+            setForm(initialValues ?? INITIAL_VALUES)
         }
-    }, [headerImagePreview])
+    }, [open, initialValues])
 
     const handleChange = <K extends keyof CreateGroupValues>(key: K, value: CreateGroupValues[K]) => {
         setForm((prev) => ({ ...prev, [key]: value }))
     }
 
     const resetForm = () => {
-        if (headerImagePreview) {
-            URL.revokeObjectURL(headerImagePreview)
-        }
-        setHeaderImagePreview(null)
         setForm(INITIAL_VALUES)
     }
 
-    const handleHeaderImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0] ?? null
-
-        if (headerImagePreview) {
-            URL.revokeObjectURL(headerImagePreview)
+    const handleImageUpload = async (file: File) => {
+        setUploading(true)
+        try {
+            const url = await communityApi.uploadImage(file)
+            handleChange("profileImageUrl", url)
+        } catch (err: unknown) {
+            toast.error(err instanceof Error ? err.message : "Failed to upload image")
+        } finally {
+            setUploading(false)
         }
-
-        if (!file) {
-            setHeaderImagePreview(null)
-            handleChange("headerImageFile", null)
-            handleChange("profileImageUrl", null)
-            return
-        }
-
-        const nextPreviewUrl = URL.createObjectURL(file)
-        setHeaderImagePreview(nextPreviewUrl)
-        handleChange("headerImageFile", file)
-        handleChange("profileImageUrl", nextPreviewUrl)
     }
 
-    // TODO: implement submit functionality
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (file) handleImageUpload(file)
+        e.target.value = ""
+    }
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault()
+        const file = e.dataTransfer.files[0]
+        if (file && file.type.startsWith("image/")) handleImageUpload(file)
+    }
+
+    const previewSrc = form.profileImageUrl
+        ? form.profileImageUrl.startsWith("/uploads/")
+            ? `http://localhost:3000${form.profileImageUrl}`
+            : form.profileImageUrl
+        : null
+
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
         setIsSubmitting(true)
-
         try {
             if (onSubmit) {
                 await onSubmit(form)
             } else {
-                // Dummy DB call placeholder
                 await new Promise((resolve) => setTimeout(resolve, 500))
                 console.log("Create group payload:", form)
             }
-
             setOpen(false)
             resetForm()
         } finally {
@@ -118,15 +118,22 @@ export default function CreateGroupDrawer({ onSubmit }: CreateGroupDrawerProps) 
     return (
         <Drawer direction="bottom" open={open} onOpenChange={setOpen}>
             <DrawerTrigger asChild>
-                <Button type="button" className="bg-primary text-primary-foreground">
-                    <PlusIcon className="size-4" />
-                    Create Group
-                </Button>
+                {mode === "edit" ? (
+                    <Button type="button" variant="outline" className="w-full">
+                        <PencilIcon className="size-4" />
+                        {triggerLabel ?? "Edit Group"}
+                    </Button>
+                ) : (
+                    <Button type="button" className="bg-primary text-primary-foreground">
+                        <PlusIcon className="size-4" />
+                        {triggerLabel ?? "Create Group"}
+                    </Button>
+                )}
             </DrawerTrigger>
 
             <DrawerContent className="h-[88vh] flex flex-col">
                 <DrawerHeader className="border-b shrink-0">
-                    <DrawerTitle className="text-center">Create Group</DrawerTitle>
+                    <DrawerTitle className="text-center">{mode === "edit" ? "Edit Group" : "Create Group"}</DrawerTitle>
                 </DrawerHeader>
 
                 <form onSubmit={handleSubmit} className="flex-1 min-h-0 flex flex-col">
@@ -169,12 +176,9 @@ export default function CreateGroupDrawer({ onSubmit }: CreateGroupDrawerProps) 
                                             className="w-full justify-between"
                                         >
                                             <span className="inline-flex items-center gap-2">
-                                                <span
-                                                    className="inline-flex size-8 items-center justify-center rounded-full text-lg"
-                                                >
+                                                <span className="inline-flex size-8 items-center justify-center rounded-full text-lg">
                                                     {form.icon}
                                                 </span>
-                                                {!form.icon ? "Choose Icon" : null}
                                             </span>
                                             <ChevronDown className="size-4 opacity-70" />
                                         </Button>
@@ -226,32 +230,51 @@ export default function CreateGroupDrawer({ onSubmit }: CreateGroupDrawerProps) 
                         </div>
 
                         <div className="space-y-3">
-                            <Label htmlFor="group-header-image">Group Header Image (Optional)</Label>
-                            <Input
-                                id="group-header-image"
+                            <Label>Group Header Image (Optional)</Label>
+                            <input
+                                ref={fileInputRef}
                                 type="file"
-                                accept="image/*"
-                                onChange={handleHeaderImageChange}
-                                className="file:font-semibold text-muted-foreground"
+                                accept="image/jpeg,image/png,image/webp"
+                                className="hidden"
+                                onChange={handleFileSelect}
                             />
-                            {headerImagePreview ? (
-                                <Image
-                                    src={headerImagePreview}
-                                    alt="Group header preview"
-                                    className="h-32 w-full rounded-md border object-cover"
-                                />
+                            {previewSrc ? (
+                                <div className="relative rounded-lg overflow-hidden">
+                                    <img
+                                        src={previewSrc}
+                                        alt="Group header preview"
+                                        className="w-full h-32 object-cover"
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="destructive"
+                                        size="icon"
+                                        className="absolute top-2 right-2 h-7 w-7"
+                                        onClick={() => handleChange("profileImageUrl", null)}
+                                    >
+                                        <X className="size-4" />
+                                    </Button>
+                                </div>
                             ) : (
-                                <p className="text-sm text-muted-foreground">
-                                    Uploaded image will be used as group header in the group detail page.
-                                </p>
+                                <div
+                                    className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-muted-foreground/25 p-6 cursor-pointer hover:border-muted-foreground/50 transition-colors"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    onDrop={handleDrop}
+                                    onDragOver={(e) => e.preventDefault()}
+                                >
+                                    <ImagePlus className="size-8 text-muted-foreground/50" />
+                                    <p className="text-sm text-muted-foreground">
+                                        {uploading ? "Uploading..." : "Click or drag to upload"}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground/70">JPG, PNG or WebP</p>
+                                </div>
                             )}
                         </div>
                     </div>
 
                     <DrawerFooter className="border-t">
-                        {/* TODO: implement submit functionality */}
-                        <Button type="submit" className="w-full" disabled={isSubmitting}>
-                            {isSubmitting ? "Creating..." : "Create Group"}
+                        <Button type="submit" className="w-full" disabled={isSubmitting || uploading}>
+                            {isSubmitting ? (mode === "edit" ? "Saving..." : "Creating...") : (mode === "edit" ? "Save Changes" : "Create Group")}
                         </Button>
                         <DrawerClose asChild>
                             <Button type="button" variant="outline" className="w-full" onClick={resetForm}>

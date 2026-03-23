@@ -176,6 +176,28 @@
 }
 /* CUSTOM CSS */
 
+/* Card hover lift effect */
+.card-hover {
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px -4px hsl(0 0% 0% / 0.18), 0 4px 8px -2px hsl(0 0% 0% / 0.10);
+}
+.dark .card-hover:hover {
+  box-shadow: 0 12px 24px -4px hsl(0 0% 0% / 0.45), 0 4px 8px -2px hsl(0 0% 0% / 0.30);
+}
+
+/* Discussion card hover — tint + lift */
+.discussion-card-hover {
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+}
+.discussion-card-hover:hover {
+  transform: translateY(-3px);
+  background-color: var(--accent);
+  box-shadow: 0 8px 20px -4px hsl(0 0% 0% / 0.15), 0 2px 6px -2px hsl(0 0% 0% / 0.08);
+}
+
 html, body, #root {
   width: 100%;
   max-width: 100%;

@@ -21,6 +21,7 @@ import {
   CheckCircle2
 } from "lucide-react"
 import { Link } from "react-router"
+import logo from "@/assets/logo.svg"
 import { format } from "date-fns"
 import {
   Drawer,
@@ -195,14 +196,19 @@ export default function BuddyMatchingPage() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-lg">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">Find Potential Buddies</h1>
-          <p className="text-sm text-muted-foreground">
-            {currentIndex + 1} of {matches.length} matches
-          </p>
+      <div className="mb-8 text-center">
+        <div className="mb-4 flex justify-center md:hidden">
+          <img src={logo} alt="PlayMatch" className="h-10 w-auto" />
         </div>
+        <h1 className="text-3xl font-bold">Find Your Buddy</h1>
+        <p className="mt-2 text-muted-foreground">
+          Connect with like-minded athletes who match your sport, skill level, and schedule.
+        </p>
       </div>
+
+      <p className="text-center text-sm text-muted-foreground mb-4">
+        {currentIndex + 1} of {matches.length} matches
+      </p>
 
       {/* Match Card */}
       <div className="relative">

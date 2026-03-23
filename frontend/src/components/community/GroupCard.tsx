@@ -1,4 +1,4 @@
-import { MessageSquare, Users } from "lucide-react"
+import { CheckCircle, Crown, MessageSquare, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Link } from "react-router"
 
@@ -11,6 +11,8 @@ type Group = {
   discussionCount: number
   description: string
   avatarUrls: string[]
+  isJoined?: boolean
+  isOwner?: boolean
 }
 
 type GroupCardProps = {
@@ -21,11 +23,11 @@ export default function GroupCard({ group }: GroupCardProps) {
   const formatCount = (count: number) => count.toLocaleString()
 
   return (
-    <div className="rounded-2xl border bg-card p-4 shadow-sm">
+    <div className="card-hover rounded-2xl border bg-card p-4 shadow-sm">
       <div className="flex gap-3">
         <div
           className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-xl"
-          style={{ backgroundColor: group.iconBgColor }}
+          style={{ backgroundColor: `var(--${group.iconBgColor})` }}
           aria-hidden="true"
         >
           <span>{group.icon}</span>
@@ -34,7 +36,7 @@ export default function GroupCard({ group }: GroupCardProps) {
         <div className="min-w-0 flex-1">
           <h3 className="truncate text-foreground text-lg font-semibold">{group.name}</h3>
 
-          <div className="mt-1 flex items-center gap-4 text-sm text-muted-foreground">
+          <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
             <span className="flex items-center gap-1">
               <Users className="h-3.5 w-3.5" />
               {formatCount(group.memberCount)}
@@ -43,6 +45,17 @@ export default function GroupCard({ group }: GroupCardProps) {
               <MessageSquare className="h-3.5 w-3.5" />
               {formatCount(group.discussionCount)}
             </span>
+            {group.isOwner ? (
+              <span className="flex items-center gap-1 text-amber-500 font-medium">
+                <Crown className="h-3.5 w-3.5" />
+                Owner
+              </span>
+            ) : group.isJoined ? (
+              <span className="flex items-center gap-1 text-primary font-medium">
+                <CheckCircle className="h-3.5 w-3.5" />
+                Joined
+              </span>
+            ) : null}
           </div>
 
           <p className="mt-3 line-clamp-2 text-[15px] text-foreground/80">{group.description}</p>
@@ -61,7 +74,7 @@ export default function GroupCard({ group }: GroupCardProps) {
 
             <Button variant="ghost" size="sm" className="text-primary">
               <Link to={`/community/groups/${group.id}`}>
-                View More
+                View
               </Link>
             </Button>
           </div>

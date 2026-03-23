@@ -59,6 +59,9 @@ export default function MyActivitiesPage() {
                     <img src={logo} alt="PlayMatch" className="h-10 w-auto" />
                 </div>
                 <h1 className="text-3xl font-bold">My Activities</h1>
+                <p className="mt-2 text-muted-foreground">
+                    Track your upcoming sessions, review past games, and manage the activities you host.
+                </p>
             </div>
 
             {/* Activity Tabs */}

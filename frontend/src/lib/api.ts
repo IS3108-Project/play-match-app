@@ -307,3 +307,153 @@ export const buddyApi = {
   /** Get potential buddy matches */
   getPotentialMatches: () => request<BuddyMatch[]>("/buddy/matches"),
 };
+
+// ── Community API ────────────────────────────────────────────────────────
+
+export interface CommunityGroup {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  iconBgColor: string;
+  profileImageUrl?: string | null;
+  memberCount: number;
+  discussionCount: number;
+  isJoined: boolean;
+  isOwner: boolean;
+  isFeatured: boolean;
+  avatarUrls: string[];
+  discussions?: CommunityDiscussion[];
+}
+
+export interface CommunityDiscussion {
+  id: string;
+  title: string;
+  content: string;
+  imageUrl?: string | null;
+  groupId?: string | null;
+  groupName?: string | null;
+  authorName: string;
+  authorImage?: string | null;
+  likeCount: number;
+  commentCount: number;
+  isLiked: boolean;
+  isOwner: boolean;
+  createdAt: string;
+}
+
+export interface CommunityComment {
+  id: string;
+  content: string;
+  authorName: string;
+  authorImage?: string | null;
+  likeCount: number;
+  isLiked: boolean;
+  isOwner: boolean;
+  createdAt: string;
+}
+
+export interface CommunityDiscussionDetail extends CommunityDiscussion {
+  comments: CommunityComment[];
+}
+
+export interface CreateGroupPayload {
+  name: string;
+  description: string;
+  icon: string;
+  iconBgColor: string;
+  profileImageUrl?: string | null;
+}
+
+export interface CreateDiscussionPayload {
+  title: string;
+  content: string;
+  imageUrl?: string | null;
+  groupId?: string | null;
+  isPublic?: boolean;
+}
+
+export const communityApi = {
+  getGroups: () =>
+    request<CommunityGroup[]>("/community/groups"),
+
+  createGroup: (data: CreateGroupPayload) =>
+    request<CommunityGroup>("/community/groups", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  getGroup: (id: string) =>
+    request<CommunityGroup>(`/community/groups/${id}`),
+
+  joinGroup: (id: string) =>
+    request<{ message: string }>(`/community/groups/${id}/join`, { method: "POST" }),
+
+  leaveGroup: (id: string) =>
+    request<{ message: string }>(`/community/groups/${id}/leave`, { method: "DELETE" }),
+
+  updateGroup: (id: string, data: Partial<CreateGroupPayload>) =>
+    request<CommunityGroup>(`/community/groups/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+
+  deleteGroup: (id: string) =>
+    request<{ message: string }>(`/community/groups/${id}`, { method: "DELETE" }),
+
+  updateDiscussion: (id: string, data: Partial<CreateDiscussionPayload>) =>
+    request<CommunityDiscussion>(`/community/discussions/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+
+  deleteDiscussion: (id: string) =>
+    request<{ message: string }>(`/community/discussions/${id}`, { method: "DELETE" }),
+
+  deleteComment: (id: string) =>
+    request<{ message: string }>(`/community/comments/${id}`, { method: "DELETE" }),
+
+  getDiscussions: (myGroups?: boolean) =>
+    request<CommunityDiscussion[]>(`/community/discussions${myGroups ? "?myGroups=true" : ""}`),
+
+  createDiscussion: (data: CreateDiscussionPayload) =>
+    request<CommunityDiscussion>("/community/discussions", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  getDiscussion: (id: string) =>
+    request<CommunityDiscussionDetail>(`/community/discussions/${id}`),
+
+  toggleDiscussionLike: (id: string) =>
+    request<{ liked: boolean; likeCount: number }>(`/community/discussions/${id}/like`, {
+      method: "POST",
+    }),
+
+  addComment: (id: string, content: string) =>
+    request<CommunityComment>(`/community/discussions/${id}/comments`, {
+      method: "POST",
+      body: JSON.stringify({ content }),
+    }),
+
+  toggleCommentLike: (id: string) =>
+    request<{ liked: boolean; likeCount: number }>(`/community/comments/${id}/like`, {
+      method: "POST",
+    }),
+
+  uploadImage: async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append("image", file);
+    const res = await fetch(`${BASE_URL}/upload/image`, {
+      method: "POST",
+      credentials: "include",
+      body: formData,
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.error || "Upload failed");
+    }
+    const data = await res.json();
+    return data.url as string;
+  },
+};

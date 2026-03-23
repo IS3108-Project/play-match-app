@@ -92,6 +92,13 @@ model User {
   reportsFiled     Report[]      @relation("reportsFiled")
   reportsReceived  Report[]      @relation("reportsReceived")
 
+  createdGroups        Group[]          @relation("createdGroups")
+  groupMemberships     GroupMember[]
+  authoredDiscussions  Discussion[]     @relation("authoredDiscussions")
+  discussionLikes      DiscussionLike[]
+  authoredComments     Comment[]        @relation("authoredComments")
+  commentLikes         CommentLike[]
+
   @@map("user")
 }
 
@@ -209,6 +216,108 @@ model Guest {
 
   @@index([activityId])
   @@map("guest")
+}
+
+// ── Community Domain ─────────────────────────────────────────────────────
+
+model Group {
+  id              String        @id @default(cuid())
+  name            String        @unique
+  description     String
+  icon            String
+  iconBgColor     String
+  profileImageUrl String?
+  creatorId       String
+  creator         User          @relation("createdGroups", fields: [creatorId], references: [id], onDelete: Cascade)
+  members         GroupMember[]
+  discussions     Discussion[]
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([creatorId])
+  @@map("group")
+}
+
+model GroupMember {
+  id       String   @id @default(cuid())
+  userId   String
+  groupId  String
+  joinedAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, groupId])
+  @@index([groupId])
+  @@map("group_member")
+}
+
+model Discussion {
+  id       String  @id @default(cuid())
+  title    String
+  content  String
+  imageUrl String?
+  isPublic Boolean @default(true)
+
+  authorId String
+  author   User   @relation("authoredDiscussions", fields: [authorId], references: [id], onDelete: Cascade)
+
+  groupId String?
+  group   Group?  @relation(fields: [groupId], references: [id], onDelete: SetNull)
+
+  likes    DiscussionLike[]
+  comments Comment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([authorId])
+  @@index([groupId])
+  @@index([createdAt])
+  @@map("discussion")
+}
+
+model DiscussionLike {
+  id           String @id @default(cuid())
+  userId       String
+  discussionId String
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  discussion Discussion @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, discussionId])
+  @@index([discussionId])
+  @@map("discussion_like")
+}
+
+model Comment {
+  id           String @id @default(cuid())
+  content      String
+  authorId     String
+  discussionId String
+
+  author     User       @relation("authoredComments", fields: [authorId], references: [id], onDelete: Cascade)
+  discussion Discussion @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+  likes      CommentLike[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([discussionId])
+  @@map("comment")
+}
+
+model CommentLike {
+  id        String @id @default(cuid())
+  userId    String
+  commentId String
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comment Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, commentId])
+  @@index([commentId])
+  @@map("comment_like")
 }
 
 // ── Report Domain ───────────────────────────────────────────────────────
