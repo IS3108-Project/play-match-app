@@ -53,7 +53,8 @@ function getActivityIcon(activityType?: string | null) {
 const badgeShowcase = [
   {
     label: "New",
-    description: "Complete 5 tracked activities to move beyond the starter badge.",
+    description:
+      "Complete 5 tracked activities to move beyond the starter badge.",
     icon: Star,
     palette: "from-slate-200 via-slate-100 to-white",
     trim: "border-slate-300",
@@ -69,7 +70,8 @@ const badgeShowcase = [
   },
   {
     label: "Consistent",
-    description: "Reach a 90% attendance rate with at least 5 tracked activities.",
+    description:
+      "Reach a 90% attendance rate with at least 5 tracked activities.",
     icon: BadgeCheck,
     palette: "from-emerald-400 via-lime-300 to-white",
     trim: "border-emerald-300",
@@ -305,41 +307,48 @@ export default function ProfilePage() {
         </CustomTabsList>
 
         <TabsContent value="overview" className="mt-6 space-y-6">
-          {profile?.bio ? (
-            <section className="space-y-2 rounded-2xl border bg-card p-5">
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                About
-              </h3>
-              <p className="text-sm leading-relaxed">{profile.bio}</p>
-            </section>
-          ) : (
-            <section className="space-y-1 rounded-2xl border border-dashed bg-card p-5">
-              <p className="text-sm font-medium text-muted-foreground">
-                No bio yet
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Tap Edit Profile to add a short bio so others know who you are.
-              </p>
-            </section>
-          )}
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
+            {profile?.bio ? (
+              <section className="col-span-2 space-y-2 rounded-2xl border bg-card p-5 shadow-sm">
+                <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+                  About
+                </h3>
+                <p className="text-sm leading-relaxed">{profile.bio}</p>
+              </section>
+            ) : (
+              <section className="col-span-2 space-y-1 rounded-2xl border border-dashed bg-card p-5 shadow-sm">
+                <p className="text-sm font-medium text-muted-foreground">
+                  No bio yet
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Tap Edit Profile to add a short bio so others know who you are.
+                </p>
+              </section>
+            )}
 
-          {profile && (
-            <section className="flex flex-col items-center gap-2">
-              <ReliabilityBadge
-                badge={profile.badge}
-                score={profile.reliability.attendanceRate}
-                showScore
-              />
-              <p className="text-xs text-muted-foreground">
-                {profile.reliability.totalActivities < 5
-                  ? "Complete 5 tracked activities to unlock your long-term reliability badge."
-                  : `${profile.reliability.totalAttended} attended, ${profile.reliability.totalLate} late, ${profile.reliability.totalNoShow} no-show.`}
-              </p>
-            </section>
-          )}
+            {profile && (
+              <section className="col-span-2 flex flex-col justify-between rounded-2xl border bg-card p-5 shadow-sm">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Reliability
+                  </p>
+                  <div className="mt-4">
+                    <ReliabilityBadge
+                      badge={profile.badge}
+                      score={profile.reliability.attendanceRate}
+                      showScore
+                    />
+                  </div>
+                </div>
+                <p className="mt-4 text-xs text-muted-foreground">
+                  {profile.reliability.totalActivities < 5
+                    ? "Complete 5 tracked activities to unlock your long-term reliability badge."
+                    : `${profile.reliability.totalAttended} attended, ${profile.reliability.totalLate} late, ${profile.reliability.totalNoShow} no-show.`}
+                </p>
+              </section>
+            )}
 
-          <section className="grid gap-3 sm:grid-cols-2">
-            <article className="rounded-2xl border bg-card p-5">
+            <article className="rounded-2xl border bg-card p-5 shadow-sm">
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Attendance Rate
               </p>
@@ -347,7 +356,7 @@ export default function ProfilePage() {
                 {profile?.reliability.attendanceRate ?? 0}%
               </p>
             </article>
-            <article className="rounded-2xl border bg-card p-5">
+            <article className="rounded-2xl border bg-card p-5 shadow-sm">
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Punctuality Rate
               </p>
@@ -355,7 +364,7 @@ export default function ProfilePage() {
                 {profile?.reliability.punctualityRate ?? 0}%
               </p>
             </article>
-          </section>
+          </div>
         </TabsContent>
 
         <TabsContent value="stats" className="mt-6 space-y-6">
@@ -363,10 +372,8 @@ export default function ProfilePage() {
             {statsItems.map((item) => (
               <UserStatsCard key={item.id} item={item} />
             ))}
-          </section>
 
-          <section className="grid gap-3 sm:grid-cols-2">
-            <article className="rounded-2xl border bg-card p-5">
+            <article className="rounded-2xl border bg-card p-5 shadow-sm">
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Total Activities Joined
               </p>
@@ -374,7 +381,7 @@ export default function ProfilePage() {
                 {profile?.stats.totalActivitiesJoined ?? 0}
               </p>
             </article>
-            <article className="rounded-2xl border bg-card p-5">
+            <article className="rounded-2xl border bg-card p-5 shadow-sm">
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Host Cancellation Rate
               </p>
@@ -385,31 +392,31 @@ export default function ProfilePage() {
           </section>
         </TabsContent>
 
-        <TabsContent value="calendar" className="mt-6">
-          <section className="rounded-3xl border bg-card p-5 shadow-sm">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <h2 className="text-2xl font-bold">
-                  {profile?.calendar.monthLabel}
-                </h2>
-                <div className="mt-4 flex gap-8">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Your Streak</p>
-                    <p className="text-3xl font-bold text-primary">
-                      {profile?.stats.currentStreak ?? 0} Weeks
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">
-                      Streak Activities
-                    </p>
-                    <p className="text-3xl font-bold text-primary">
-                      {profile?.calendar.streakActivities ?? 0}
-                    </p>
-                  </div>
+        <TabsContent value="calendar" className="mt-6 space-y-6">
+          <div className="grid gap-4 md:grid-cols-2">
+            <section className="rounded-3xl border bg-card p-5 shadow-sm">
+              <h2 className="text-2xl font-bold">
+                {profile?.calendar.monthLabel}
+              </h2>
+              <div className="mt-4 grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Your Streak</p>
+                  <p className="text-3xl font-bold text-primary">
+                    {profile?.stats.currentStreak ?? 0} Week(s)
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">
+                    Streak Activities
+                  </p>
+                  <p className="text-3xl font-bold text-primary">
+                    {profile?.calendar.streakActivities ?? 0}
+                  </p>
                 </div>
               </div>
+            </section>
 
+            <section className="rounded-3xl border bg-card p-5 shadow-sm">
               <div className="rounded-3xl bg-primary/10 px-4 py-6 text-center">
                 <Flame className="mx-auto h-8 w-8 text-primary" />
                 <p className="mt-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -419,108 +426,122 @@ export default function ProfilePage() {
                   {profile?.stats.currentStreak ?? 0}
                 </p>
               </div>
-            </div>
+            </section>
 
-            <div className="mt-6 grid grid-cols-7 gap-3 text-center text-sm text-muted-foreground">
-              {["M", "T", "W", "T", "F", "S", "S"].map((label) => (
-                <span key={label} className="font-medium">
-                  {label}
-                </span>
-              ))}
-            </div>
+            <section className="rounded-3xl border bg-card p-5 shadow-sm md:col-span-2">
+              <div className="grid grid-cols-7 gap-3 text-center text-sm text-muted-foreground">
+                {["M", "T", "W", "T", "F", "S", "S"].map((label) => (
+                  <span key={label} className="font-medium">
+                    {label}
+                  </span>
+                ))}
+              </div>
 
-            <div className="mt-4 grid grid-cols-7 gap-3">
-              {calendarCells.map((cell, index) => {
-                if (!cell) {
-                  return <div key={`empty-${index}`} className="h-16 rounded-2xl" />;
-                }
+              <div className="mt-4 grid grid-cols-7 gap-3">
+                {calendarCells.map((cell, index) => {
+                  if (!cell) {
+                    return (
+                      <div key={`empty-${index}`} className="h-16 rounded-2xl" />
+                    );
+                  }
 
-                const key = cell.toISOString().slice(0, 10);
-                const latestActivityType = calendarCounts.get(key) ?? null;
-                const ActivityIcon = getActivityIcon(latestActivityType);
-                return (
-                  <div
-                    key={key}
-                    className="flex h-16 items-center justify-center rounded-2xl border bg-background"
-                  >
-                    {latestActivityType ? (
-                      <div
-                        className="flex h-10 w-10 items-center justify-center rounded-full bg-foreground text-background"
-                        title={latestActivityType}
-                      >
-                        <ActivityIcon className="h-5 w-5" />
-                      </div>
-                    ) : (
-                      <span className="text-sm font-medium text-muted-foreground">
-                        {cell.getDate()}
-                      </span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </section>
+                  const key = cell.toISOString().slice(0, 10);
+                  const latestActivityType = calendarCounts.get(key) ?? null;
+                  const ActivityIcon = getActivityIcon(latestActivityType);
+                  return (
+                    <div
+                      key={key}
+                      className="flex h-16 items-center justify-center rounded-2xl border bg-background"
+                    >
+                      {latestActivityType ? (
+                        <div
+                          className="flex h-10 w-10 items-center justify-center rounded-full bg-foreground text-background"
+                          title={latestActivityType}
+                        >
+                          <ActivityIcon className="h-5 w-5" />
+                        </div>
+                      ) : (
+                        <span className="text-sm font-medium text-muted-foreground">
+                          {cell.getDate()}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          </div>
         </TabsContent>
 
         <TabsContent value="badges" className="mt-6 space-y-4">
-          <section className="rounded-3xl border bg-card p-5">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Badge Cabinet
-                </p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Earn streak and reliability badges as you keep showing up.
-                </p>
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
+            <section className="col-span-2 rounded-3xl border bg-card p-5 shadow-sm">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Badge Cabinet
+                  </p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Earn streak and reliability badges as you keep showing up.
+                  </p>
+                </div>
+                {profile && (
+                  <ReliabilityBadge
+                    badge={profile.badge}
+                    score={profile.reliability.attendanceRate}
+                    showScore
+                  />
+                )}
               </div>
-              {profile && (
-                <ReliabilityBadge
-                  badge={profile.badge}
-                  score={profile.reliability.attendanceRate}
-                  showScore
-                />
-              )}
-            </div>
+            </section>
 
-            <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
-              {badgeShowcase.map((badge) => {
-                const Icon = badge.icon;
-                const earned = profile?.badge.label === badge.label;
+            {badgeShowcase.map((badge) => {
+              const Icon = badge.icon;
+              const earned = profile?.badge.label === badge.label;
 
-                return (
-                  <article
-                    key={badge.label}
-                    className="rounded-3xl border bg-background p-4 text-center shadow-sm"
-                  >
-                    <div className="mx-auto flex w-fit flex-col items-center">
+              return (
+                <article
+                  key={badge.label}
+                  className="rounded-3xl border bg-card p-4 text-center shadow-sm"
+                >
+                  <div className="mx-auto flex w-fit flex-col items-center">
+                    <div
+                      className={[
+                        "relative flex h-24 w-24 items-center justify-center rounded-full border-4 bg-gradient-to-b shadow-sm",
+                        badge.palette,
+                        badge.trim,
+                        earned ? "" : "grayscale opacity-60",
+                      ].join(" ")}
+                    >
+                      <Icon className="h-10 w-10 text-foreground" />
+                      <span className="absolute -top-2 rounded-full border bg-background px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide">
+                        {earned ? "Earned" : "Locked"}
+                      </span>
+                    </div>
+                    <div className="flex items-start gap-2">
                       <div
                         className={[
-                          "relative flex h-24 w-24 items-center justify-center rounded-full border-4 bg-gradient-to-b shadow-sm",
-                          badge.palette,
-                          badge.trim,
-                          earned ? "" : "grayscale opacity-60",
+                          "mt-[-1px] h-6 w-4 rounded-b-xl",
+                          badge.ribbon,
                         ].join(" ")}
-                      >
-                        <Icon className="h-10 w-10 text-foreground" />
-                        <span className="absolute -top-2 rounded-full border bg-background px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide">
-                          {earned ? "Earned" : "Locked"}
-                        </span>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <div className={["mt-[-1px] h-6 w-4 rounded-b-xl", badge.ribbon].join(" ")} />
-                        <div className={["mt-[-1px] h-6 w-4 rounded-b-xl", badge.ribbon].join(" ")} />
-                      </div>
+                      />
+                      <div
+                        className={[
+                          "mt-[-1px] h-6 w-4 rounded-b-xl",
+                          badge.ribbon,
+                        ].join(" ")}
+                      />
                     </div>
+                  </div>
 
-                    <p className="mt-4 text-sm font-semibold">{badge.label}</p>
-                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                      {badge.description}
-                    </p>
-                  </article>
-                );
-              })}
-            </div>
-          </section>
+                  <p className="mt-4 text-sm font-semibold">{badge.label}</p>
+                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                    {badge.description}
+                  </p>
+                </article>
+              );
+            })}
+          </div>
         </TabsContent>
       </CustomTabs>
     </div>
