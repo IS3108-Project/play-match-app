@@ -333,6 +333,7 @@ export interface CommunityDiscussion {
   imageUrl?: string | null;
   groupId?: string | null;
   groupName?: string | null;
+  authorId: string;
   authorName: string;
   authorImage?: string | null;
   likeCount: number;
@@ -345,6 +346,7 @@ export interface CommunityDiscussion {
 export interface CommunityComment {
   id: string;
   content: string;
+  authorId: string;
   authorName: string;
   authorImage?: string | null;
   likeCount: number;
@@ -456,4 +458,153 @@ export const communityApi = {
     const data = await res.json();
     return data.url as string;
   },
+};
+
+// ── Report API (for regular users) ─────────────────────────────────────
+
+export interface CreateReportPayload {
+  reportedUserId: string;
+  activityId?: string;
+  type: "NO_SHOW" | "RUDE_UNSAFE" | "MISREPRESENTED" | "SPAM" | "OTHER";
+  details: string;
+  anonymous: boolean;
+}
+
+export const reportApi = {
+  create: (data: CreateReportPayload) =>
+    request<{ id: string }>("/reports", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+};
+
+// ── Admin API ──────────────────────────────────────────────────────────
+
+export interface AdminDashboardStats {
+  totalUsers: number;
+  bannedUsers: number;
+  totalActivities: number;
+  activeActivities: number;
+  pendingReports: number;
+  totalReports: number;
+  totalDiscussions: number;
+}
+
+export interface AdminUser {
+  id: string;
+  name: string;
+  email: string;
+  image: string | null;
+  role: "USER" | "ADMIN";
+  banned: boolean;
+  bannedAt: string | null;
+  createdAt: string;
+  _count: {
+    reportsReceived: number;
+    hostedActivities: number;
+    participations: number;
+    authoredDiscussions: number;
+  };
+}
+
+export interface AdminUserDetail extends AdminUser {
+  bio: string | null;
+  sportInterests: string[];
+  skillLevel: string | null;
+  _count: AdminUser["_count"] & {
+    reportsFiled: number;
+    authoredComments: number;
+  };
+  reportsAgainst: AdminReport[];
+}
+
+export interface AdminReport {
+  id: string;
+  reporterId: string;
+  reportedUserId: string;
+  activityId: string | null;
+  type: string;
+  details: string;
+  anonymous: boolean;
+  status: "PENDING" | "REVIEWED" | "DISMISSED";
+  adminNote: string | null;
+  createdAt: string;
+  resolvedAt: string | null;
+  reporter: { id: string; name: string; email: string; image: string | null };
+  reportedUser: { id: string; name: string; email: string; image: string | null; banned: boolean };
+  activity: { id: string; title: string } | null;
+}
+
+export interface AdminActivity {
+  id: string;
+  title: string;
+  activityType: string;
+  date: string;
+  status: string;
+  createdAt: string;
+  host: { id: string; name: string; image: string | null };
+  _count: { participants: number; reports: number };
+}
+
+export interface AdminDiscussion {
+  id: string;
+  title: string;
+  content: string;
+  createdAt: string;
+  author: { id: string; name: string; image: string | null };
+  group: { id: string; name: string } | null;
+  _count: { likes: number; comments: number };
+}
+
+export const adminApi = {
+  getStats: () =>
+    request<AdminDashboardStats>("/admin/stats"),
+
+  // Users
+  listUsers: (params?: { search?: string; banned?: boolean }) => {
+    const searchParams = new URLSearchParams();
+    if (params?.search) searchParams.set("search", params.search);
+    if (params?.banned !== undefined) searchParams.set("banned", String(params.banned));
+    const query = searchParams.toString();
+    return request<AdminUser[]>(`/admin/users${query ? `?${query}` : ""}`);
+  },
+
+  getUserDetail: (id: string) =>
+    request<AdminUserDetail>(`/admin/users/${id}`),
+
+  banUser: (id: string) =>
+    request<{ message: string }>(`/admin/users/${id}/ban`, { method: "POST" }),
+
+  unbanUser: (id: string) =>
+    request<{ message: string }>(`/admin/users/${id}/unban`, { method: "POST" }),
+
+  // Reports
+  listReports: (status?: string) => {
+    const query = status ? `?status=${status}` : "";
+    return request<AdminReport[]>(`/admin/reports${query}`);
+  },
+
+  resolveReport: (id: string, status: "REVIEWED" | "DISMISSED", adminNote?: string) =>
+    request<{ message: string }>(`/admin/reports/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ status, adminNote }),
+    }),
+
+  // Activities
+  listActivities: (search?: string) => {
+    const query = search ? `?search=${encodeURIComponent(search)}` : "";
+    return request<AdminActivity[]>(`/admin/activities${query}`);
+  },
+
+  deleteActivity: (id: string) =>
+    request<{ message: string }>(`/admin/activities/${id}`, { method: "DELETE" }),
+
+  // Discussions
+  listDiscussions: (search?: string) => {
+    const query = search ? `?search=${encodeURIComponent(search)}` : "";
+    return request<AdminDiscussion[]>(`/admin/discussions${query}`);
+  },
+
+  deleteDiscussion: (id: string) =>
+    request<{ message: string }>(`/admin/discussions/${id}`, { method: "DELETE" }),
 };

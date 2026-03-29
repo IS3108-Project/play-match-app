@@ -124,7 +124,7 @@ export async function getGroupById(groupId: string, userId: string) {
       discussions: {
         orderBy: { createdAt: "desc" },
         include: {
-          author: { select: { name: true, image: true } },
+          author: { select: { id: true, name: true, image: true } },
           _count: { select: { likes: true, comments: true } },
           likes: { where: { userId }, select: { id: true } },
         },
@@ -160,6 +160,7 @@ export async function getGroupById(groupId: string, userId: string) {
       imageUrl: d.imageUrl,
       groupId: group.id,
       groupName: group.name,
+      authorId: d.author.id,
       authorName: d.author.name,
       authorImage: d.author.image,
       likeCount: d._count.likes,
@@ -204,7 +205,7 @@ export async function getDiscussions(userId: string, myGroupsOnly?: boolean) {
     },
     orderBy: { createdAt: "desc" },
     include: {
-      author: { select: { name: true, image: true } },
+      author: { select: { id: true, name: true, image: true } },
       group: { select: { id: true, name: true } },
       _count: { select: { likes: true, comments: true } },
       likes: { where: { userId }, select: { id: true } },
@@ -239,7 +240,7 @@ export async function createDiscussion(userId: string, data: CreateDiscussionDat
       authorId: userId,
     },
     include: {
-      author: { select: { name: true, image: true } },
+      author: { select: { id: true, name: true, image: true } },
       group: { select: { id: true, name: true } },
       _count: { select: { likes: true, comments: true } },
     },
@@ -252,6 +253,7 @@ export async function createDiscussion(userId: string, data: CreateDiscussionDat
     imageUrl: discussion.imageUrl,
     groupId: discussion.group?.id ?? null,
     groupName: discussion.group?.name ?? null,
+    authorId: discussion.author.id,
     authorName: discussion.author.name,
     authorImage: discussion.author.image,
     likeCount: 0,
@@ -266,14 +268,14 @@ export async function getDiscussionById(discussionId: string, userId: string) {
   const discussion = await prisma.discussion.findUnique({
     where: { id: discussionId },
     include: {
-      author: { select: { name: true, image: true } },
+      author: { select: { id: true, name: true, image: true } },
       group: { select: { id: true, name: true } },
       _count: { select: { likes: true, comments: true } },
       likes: { where: { userId }, select: { id: true } },
       comments: {
         orderBy: { createdAt: "asc" },
         include: {
-          author: { select: { name: true, image: true } },
+          author: { select: { id: true, name: true, image: true } },
           _count: { select: { likes: true } },
           likes: { where: { userId }, select: { id: true } },
         },
@@ -290,6 +292,7 @@ export async function getDiscussionById(discussionId: string, userId: string) {
     imageUrl: discussion.imageUrl,
     groupId: discussion.group?.id ?? null,
     groupName: discussion.group?.name ?? null,
+    authorId: discussion.author.id,
     authorName: discussion.author.name,
     authorImage: discussion.author.image,
     likeCount: discussion._count.likes,
@@ -300,6 +303,7 @@ export async function getDiscussionById(discussionId: string, userId: string) {
     comments: discussion.comments.map((c) => ({
       id: c.id,
       content: c.content,
+      authorId: c.author.id,
       authorName: c.author.name,
       authorImage: c.author.image,
       likeCount: c._count.likes,
@@ -333,13 +337,14 @@ export async function addComment(discussionId: string, userId: string, content: 
   const comment = await prisma.comment.create({
     data: { content, authorId: userId, discussionId },
     include: {
-      author: { select: { name: true, image: true } },
+      author: { select: { id: true, name: true, image: true } },
     },
   });
 
   return {
     id: comment.id,
     content: comment.content,
+    authorId: comment.author.id,
     authorName: comment.author.name,
     authorImage: comment.author.image,
     likeCount: 0,
@@ -411,7 +416,7 @@ export async function updateDiscussion(discussionId: string, userId: string, dat
       ...(data.isPublic !== undefined && { isPublic: data.isPublic }),
     },
     include: {
-      author: { select: { name: true, image: true } },
+      author: { select: { id: true, name: true, image: true } },
       group: { select: { id: true, name: true } },
       _count: { select: { likes: true, comments: true } },
     },
@@ -423,6 +428,7 @@ export async function updateDiscussion(discussionId: string, userId: string, dat
     imageUrl: updated.imageUrl,
     groupId: updated.group?.id ?? null,
     groupName: updated.group?.name ?? null,
+    authorId: updated.author.id,
     authorName: updated.author.name,
     authorImage: updated.author.image,
     likeCount: updated._count.likes,

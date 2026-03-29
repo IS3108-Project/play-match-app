@@ -43,7 +43,7 @@ export default function Navbar() {
 
   // Build nav links dynamically based on role
   const allNavLinks = isAdmin
-    ? [...navLinks, { name: "Users", href: "/admin" }]
+    ? [...navLinks, { name: "Admin", href: "/admin" }]
     : navLinks;
 
   return (
