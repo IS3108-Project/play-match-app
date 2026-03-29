@@ -12,6 +12,8 @@ import InvitationOutcomeEmail from "../email/email_templates/invitation-outcome-
 import CancelledActivityEmail from "../email/email_templates/cancelled-activity-email";
 import PendingRequestEmail from "../email/email_templates/pending-request-email";
 import RequestOutcomeEmail from "../email/email_templates/request-outcome-email";
+import AttendanceReminderEmail from "../email/email_templates/attendance-reminder-email";
+import NoShowWarningEmail from "../email/email_templates/no-show-warning-email";
 
 // ── Shared types ────────────────────────────────────────────────────────────
 
@@ -271,6 +273,41 @@ export async function sendReminder(
           timeUntil,
         }),
       }),
-    ),
+      ),
   );
+}
+
+export async function sendAttendanceReminder(
+  user: NotificationUser,
+  activity: ActivityDetails,
+  urgency: "first" | "final",
+): Promise<void> {
+  await sendEmail({
+    to: user.email,
+    subject:
+      urgency === "final"
+        ? `Final reminder: mark attendance for ${activity.name}`
+        : `Don't forget to mark attendance for ${activity.name}`,
+    react: AttendanceReminderEmail({
+      userName: user.name,
+      activityName: activity.name,
+      activityDate: activity.date,
+      activityLocation: activity.location,
+      urgency,
+    }),
+  });
+}
+
+export async function sendNoShowWarning(
+  user: NotificationUser,
+  totalNoShows: number,
+): Promise<void> {
+  await sendEmail({
+    to: user.email,
+    subject: "Warning: You've missed 5 activities",
+    react: NoShowWarningEmail({
+      userName: user.name,
+      totalNoShows,
+    }),
+  });
 }

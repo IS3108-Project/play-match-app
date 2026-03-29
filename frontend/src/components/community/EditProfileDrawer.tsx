@@ -29,6 +29,7 @@ const TIMING_OPTIONS = ["Morning", "Afternoon", "Evening", "Weekends"] as const
 
 type EditProfileValues = {
     name: string
+    bio: string
     locations: string[]
     skillLevel: string
     sportsPreferences: string[]
@@ -51,6 +52,7 @@ export default function EditProfileDrawer({
     const [image, setImage] = React.useState<string | null>(defaultValues?.image ?? null)
     const [imageFile, setImageFile] = React.useState<File | null>(null)
     const [name, setName] = React.useState(defaultValues?.name ?? "")
+    const [bio, setBio] = React.useState(defaultValues?.bio ?? "")
     const [locationSharingEnabled, setLocationSharingEnabled] = React.useState(
         defaultValues?.locationSharingEnabled ?? false
     )
@@ -72,6 +74,7 @@ export default function EditProfileDrawer({
         if (defaultValues) {
             setImage(defaultValues.image ?? null)
             setName(defaultValues.name ?? "")
+            setBio(defaultValues.bio ?? "")
             setLocationSharingEnabled(defaultValues.locationSharingEnabled ?? false)
             setLocations(defaultValues.locations ?? [])
             setSkillLevel(defaultValues.skillLevel ?? "")
@@ -155,6 +158,23 @@ export default function EditProfileDrawer({
                                 onChange={(e) => setName(e.target.value)}
                                 placeholder="Enter your name"
                             />
+                        </div>
+                        <div className="space-y-2">
+                            <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                                Short bio
+                            </h4>
+                            <textarea
+                                id="profile-bio"
+                                value={bio}
+                                onChange={(e) => setBio(e.target.value)}
+                                placeholder="Write a short bio so other players know you better"
+                                rows={4}
+                                maxLength={180}
+                                className="border-input placeholder:text-muted-foreground w-full rounded-md border bg-transparent px-3 py-2 text-sm outline-none"
+                            />
+                            <p className="text-xs text-muted-foreground">
+                                Keep it short and useful. {bio.length}/180
+                            </p>
                         </div>
                     </section>
 
@@ -289,11 +309,12 @@ export default function EditProfileDrawer({
                         <Button
                             className="w-full"
                             onClick={() =>
-                                onDone?.({
-                                    name,
-                                    locations,
-                                    skillLevel,
-                                    sportsPreferences,
+                            onDone?.({
+                                name,
+                                bio: bio.trim(),
+                                locations,
+                                skillLevel,
+                                sportsPreferences,
                                     preferredTimings,
                                     image,
                                     imageFile,

@@ -47,7 +47,6 @@ export default function GroupDetailPage() {
     const [group, setGroup] = React.useState<(CommunityGroup & { discussions?: CommunityDiscussion[] }) | null | undefined>(undefined)
     const [isJoining, setIsJoining] = React.useState(false)
     const [isDarkBackground, setIsDarkBackground] = React.useState(false)
-    const [postDrawerOpen, setPostDrawerOpen] = React.useState(false)
     const [deleteGroupConfirm, setDeleteGroupConfirm] = React.useState(false)
 
     const fetchGroup = React.useCallback(async () => {
@@ -119,7 +118,6 @@ export default function GroupDetailPage() {
         })
         toast.success("Discussion posted!")
         fetchGroup()
-        setPostDrawerOpen(false)
     }
 
     const handleUpdateGroup = async (values: CreateGroupValues) => {

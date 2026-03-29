@@ -24,8 +24,12 @@ export default function ActivityCard({ activity, isHosted, onRefresh }: Activity
 
     const handleCancelRsvp = async () => {
         try {
-            await activityApi.leave(activity.id)
-            toast.success("Left activity")
+            const result = await activityApi.leave(activity.id)
+            if (result.isLateCancellation) {
+                toast.warning("Late cancellation recorded. This counts as a no-show.")
+            } else {
+                toast.success("Left activity")
+            }
             onRefresh?.()
         } catch (err: any) {
             toast.error(err.message)

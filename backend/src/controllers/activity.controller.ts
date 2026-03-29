@@ -131,6 +131,13 @@ export async function cancelActivity(req: AuthRequest, res: Response) {
       res.status(400).json({ error: "Invalid transfer target" });
       return;
     }
+    if (error.message === "TOO_LATE_TO_CANCEL") {
+      res.status(400).json({
+        error:
+          "Hosts cannot cancel within 24 hours of the activity start time",
+      });
+      return;
+    }
     console.error("Failed to cancel activity:", error);
     res.status(500).json({ error: "Failed to cancel activity" });
   }
@@ -167,8 +174,8 @@ export async function joinActivity(req: AuthRequest, res: Response) {
 export async function leaveActivity(req: AuthRequest, res: Response) {
   try {
     const id = req.params.id as string;
-    await activityService.leaveActivity(id, req.user.id);
-    res.json({ message: "Left activity" });
+    const result = await activityService.leaveActivity(id, req.user.id);
+    res.json({ message: "Left activity", ...result });
   } catch (error: any) {
     if (error.message === "NOT_PARTICIPANT") {
       res.status(404).json({ error: "Not a participant" });
@@ -352,7 +359,12 @@ export async function removeGuest(req: AuthRequest, res: Response) {
 export async function markAttendance(req: AuthRequest, res: Response) {
   try {
     const id = req.params.id as string;
-    await activityService.markAttendance(id, req.user.id, req.body.participantIds);
+    await activityService.markAttendance(
+      id,
+      req.user.id,
+      req.body.attendance,
+      req.body.participantIds,
+    );
     res.json({ message: "Attendance marked" });
   } catch (error: any) {
     if (error.message === "FORBIDDEN") {
@@ -361,6 +373,10 @@ export async function markAttendance(req: AuthRequest, res: Response) {
     }
     if (error.message === "TOO_EARLY") {
       res.status(400).json({ error: "Activity has not started yet" });
+      return;
+    }
+    if (error.message === "ATTENDANCE_LOCKED") {
+      res.status(400).json({ error: "Attendance can no longer be edited" });
       return;
     }
     console.error("Failed to mark attendance:", error);

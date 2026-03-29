@@ -6,6 +6,7 @@ type UserProfileCardProps = {
   name?: string | null;
   location?: string;
   level?: string;
+  metaRow?: React.ReactNode;
   editAction?: React.ReactNode;
 };
 
@@ -14,6 +15,7 @@ export default function UserProfileCard({
   name,
   location = "Singapore",
   level = "Intermediate Level",
+  metaRow,
   editAction,
 }: UserProfileCardProps) {
   const displayName = name?.trim() || "User";
@@ -38,9 +40,13 @@ export default function UserProfileCard({
         <span>{location}</span>
       </div>
 
-      <span className="mt-2 rounded-full bg-muted px-3 py-1 text-sm font-medium text-muted-foreground">
-        {level}
-      </span>
+      {metaRow ? (
+        <div className="mt-3">{metaRow}</div>
+      ) : (
+        <span className="mt-2 rounded-full bg-muted px-3 py-1 text-sm font-medium text-muted-foreground">
+          {level}
+        </span>
+      )}
     </section>
   );
 }

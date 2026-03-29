@@ -4,6 +4,7 @@ import * as notificationService from "./notification.service";
 import { format } from "date-fns";
 import * as fs from "fs";
 import * as path from "path";
+import { getReliabilityBadge } from "./user.service";
 
 // ── Types ───────────────────────────────────────────────────────────────
 
@@ -95,6 +96,92 @@ function activityToNotification(
     location: activity.location,
     url: `http://localhost:5173/explore?activity=${activity.id}`,
   };
+}
+
+function getActivityStartDateTime(activity: {
+  date: Date;
+  startTime: string;
+}): Date {
+  const result = new Date(activity.date);
+  const [hours, minutes] = activity.startTime.split(":").map(Number);
+  result.setHours(hours ?? 0, minutes ?? 0, 0, 0);
+  return result;
+}
+
+function getActivityEndDateTime(activity: { date: Date; endTime: string }): Date {
+  const result = new Date(activity.date);
+  const [hours, minutes] = activity.endTime.split(":").map(Number);
+  result.setHours(hours ?? 0, minutes ?? 0, 0, 0);
+  return result;
+}
+
+function isWithinLateCancellationWindow(activity: {
+  date: Date;
+  startTime: string;
+}): boolean {
+  return getActivityStartDateTime(activity).getTime() - Date.now() < 24 * 60 * 60 * 1000;
+}
+
+async function syncStartedHostAttendanceForActivities(
+  activities: Array<{
+    id: string;
+    date: Date;
+    startTime: string;
+    hostId: string;
+    status: ActivityStatus;
+  }>,
+) {
+  const now = new Date();
+  const eligibleActivities = activities.filter((activity) => {
+    if (activity.status !== "ACTIVE") return false;
+    return getActivityStartDateTime(activity).getTime() <= now.getTime();
+  });
+
+  if (eligibleActivities.length === 0) return;
+
+  const hostParticipantIds = await prisma.participant.findMany({
+    where: {
+      activityId: { in: eligibleActivities.map((activity) => activity.id) },
+      status: "CONFIRMED",
+      attendanceStatus: "PENDING",
+      OR: eligibleActivities.map((activity) => ({
+        activityId: activity.id,
+        userId: activity.hostId,
+      })),
+    },
+    select: { id: true },
+  });
+
+  if (hostParticipantIds.length === 0) return;
+
+  await prisma.participant.updateMany({
+    where: { id: { in: hostParticipantIds.map((participant) => participant.id) } },
+    data: { attendanceStatus: "ATTENDED" },
+  });
+}
+
+async function getNoShowCount(userId: string) {
+  return prisma.participant.count({
+    where: { userId, attendanceStatus: "NO_SHOW" },
+  });
+}
+
+async function maybeSendNoShowWarning(userId: string, previousCount: number) {
+  const totalNoShows = await getNoShowCount(userId);
+  if (previousCount < 5 && totalNoShows >= 5) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { name: true, email: true },
+    });
+    if (user) {
+      notificationService
+        .sendNoShowWarning(
+          { name: user.name, email: user.email },
+          totalNoShows,
+        )
+        .catch(console.error);
+    }
+  }
 }
 
 // ── Create ──────────────────────────────────────────────────────────────
@@ -266,6 +353,8 @@ export async function getActivities(
       const confirmed = a.participants.filter((p) => p.status === "CONFIRMED").length;
       const guestCount = a._count.guests;
       const myParticipant = a.participants.find((p) => p.userId === userId);
+      const normalizedMyStatus =
+        myParticipant?.status === "CANCELLED" ? null : myParticipant?.status ?? null;
 
       return {
         id: a.id,
@@ -287,7 +376,7 @@ export async function getActivities(
         host: a.host,
         _count: { confirmed },
         slotsLeft: a.maxParticipants - confirmed - guestCount,
-        myStatus: myParticipant?.status ?? null,
+        myStatus: normalizedMyStatus,
         createdAt: a.createdAt.toISOString(),
         distance: a.distance != null ? Math.round(a.distance * 10) / 10 : null, // Round to 1 decimal
       };
@@ -341,6 +430,8 @@ export async function getActivities(
     ).length;
     const guestCount = a._count.guests;
     const myParticipant = a.participants.find((p) => p.userId === userId);
+    const normalizedMyStatus =
+      myParticipant?.status === "CANCELLED" ? null : myParticipant?.status ?? null;
 
     return {
       id: a.id,
@@ -362,7 +453,7 @@ export async function getActivities(
       host: a.host,
       _count: { confirmed },
       slotsLeft: a.maxParticipants - confirmed - guestCount,
-      myStatus: myParticipant?.status ?? null,
+      myStatus: normalizedMyStatus,
       createdAt: a.createdAt.toISOString(),
       distance: null, // No distance info in standard query
     };
@@ -392,13 +483,39 @@ export async function getMyActivities(
   today.setHours(0, 0, 0, 0);
 
   if (tab === "hosted") {
-    const activities = await prisma.activity.findMany({
+    let activities = await prisma.activity.findMany({
       where: { hostId: userId, status: { not: "CANCELLED" } },
       orderBy: { date: "asc" },
       include: {
         host: { select: { id: true, name: true, image: true } },
         participants: {
           select: { id: true, userId: true, status: true, source: true },
+        },
+        _count: { select: { guests: true } },
+      },
+    });
+    await syncStartedHostAttendanceForActivities(
+      activities.map((activity) => ({
+        id: activity.id,
+        date: activity.date,
+        startTime: activity.startTime,
+        hostId: activity.hostId,
+        status: activity.status,
+      })),
+    );
+    activities = await prisma.activity.findMany({
+      where: { hostId: userId, status: { not: "CANCELLED" } },
+      orderBy: { date: "asc" },
+      include: {
+        host: { select: { id: true, name: true, image: true } },
+        participants: {
+          select: {
+            id: true,
+            userId: true,
+            status: true,
+            source: true,
+            attendanceStatus: true,
+          },
         },
         _count: { select: { guests: true } },
       },
@@ -437,6 +554,8 @@ function mapActivityResponse(a: any, userId: string) {
   ).length;
   const guestCount = a._count?.guests ?? 0;
   const myParticipant = a.participants.find((p: any) => p.userId === userId);
+  const normalizedMyStatus =
+    myParticipant?.status === "CANCELLED" ? null : myParticipant?.status ?? null;
 
   return {
     id: a.id,
@@ -456,7 +575,7 @@ function mapActivityResponse(a: any, userId: string) {
     host: a.host,
     _count: { confirmed },
     slotsLeft: a.maxParticipants - confirmed - guestCount,
-    myStatus: myParticipant?.status ?? null,
+    myStatus: normalizedMyStatus,
     mySource: myParticipant?.source ?? null,
     pendingCount: a.participants.filter((p: any) => p.status === "PENDING").length,
     createdAt: a.createdAt.toISOString(),
@@ -468,7 +587,7 @@ function mapActivityResponse(a: any, userId: string) {
 // ── Get By ID (Detail) ──────────────────────────────────────────────────
 
 export async function getActivityById(activityId: string, userId: string) {
-  const activity = await prisma.activity.findUnique({
+  let activity = await prisma.activity.findUnique({
     where: { id: activityId },
     include: {
       host: { select: { id: true, name: true, image: true, email: true } },
@@ -485,11 +604,59 @@ export async function getActivityById(activityId: string, userId: string) {
   });
 
   if (!activity) return null;
+  await syncStartedHostAttendanceForActivities([
+    {
+      id: activity.id,
+      date: activity.date,
+      startTime: activity.startTime,
+      hostId: activity.hostId,
+      status: activity.status,
+    },
+  ]);
+  activity = await prisma.activity.findUnique({
+    where: { id: activityId },
+    include: {
+      host: { select: { id: true, name: true, image: true, email: true } },
+      participants: {
+        include: {
+          user: { select: { id: true, name: true, image: true, email: true } },
+        },
+        orderBy: { joinedAt: "asc" },
+      },
+      guests: {
+        orderBy: { createdAt: "asc" },
+      },
+    },
+  });
+  if (!activity) return null;
 
   const confirmed = activity.participants.filter(
     (p) => p.status === "CONFIRMED",
   ).length;
   const myParticipant = activity.participants.find((p) => p.userId === userId);
+  const normalizedMyStatus =
+    myParticipant?.status === "CANCELLED" ? null : myParticipant?.status ?? null;
+  const participantUserIds = activity.participants.map(
+    (participant) => participant.userId,
+  );
+  const reliabilityEntries =
+    participantUserIds.length === 0
+      ? []
+      : await prisma.participant.findMany({
+          where: {
+            userId: { in: participantUserIds },
+            attendanceStatus: { in: ["ATTENDED", "LATE", "NO_SHOW"] },
+          },
+          select: {
+            userId: true,
+            attendanceStatus: true,
+          },
+        });
+  const reliabilityCounts = new Map<string, number>();
+  for (const entry of reliabilityEntries) {
+    const key = `${entry.userId}:${entry.attendanceStatus}`;
+    reliabilityCounts.set(key, (reliabilityCounts.get(key) ?? 0) + 1);
+  }
 
   return {
     ...activity,
@@ -498,8 +665,43 @@ export async function getActivityById(activityId: string, userId: string) {
     updatedAt: activity.updatedAt.toISOString(),
     _count: { confirmed },
     slotsLeft: activity.maxParticipants - confirmed - activity.guests.length,
-    myStatus: myParticipant?.status ?? null,
+    myStatus: normalizedMyStatus,
     mySource: myParticipant?.source ?? null,
+    participants: activity.participants.map((participant) => {
+      const totalAttended =
+        reliabilityCounts.get(`${participant.userId}:ATTENDED`) ?? 0;
+      const totalLate = reliabilityCounts.get(`${participant.userId}:LATE`) ?? 0;
+      const totalNoShow =
+        reliabilityCounts.get(`${participant.userId}:NO_SHOW`) ?? 0;
+      const totalActivities = totalAttended + totalLate + totalNoShow;
+      const attendanceRate =
+        totalActivities === 0
+          ? 0
+          : Math.round(((totalAttended + totalLate) / totalActivities) * 100);
+      const noShowRate =
+        totalActivities === 0
+          ? 0
+          : Math.round((totalNoShow / totalActivities) * 100);
+
+      return {
+        ...participant,
+        joinedAt: participant.joinedAt.toISOString(),
+        reliability: {
+          totalAttended,
+          totalLate,
+          totalNoShow,
+          totalActivities,
+          attendanceRate,
+          noShowRate,
+        },
+        badge: getReliabilityBadge(
+          totalActivities,
+          totalLate,
+          attendanceRate,
+          noShowRate,
+        ),
+      };
+    }),
   };
 }
 
@@ -608,6 +810,9 @@ export async function cancelActivity(
 
   if (!activity) throw new Error("NOT_FOUND");
   if (activity.hostId !== hostId) throw new Error("FORBIDDEN");
+  if (isWithinLateCancellationWindow(activity)) {
+    throw new Error("TOO_LATE_TO_CANCEL");
+  }
 
   // Transfer host path
   if (transferToUserId) {
@@ -670,7 +875,10 @@ export async function joinActivity(
   });
 
   // Allow re-join after rejection
-  if (existing && existing.status === "REJECTED") {
+  if (
+    existing &&
+    (existing.status === "REJECTED" || existing.status === "CANCELLED")
+  ) {
     await prisma.participant.delete({
       where: { userId_activityId: { userId, activityId } },
     });
@@ -774,7 +982,13 @@ export async function inviteUser(
     where: { userId_activityId: { userId: invitedUserId, activityId } },
   });
 
-  if (existing) {
+  if (existing && (existing.status === "REJECTED" || existing.status === "CANCELLED")) {
+    await prisma.participant.delete({
+      where: {
+        userId_activityId: { userId: invitedUserId, activityId },
+      },
+    });
+  } else if (existing) {
     throw new Error("ALREADY_PARTICIPANT");
   }
 
@@ -956,18 +1170,25 @@ export async function leaveActivity(activityId: string, userId: string) {
   if (activity.hostId === userId) throw new Error("HOST_CANNOT_LEAVE");
 
   const wasConfirmed = participant.status === "CONFIRMED";
+  const isLateCancellation = isWithinLateCancellationWindow(activity);
+  const attendanceStatus = isLateCancellation ? "NO_SHOW" : "CANCELLED";
+  const previousNoShowCount = isLateCancellation
+    ? await getNoShowCount(userId)
+    : null;
 
-  // Fetch leaving user's name before deleting
   const leavingUser = await prisma.user.findUnique({
     where: { id: userId },
     select: { name: true },
   });
 
-  // Delete participant + their guests
   await prisma.$transaction([
     prisma.guest.deleteMany({ where: { activityId, invitedById: userId } }),
-    prisma.participant.delete({
+    prisma.participant.update({
       where: { userId_activityId: { userId, activityId } },
+      data: {
+        status: "CANCELLED",
+        attendanceStatus,
+      },
     }),
   ]);
 
@@ -995,6 +1216,12 @@ export async function leaveActivity(activityId: string, userId: string) {
   if (wasConfirmed) {
     await promoteFromWaitlist(activityId, 1, activity.requireApproval);
   }
+
+  if (isLateCancellation && previousNoShowCount != null) {
+    await maybeSendNoShowWarning(userId, previousNoShowCount);
+  }
+
+  return { isLateCancellation, attendanceStatus };
 }
 
 // ── Approve / Reject ────────────────────────────────────────────────────
@@ -1158,7 +1385,8 @@ export async function removeGuest(
 export async function markAttendance(
   activityId: string,
   hostId: string,
-  participantIds: string[],
+  attendance?: Record<string, "ATTENDED" | "LATE" | "NO_SHOW">,
+  participantIds?: string[],
 ) {
   const activity = await prisma.activity.findUnique({
     where: { id: activityId },
@@ -1166,33 +1394,59 @@ export async function markAttendance(
   if (!activity) throw new Error("NOT_FOUND");
   if (activity.hostId !== hostId) throw new Error("FORBIDDEN");
 
-  // Check if activity has started
   const now = new Date();
-  const activityStart = new Date(activity.date);
-  const parts = activity.startTime.split(":").map(Number);
-  activityStart.setHours(parts[0] ?? 0, parts[1] ?? 0, 0, 0);
+  const activityStart = getActivityStartDateTime(activity);
+  const activityEnd = getActivityEndDateTime(activity);
+  const attendanceLockTime = new Date(
+    activityEnd.getTime() + 24 * 60 * 60 * 1000,
+  );
 
   if (now < activityStart) throw new Error("TOO_EARLY");
+  if (now > attendanceLockTime) throw new Error("ATTENDANCE_LOCKED");
 
-  // Bulk update: mark selected as attended, rest as no-show
-  await prisma.$transaction([
-    prisma.participant.updateMany({
-      where: {
-        activityId,
-        status: "CONFIRMED",
-        id: { in: participantIds },
-      },
-      data: { attendanceStatus: "ATTENDED" },
-    }),
-    prisma.participant.updateMany({
-      where: {
-        activityId,
-        status: "CONFIRMED",
-        id: { notIn: participantIds },
-      },
-      data: { attendanceStatus: "NO_SHOW" },
-    }),
-  ]);
+  const confirmedParticipants = await prisma.participant.findMany({
+    where: { activityId, status: "CONFIRMED" },
+    select: { id: true, userId: true },
+  });
+
+  const normalizedAttendance: Record<string, "ATTENDED" | "LATE" | "NO_SHOW"> =
+    attendance && Object.keys(attendance).length > 0
+      ? attendance
+      : Object.fromEntries(
+          confirmedParticipants.map((participant) => [
+            participant.id,
+            participantIds?.includes(participant.id) ? "ATTENDED" : "NO_SHOW",
+          ]),
+        );
+
+  const previousNoShowCounts = new Map<string, number>();
+  const touchedUserIds = new Set<string>();
+  const updates = confirmedParticipants.map((participant) => {
+    const nextStatus = normalizedAttendance[participant.id] ?? "NO_SHOW";
+
+    return prisma.participant.update({
+      where: { id: participant.id },
+      data: { attendanceStatus: nextStatus },
+    });
+  });
+
+  for (const participant of confirmedParticipants) {
+    touchedUserIds.add(participant.userId);
+    if (!previousNoShowCounts.has(participant.userId)) {
+      previousNoShowCounts.set(
+        participant.userId,
+        await getNoShowCount(participant.userId),
+      );
+    }
+  }
+
+  await prisma.$transaction(updates);
+
+  await Promise.all(
+    Array.from(touchedUserIds).map((userId) =>
+      maybeSendNoShowWarning(userId, previousNoShowCounts.get(userId) ?? 0),
+    ),
+  );
 }
 
 // ── Waitlist promotion (internal) ───────────────────────────────────────
