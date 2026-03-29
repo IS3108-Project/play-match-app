@@ -12,6 +12,7 @@ import DiscussionPostContent from "@/components/community/DiscussionPostContent"
 import PostActionMenu from "@/components/community/PostActionMenu"
 import CreatePostDrawer from "@/components/ui/CreatePostDrawer"
 import type { CreatePostValues } from "@/components/ui/CreatePostDrawer"
+import ReportDrawer from "@/components/ReportDrawer"
 import { useRole } from "@/hooks/useRole"
 import { communityApi } from "@/lib/api"
 import type { CommunityDiscussionDetail, CommunityComment } from "@/lib/api"
@@ -36,6 +37,7 @@ export default function DiscussionPostPage() {
     const [commentText, setCommentText] = React.useState("")
     const [isSubmitting, setIsSubmitting] = React.useState(false)
     const [deleteConfirm, setDeleteConfirm] = React.useState(false)
+    const [reportTarget, setReportTarget] = React.useState<{ userId: string; name: string } | null>(null)
 
     const backTo =
         typeof (location.state as { backTo?: unknown } | null)?.backTo === "string"
@@ -205,7 +207,7 @@ export default function DiscussionPostPage() {
                             />
                         </div>
                     ) : (
-                        <PostActionMenu onReport={() => { }} />
+                        <PostActionMenu onReport={() => setReportTarget({ userId: discussion.authorId, name: discussion.authorName })} />
                     )}
                 </header>
 
@@ -241,7 +243,7 @@ export default function DiscussionPostPage() {
                                 isOwner={comment.isOwner}
                                 onLike={() => handleCommentLike(comment.id)}
                                 onDelete={() => handleDeleteComment(comment.id)}
-                                onReport={() => { }}
+                                onReport={() => setReportTarget({ userId: comment.authorId, name: comment.authorName })}
                             />
                         ))}
                     </div>
@@ -283,6 +285,15 @@ export default function DiscussionPostPage() {
                     </div>
                 </footer>
             </div>
+
+            {reportTarget && (
+                <ReportDrawer
+                    open={!!reportTarget}
+                    onOpenChange={(open) => !open && setReportTarget(null)}
+                    reportedUserId={reportTarget.userId}
+                    reportedUserName={reportTarget.name}
+                />
+            )}
         </div>
     )
 }

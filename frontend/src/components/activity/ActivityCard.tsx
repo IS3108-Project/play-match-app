@@ -5,6 +5,7 @@ import HostActivityDrawer, { type HostActivityValues } from "@/components/activi
 import PendingRequestsDrawer from "@/components/activity/PendingRequestsDrawer"
 import AttendanceDrawer from "@/components/activity/AttendanceDrawer"
 import CancelActivityDrawer from "@/components/activity/CancelActivityDrawer"
+import ReportDrawer from "@/components/ReportDrawer"
 import { type Activity, activityApi } from "@/lib/api"
 import { toast } from "sonner"
 import { format } from "date-fns"
@@ -28,6 +29,7 @@ export default function ActivityCard({ activity, isHosted, onRefresh }: Activity
     const displayTime = `${activity.startTime} - ${activity.endTime}`
 
     const [confirmingCancel, setConfirmingCancel] = React.useState(false)
+    const [reportOpen, setReportOpen] = React.useState(false)
 
     const handleCancelRsvp = async () => {
         try {
@@ -108,7 +110,7 @@ export default function ActivityCard({ activity, isHosted, onRefresh }: Activity
                 <div className="absolute right-3 top-3 z-10">
                     <ActivityActionsMenu
                         onShareLink={handleShare}
-                        onReport={isHost ? undefined : () => toast.success("Report submitted")}
+                        onReport={isHost ? undefined : () => setReportOpen(true)}
                         onCancelRsvp={isHost ? undefined : () => setConfirmingCancel(true)}
                         cancelLabel={isPending ? "Cancel Request" : isWaitlisted ? "Leave Waitlist" : "Cancel RSVP"}
                     />
@@ -254,6 +256,14 @@ export default function ActivityCard({ activity, isHosted, onRefresh }: Activity
                     </div>
                 </div>
             )}
+
+            <ReportDrawer
+                open={reportOpen}
+                onOpenChange={setReportOpen}
+                reportedUserId={activity.hostId}
+                reportedUserName={activity.host.name}
+                activityId={activity.id}
+            />
         </div>
     )
 }

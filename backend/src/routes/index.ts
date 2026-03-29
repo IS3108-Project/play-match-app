@@ -8,6 +8,8 @@ import uploadRoutes from './upload.routes';
 import configRoutes from './config.routes';
 import buddyRoutes from './buddy.routes';
 import communityRoutes from './community.routes';
+import adminRoutes from './admin.routes';
+import reportRoutes from './report.routes';
 
 const router = Router();
 
@@ -18,5 +20,7 @@ router.use('/activities', activityRoutes);
 router.use('/upload', uploadRoutes);
 router.use('/buddy', buddyRoutes);
 router.use('/community', communityRoutes);
+router.use('/admin', adminRoutes);
+router.use('/reports', reportRoutes);
 
 export default router;
