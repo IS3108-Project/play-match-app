@@ -85,6 +85,7 @@ export default function CommunityPage() {
             imageUrl: values.imageUrl || null,
             groupId: values.groupId || null,
             isPublic: values.isPublic,
+            linkedActivityId: values.linkedActivityId || null,
         })
         toast.success("Discussion posted!")
         fetchDiscussions()
@@ -271,6 +272,9 @@ export default function CommunityPage() {
                 <div className="flex flex-col gap-4 w-full items-stretch">
                     <p className="text-sm text-muted-foreground">
                         See trending discussions across the PlayMatch community. Browse posts from all groups or filter to your own.
+                    </p>
+                    <p className="text-xs text-muted-foreground/70">
+                        Posts live inside groups — tap any post to read replies and join the conversation.
                     </p>
 
                     {/* Header row */}

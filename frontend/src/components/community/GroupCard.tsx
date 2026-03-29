@@ -1,6 +1,7 @@
 import { CheckCircle, Crown, MessageSquare, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Link } from "react-router"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 type Group = {
   id: string
@@ -10,9 +11,13 @@ type Group = {
   memberCount: number
   discussionCount: number
   description: string
-  avatarUrls: string[]
+  memberAvatars: { name: string; image: string | null }[]
   isJoined?: boolean
   isOwner?: boolean
+}
+
+function getInitials(name: string) {
+  return name.split(" ").map((p) => p[0]).join("").slice(0, 2).toUpperCase()
 }
 
 type GroupCardProps = {
@@ -62,13 +67,11 @@ export default function GroupCard({ group }: GroupCardProps) {
 
           <div className="mt-4 flex items-center justify-between">
             <div className="flex -space-x-2">
-              {group.avatarUrls.slice(0, 4).map((url, idx) => (
-                <img
-                  key={`${group.id}-avatar-${idx}`}
-                  src={url}
-                  alt={`${group.name} member ${idx + 1}`}
-                  className="h-7 w-7 rounded-full border-2 border-background object-cover"
-                />
+              {group.memberAvatars.slice(0, 4).map((member, idx) => (
+                <Avatar key={`${group.id}-avatar-${idx}`} className="h-7 w-7 border-2 border-background">
+                  <AvatarImage src={member.image ?? undefined} alt={member.name} />
+                  <AvatarFallback className="text-[10px]">{getInitials(member.name)}</AvatarFallback>
+                </Avatar>
               ))}
             </div>
 

@@ -24,7 +24,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
-import { communityApi } from "@/lib/api"
+import { communityApi, activityApi, type Activity } from "@/lib/api"
 
 export type CreatePostValues = {
     title: string
@@ -32,6 +32,7 @@ export type CreatePostValues = {
     imageUrl: string | null
     groupId: string | null
     isPublic: boolean
+    linkedActivityId: string | null
 }
 
 type GroupOption = { id: string; name: string }
@@ -51,6 +52,7 @@ const INITIAL_VALUES: CreatePostValues = {
     imageUrl: null,
     groupId: null,
     isPublic: true,
+    linkedActivityId: null,
 }
 
 export default function CreatePostDrawer({
@@ -65,11 +67,17 @@ export default function CreatePostDrawer({
     const [form, setForm] = React.useState<CreatePostValues>(initialValues ?? { ...INITIAL_VALUES, groupId: defaultGroupId })
     const [isSubmitting, setIsSubmitting] = React.useState(false)
     const [uploading, setUploading] = React.useState(false)
+    const [hostedActivities, setHostedActivities] = React.useState<Activity[]>([])
     const fileInputRef = React.useRef<HTMLInputElement>(null)
 
     React.useEffect(() => {
         if (open) {
             setForm(initialValues ?? { ...INITIAL_VALUES, groupId: defaultGroupId })
+            activityApi.mine("hosted")
+                .then((activities) => setHostedActivities(
+                    activities.filter((a) => a.status !== "CANCELLED" && new Date(a.date) > new Date())
+                ))
+                .catch(() => setHostedActivities([]))
         }
     }, [open, defaultGroupId, initialValues])
 
@@ -78,6 +86,7 @@ export default function CreatePostDrawer({
     }
 
     const selectedGroup = groupOptions.find((g) => g.id === form.groupId) ?? null
+    const selectedActivity = hostedActivities.find((a) => a.id === form.linkedActivityId) ?? null
 
     const handleImageUpload = async (file: File) => {
         setUploading(true)
@@ -246,6 +255,52 @@ export default function CreatePostDrawer({
                                         ))}
                                     </DropdownMenuContent>
                                 </DropdownMenu>
+                            </div>
+                        )}
+
+                        {hostedActivities.length > 0 && (
+                            <div className="space-y-3">
+                                <Label>Link an Activity (Optional)</Label>
+                                {selectedActivity ? (
+                                    <div className="flex items-center justify-between rounded-lg border bg-muted/30 px-3 py-2">
+                                        <div className="min-w-0 flex-1">
+                                            <p className="truncate text-sm font-medium">{selectedActivity.title}</p>
+                                            <p className="text-xs text-muted-foreground">{selectedActivity.activityType} · {selectedActivity.startTime}</p>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleChange("linkedActivityId", null)}
+                                            className="ml-2 shrink-0 text-muted-foreground hover:text-destructive transition-colors"
+                                            aria-label="Remove linked activity"
+                                        >
+                                            <X className="size-4" />
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                className="w-full justify-between"
+                                            >
+                                                No activity linked
+                                                <ChevronDown className="size-4 opacity-70" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent className="w-(--radix-dropdown-menu-trigger-width)">
+                                            {hostedActivities.map((activity) => (
+                                                <DropdownMenuItem
+                                                    key={activity.id}
+                                                    onClick={() => handleChange("linkedActivityId", activity.id)}
+                                                >
+                                                    <span className="truncate">{activity.title}</span>
+                                                    <span className="ml-auto shrink-0 text-xs text-muted-foreground">{activity.activityType}</span>
+                                                </DropdownMenuItem>
+                                            ))}
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                )}
                             </div>
                         )}
 

@@ -116,6 +116,7 @@ export default function GroupDetailPage() {
             imageUrl: values.imageUrl || null,
             groupId: groupId ?? null,
             isPublic: values.isPublic,
+            linkedActivityId: values.linkedActivityId || null,
         })
         toast.success("Discussion posted!")
         fetchGroup()

@@ -175,6 +175,7 @@ model Activity {
   participants Participant[]
   guests       Guest[]
   reports      Report[]
+  linkedDiscussions Discussion[] @relation("linkedDiscussions")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -266,6 +267,9 @@ model Discussion {
 
   groupId String?
   group   Group?  @relation(fields: [groupId], references: [id], onDelete: SetNull)
+
+  linkedActivityId String?
+  linkedActivity   Activity? @relation("linkedDiscussions", fields: [linkedActivityId], references: [id], onDelete: SetNull)
 
   likes    DiscussionLike[]
   comments Comment[]

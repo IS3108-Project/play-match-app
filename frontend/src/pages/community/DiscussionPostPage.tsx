@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import PostCommentCard from "@/components/community/PostCommentCard"
 import DiscussionPostContent from "@/components/community/DiscussionPostContent"
 import PostActionMenu from "@/components/community/PostActionMenu"
+import LinkedActivityCard from "@/components/community/LinkedActivityCard"
 import CreatePostDrawer from "@/components/ui/CreatePostDrawer"
 import type { CreatePostValues } from "@/components/ui/CreatePostDrawer"
 import ReportDrawer from "@/components/ReportDrawer"
@@ -58,6 +59,7 @@ export default function DiscussionPostPage() {
             content: values.content,
             imageUrl: values.imageUrl || null,
             isPublic: values.isPublic,
+            linkedActivityId: values.linkedActivityId ?? null,
         })
         setDiscussion((prev) => prev ? { ...prev, ...updated, comments: prev.comments } : prev)
         toast.success("Discussion updated!")
@@ -187,9 +189,28 @@ export default function DiscussionPostPage() {
                                     imageUrl: discussion.imageUrl ?? null,
                                     groupId: discussion.groupId ?? null,
                                     isPublic: true,
+                                    linkedActivityId: discussion.linkedActivity?.id ?? null,
                                 }}
                                 onSubmit={handleUpdateDiscussion}
                             />
+                            <button
+                                type="button"
+                                onClick={() => setDeleteConfirm(true)}
+                                className="cursor-pointer text-muted-foreground hover:text-destructive transition-colors"
+                                aria-label="Delete discussion"
+                            >
+                                <Trash2 className="h-5 w-5" />
+                            </button>
+                            <DeleteConfirmDrawer
+                                open={deleteConfirm}
+                                onOpenChange={setDeleteConfirm}
+                                name={discussion.title}
+                                itemType="discussion"
+                                onConfirm={handleDeleteDiscussion}
+                            />
+                        </div>
+                    ) : discussion.canDelete ? (
+                        <div className="flex items-center gap-2">
                             <button
                                 type="button"
                                 onClick={() => setDeleteConfirm(true)}
@@ -225,6 +246,13 @@ export default function DiscussionPostPage() {
                     onShare={handleShare}
                     onLike={handleLike}
                 />
+
+                {/* Linked Activity */}
+                {discussion.linkedActivity && (
+                    <div className="border-t px-4 py-4">
+                        <LinkedActivityCard activity={discussion.linkedActivity} />
+                    </div>
+                )}
 
                 {/* Post Comments */}
                 <section className="border-t bg-muted/20 px-4 py-4">

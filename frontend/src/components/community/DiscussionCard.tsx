@@ -4,6 +4,7 @@ import { Link } from "react-router"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { formatDistanceToNow } from "date-fns"
 import DeleteConfirmDrawer from "@/components/ui/DeleteConfirmDrawer"
+import LinkedActivityCard from "@/components/community/LinkedActivityCard"
 
 type Discussion = {
     id: string
@@ -73,7 +74,7 @@ export default function DiscussionCard({ discussion, backTo = "/community/discus
                         ) : null}
                     </div>
                 </div>
-                {discussion.isOwner && onDelete && (
+                {(discussion.canDelete ?? discussion.isOwner) && onDelete && (
                     <button
                         type="button"
                         onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmOpen(true) }}
@@ -86,6 +87,10 @@ export default function DiscussionCard({ discussion, backTo = "/community/discus
             </header>
 
             <p className="mt-3 line-clamp-2 text-sm leading-6 text-foreground/90">{discussion.content}</p>
+
+            {discussion.linkedActivity && (
+                <LinkedActivityCard activity={discussion.linkedActivity} />
+            )}
 
             <footer className="mt-4 flex items-center gap-5 border-t pt-3 text-sm text-muted-foreground">
                 <button
