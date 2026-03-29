@@ -1,6 +1,8 @@
 "use client"
 import * as React from "react"
+import { useSearchParams } from "react-router"
 import ActivityCard from "@/components/activity/ActivityCard"
+import ActivityDetailsCard from "@/components/activity/ActivityDetailsCard"
 import FilterBar, { type MaxDistance } from "@/components/FilterBar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -13,11 +15,14 @@ import { useUserLocation } from "@/hooks/useUserLocation"
 import { Link } from "react-router"
 
 export default function ExplorePage() {
+  const [searchParams] = useSearchParams()
+  const deepLinkedActivityId = searchParams.get("activity")
+
   const { location, isEnabled: locationEnabled, hasPermission: hasLocationPermission } = useUserLocation()
-  
+
   const [search, setSearch] = React.useState("")
   const debouncedSearch = useDebounce(search, 300)
-  
+
   const [selectedActivityTypes, setSelectedActivityTypes] = React.useState<string[]>([])
   const [selectedSkills, setSelectedSkills] = React.useState<("Beginner" | "Intermediate" | "Advanced")[]>([])
   const [sortBy, setSortBy] = React.useState<"date" | "distance">("date")
@@ -161,6 +166,17 @@ export default function ExplorePage() {
             </div>
           )}
         </>
+      )}
+
+      {deepLinkedActivityId && (
+        <ActivityDetailsCard
+          key={deepLinkedActivityId}
+          activityId={deepLinkedActivityId}
+          defaultOpen
+          onRefresh={fetchActivities}
+        >
+          <span className="hidden" />
+        </ActivityDetailsCard>
       )}
     </div>
   );

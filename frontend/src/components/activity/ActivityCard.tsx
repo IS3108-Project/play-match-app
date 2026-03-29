@@ -9,6 +9,8 @@ import { type Activity, activityApi } from "@/lib/api"
 import { toast } from "sonner"
 import { format } from "date-fns"
 import { MapPin } from "lucide-react"
+import { useRole } from "@/hooks/useRole"
+import * as React from "react"
 
 type ActivityCardProps = {
     activity: Activity
@@ -17,15 +19,21 @@ type ActivityCardProps = {
 }
 
 export default function ActivityCard({ activity, isHosted, onRefresh }: ActivityCardProps) {
+    const { session } = useRole()
+    const isHost = activity.hostId === session?.user?.id
+
     const slotsLeft = activity.slotsLeft
     const confirmed = activity._count.confirmed
     const displayDate = format(new Date(activity.date), "EEEE, MMM d, yyyy")
     const displayTime = `${activity.startTime} - ${activity.endTime}`
 
+    const [confirmingCancel, setConfirmingCancel] = React.useState(false)
+
     const handleCancelRsvp = async () => {
         try {
             await activityApi.leave(activity.id)
             toast.success("Left activity")
+            setConfirmingCancel(false)
             onRefresh?.()
         } catch (err: any) {
             toast.error(err.message)
@@ -96,12 +104,13 @@ export default function ActivityCard({ activity, isHosted, onRefresh }: Activity
     return (
         <div className="relative flex flex-row overflow-hidden rounded-lg border bg-card shadow-sm lg:flex-col">
             {/* Actions Menu */}
-            {isJoined && (
+            {(isJoined || isPending || isWaitlisted) && (
                 <div className="absolute right-3 top-3 z-10">
                     <ActivityActionsMenu
                         onShareLink={handleShare}
-                        onReport={() => toast.success("Report submitted")}
-                        onCancelRsvp={handleCancelRsvp}
+                        onReport={isHost ? undefined : () => toast.success("Report submitted")}
+                        onCancelRsvp={isHost ? undefined : () => setConfirmingCancel(true)}
+                        cancelLabel={isPending ? "Cancel Request" : isWaitlisted ? "Leave Waitlist" : "Cancel RSVP"}
                     />
                 </div>
             )}
@@ -147,13 +156,15 @@ export default function ActivityCard({ activity, isHosted, onRefresh }: Activity
                             </Button>
                         </ActivityDetailsCard>
                         <div className="mt-2 space-y-2">
-                            {/* Row 1: Attendance + Pending */}
+                            {/* Row 1: Attendance (only after activity date) + Pending */}
                             <div className="flex gap-2">
-                                <AttendanceDrawer
-                                    activityId={activity.id}
-                                    onRefresh={onRefresh}
-                                    className={activity.requireApproval ? "flex-1" : "w-full"}
-                                />
+                                {new Date() > new Date(activity.date) && (
+                                    <AttendanceDrawer
+                                        activityId={activity.id}
+                                        onRefresh={onRefresh}
+                                        className={activity.requireApproval ? "flex-1" : "w-full"}
+                                    />
+                                )}
                                 {activity.requireApproval && (
                                     <PendingRequestsDrawer
                                         activityId={activity.id}
@@ -227,6 +238,22 @@ export default function ActivityCard({ activity, isHosted, onRefresh }: Activity
                     </>
                 )}
             </div>
+
+            {confirmingCancel && (
+                <div className="absolute inset-0 z-20 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
+                    <div className="space-y-3 text-center">
+                        <p className="text-sm font-medium">Are you sure you want to leave this activity?</p>
+                        <div className="flex gap-2 justify-center">
+                            <Button size="sm" variant="outline" onClick={() => setConfirmingCancel(false)}>
+                                Cancel
+                            </Button>
+                            <Button size="sm" variant="destructive" onClick={handleCancelRsvp}>
+                                Confirm
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }

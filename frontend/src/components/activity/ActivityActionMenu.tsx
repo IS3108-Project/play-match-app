@@ -11,12 +11,14 @@ type Props = {
     onShareLink?: () => void
     onReport?: () => void
     onCancelRsvp?: () => void
+    cancelLabel?: string
 }
 
 export default function ActivityActionsMenu({
     onShareLink,
     onReport,
     onCancelRsvp,
+    cancelLabel = "Cancel RSVP",
 }: Props) {
     return (
         <DropdownMenu>
@@ -37,14 +39,18 @@ export default function ActivityActionsMenu({
                     <ExternalLink className="h-4 w-4" />
                     Share Link
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={onReport}>
-                    <FlagTriangleRight className="h-4 w-4" />
-                    Report
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={onCancelRsvp} className="text-destructive">
-                    <CircleX className="h-4 w-4 text-destructive" />
-                    Cancel RSVP
-                </DropdownMenuItem>
+                {onReport && (
+                    <DropdownMenuItem onClick={onReport}>
+                        <FlagTriangleRight className="h-4 w-4" />
+                        Report
+                    </DropdownMenuItem>
+                )}
+                {onCancelRsvp && (
+                    <DropdownMenuItem onClick={onCancelRsvp} className="text-destructive">
+                        <CircleX className="h-4 w-4 text-destructive" />
+                        {cancelLabel}
+                    </DropdownMenuItem>
+                )}
             </DropdownMenuContent>
         </DropdownMenu>
     )
