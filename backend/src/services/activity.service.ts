@@ -156,7 +156,10 @@ export async function getActivities(
   const page = Math.max(1, pagination.page ?? 1);
   const limit = Math.min(50, Math.max(1, pagination.limit ?? 12)); // Default 12, max 50
 
-  const where: any = { status: "ACTIVE" as ActivityStatus };
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const where: any = { status: "ACTIVE" as ActivityStatus, date: { gte: today } };
 
   // Check if we need distance-based filtering or sorting
   const useDistanceFilter = filters.lat != null && filters.lng != null && filters.maxDistance != null;
@@ -393,7 +396,7 @@ export async function getMyActivities(
 
   if (tab === "hosted") {
     const activities = await prisma.activity.findMany({
-      where: { hostId: userId, status: { not: "CANCELLED" } },
+      where: { hostId: userId, status: { not: "CANCELLED" }, date: { gte: today } },
       orderBy: { date: "asc" },
       include: {
         host: { select: { id: true, name: true, image: true } },
