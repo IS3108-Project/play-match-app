@@ -66,6 +66,8 @@ model User {
   image          String?
   role           UserRole @default(USER)
   bio            String?
+  banned         Boolean  @default(false)
+  bannedAt       DateTime?
 
   sportInterests String[]
   skillLevel     String?
@@ -332,6 +334,7 @@ model Report {
   details        String
   anonymous      Boolean      @default(false)
   status         ReportStatus @default(PENDING)
+  adminNote      String?
   createdAt      DateTime     @default(now())
   resolvedAt     DateTime?
 

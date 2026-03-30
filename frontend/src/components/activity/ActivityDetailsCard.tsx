@@ -31,10 +31,11 @@ type ActivityDetailsCardProps = {
     activityId: string
     children: React.ReactNode
     onRefresh?: () => void
+    defaultOpen?: boolean
 }
 
-export default function ActivityDetailsCard({ activityId, children, onRefresh }: ActivityDetailsCardProps) {
-    const [open, setOpen] = React.useState(false)
+export default function ActivityDetailsCard({ activityId, children, onRefresh, defaultOpen = false }: ActivityDetailsCardProps) {
+    const [open, setOpen] = React.useState(defaultOpen)
     const [detail, setDetail] = React.useState<ActivityDetail | null>(null)
     const [loading, setLoading] = React.useState(false)
 
