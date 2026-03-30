@@ -176,6 +176,8 @@ export async function getUserProfile(viewerId: string, targetUserId: string) {
       sportInterests: true,
       preferredTimes: true,
       locationSharingEnabled: true,
+      emailNotificationsEnabled: true,
+      activityRemindersEnabled: true,
       hostedActivities: {
         select: {
           id: true,
@@ -329,6 +331,8 @@ export async function getUserProfile(viewerId: string, targetUserId: string) {
     sportInterests: user.sportInterests,
     preferredTimes: user.preferredTimes,
     locationSharingEnabled: user.locationSharingEnabled,
+    emailNotificationsEnabled: user.emailNotificationsEnabled,
+    activityRemindersEnabled: user.activityRemindersEnabled,
     reliability: {
       totalAttended,
       totalLate,
@@ -383,6 +387,8 @@ interface UpdateProfileInput {
   sportInterests?: string[];
   preferredTimes?: string[];
   locationSharingEnabled?: boolean;
+  emailNotificationsEnabled?: boolean;
+  activityRemindersEnabled?: boolean;
   image?: string | null;
   bio?: string;
   matchRadius?: number;
@@ -405,6 +411,8 @@ export const updateProfile = async (
       sportInterests: true,
       preferredTimes: true,
       locationSharingEnabled: true,
+      emailNotificationsEnabled: true,
+      activityRemindersEnabled: true,
       bio: true,
       matchRadius: true,
     },

@@ -287,6 +287,8 @@ export interface UpdateProfilePayload {
   sportInterests?: string[];
   preferredTimes?: string[];
   locationSharingEnabled?: boolean;
+  emailNotificationsEnabled?: boolean;
+  activityRemindersEnabled?: boolean;
   image?: string | null;
   bio?: string;
 }
@@ -303,6 +305,8 @@ export interface UserProfile {
   sportInterests: string[];
   preferredTimes: string[];
   locationSharingEnabled: boolean;
+  emailNotificationsEnabled: boolean;
+  activityRemindersEnabled: boolean;
   reliability: {
     totalAttended: number;
     totalLate: number;
@@ -356,6 +360,8 @@ export const userApi = {
       sportInterests: string[];
       preferredTimes: string[];
       locationSharingEnabled: boolean;
+      emailNotificationsEnabled: boolean;
+      activityRemindersEnabled: boolean;
       bio: string | null;
     }>("/users/profile", {
       method: "PATCH",
@@ -408,8 +414,25 @@ export interface CommunityGroup {
   isJoined: boolean;
   isOwner: boolean;
   isFeatured: boolean;
-  avatarUrls: string[];
+  memberAvatars: { name: string; image: string | null }[];
   discussions?: CommunityDiscussion[];
+}
+
+export interface LinkedActivityPreview {
+  id: string;
+  title: string;
+  activityType: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  location: string;
+  skillLevel: string;
+  status: string;
+  requireApproval: boolean;
+  hostId: string;
+  slotsLeft: number;
+  myStatus: string | null;
+  host: { id: string; name: string; image?: string | null };
 }
 
 export interface CommunityDiscussion {
@@ -426,6 +449,8 @@ export interface CommunityDiscussion {
   commentCount: number;
   isLiked: boolean;
   isOwner: boolean;
+  canDelete?: boolean;
+  linkedActivity?: LinkedActivityPreview | null;
   createdAt: string;
 }
 
@@ -459,6 +484,7 @@ export interface CreateDiscussionPayload {
   imageUrl?: string | null;
   groupId?: string | null;
   isPublic?: boolean;
+  linkedActivityId?: string | null;
 }
 
 export const communityApi = {

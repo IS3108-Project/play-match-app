@@ -9,7 +9,7 @@ type FeaturedGroup = {
     iconBgColor: string
     memberCount: number
     description: string
-    avatarUrls: string[]
+    memberAvatars: { name: string; image: string | null }[]
     isFeatured: boolean
     isJoined?: boolean
     isOwner?: boolean

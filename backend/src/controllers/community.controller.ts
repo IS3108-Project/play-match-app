@@ -124,7 +124,7 @@ export async function listDiscussions(req: AuthRequest, res: Response) {
 
 // POST /api/community/discussions
 export async function createDiscussion(req: AuthRequest, res: Response) {
-  const { title, content, imageUrl, groupId, isPublic } = req.body;
+  const { title, content, imageUrl, groupId, isPublic, linkedActivityId } = req.body;
   if (!title || !content) {
     return res.status(400).json({ error: "Title and content are required" });
   }
@@ -135,6 +135,7 @@ export async function createDiscussion(req: AuthRequest, res: Response) {
       imageUrl,
       groupId,
       isPublic,
+      linkedActivityId,
     });
     res.status(201).json(discussion);
   } catch (err) {
@@ -183,10 +184,10 @@ export async function addComment(req: AuthRequest, res: Response) {
 
 // PUT /api/community/discussions/:id
 export async function updateDiscussion(req: AuthRequest, res: Response) {
-  const { title, content, imageUrl, isPublic } = req.body;
+  const { title, content, imageUrl, isPublic, linkedActivityId } = req.body;
   try {
     const discussion = await communityService.updateDiscussion(String(req.params.id), req.user.id, {
-      title, content, imageUrl, isPublic,
+      title, content, imageUrl, isPublic, linkedActivityId,
     });
     res.json(discussion);
   } catch (err: unknown) {

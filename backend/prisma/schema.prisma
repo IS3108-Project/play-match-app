@@ -7,42 +7,46 @@ datasource db {
   provider = "postgresql"
 }
 
+// ── Auth Domain ─────────────────────────────────────────────────────────
+
 model User {
   id                     String           @id
   name                   String
   email                  String           @unique
   emailVerified          Boolean          @default(false)
   image                  String?
-  createdAt              DateTime         @default(now())
-  updatedAt              DateTime         @updatedAt
-  completedSteps         String?
-  preferredAreas         String[]
-  preferredTimes         String[]
   role                   UserRole         @default(USER)
-  shouldOnboard          Boolean          @default(true)
-  skillLevel             String?
-  sportInterests         String[]
   bio                    String?
-  locationSharingEnabled Boolean          @default(false)
-  lastLatitude           Float?
-  lastLocationAt         DateTime?
-  lastLongitude          Float?
-  matchRadius            Int              @default(25)
   banned                 Boolean          @default(false)
   bannedAt               DateTime?
+  sportInterests         String[]
+  skillLevel             String?
+  preferredTimes         String[]
+  preferredAreas         String[]
+  locationSharingEnabled Boolean          @default(false)
+  emailNotificationsEnabled Boolean        @default(true)
+  activityRemindersEnabled  Boolean        @default(true)
+  lastLatitude           Float?
+  lastLongitude          Float?
+  lastLocationAt         DateTime?
+  matchRadius            Int              @default(25)
+  createdAt              DateTime         @default(now())
+  updatedAt              DateTime         @updatedAt
+  shouldOnboard          Boolean          @default(true)
+  completedSteps         String?
+  sessions               Session[]
   accounts               Account[]
   hostedActivities       Activity[]       @relation("hostedActivities")
-  authoredComments       Comment[]        @relation("authoredComments")
-  commentLikes           CommentLike[]
-  authoredDiscussions    Discussion[]     @relation("authoredDiscussions")
-  discussionLikes        DiscussionLike[]
+  participations         Participant[]
+  invitedGuests          Guest[]          @relation("invitedGuests")
+  reportsFiled           Report[]         @relation("reportsFiled")
+  reportsReceived        Report[]         @relation("reportsReceived")
   createdGroups          Group[]          @relation("createdGroups")
   groupMemberships       GroupMember[]
-  invitedGuests          Guest[]          @relation("invitedGuests")
-  participations         Participant[]
-  reportsReceived        Report[]         @relation("reportsReceived")
-  reportsFiled           Report[]         @relation("reportsFiled")
-  sessions               Session[]
+  authoredDiscussions    Discussion[]     @relation("authoredDiscussions")
+  discussionLikes        DiscussionLike[]
+  authoredComments       Comment[]        @relation("authoredComments")
+  commentLikes           CommentLike[]
 
   @@map("user")
 }
@@ -67,6 +71,7 @@ model Account {
   accountId             String
   providerId            String
   userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   accessToken           String?
   refreshToken          String?
   idToken               String?
@@ -76,7 +81,6 @@ model Account {
   password              String?
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
-  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@map("account")
@@ -94,6 +98,8 @@ model Verification {
   @@map("verification")
 }
 
+// ── Activity Domain ─────────────────────────────────────────────────────
+
 model Activity {
   id              String         @id @default(cuid())
   title           String
@@ -103,21 +109,21 @@ model Activity {
   startTime       String
   endTime         String
   location        String
+  latitude        Float?
+  longitude       Float?
   skillLevel      String
   maxParticipants Int
   requireApproval Boolean        @default(false)
   status          ActivityStatus @default(ACTIVE)
   imageSrc        String?
   hostId          String
+  host            User           @relation("hostedActivities", fields: [hostId], references: [id], onDelete: Cascade)
+  participants    Participant[]
+  guests          Guest[]
+  reports         Report[]
+  linkedDiscussions Discussion[] @relation("linkedDiscussions")
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
-  latitude        Float?
-  longitude       Float?
-  host            User           @relation("hostedActivities", fields: [hostId], references: [id], onDelete: Cascade)
-  discussion      Discussion[]
-  guests          Guest[]
-  participants    Participant[]
-  reports         Report[]
 
   @@index([hostId])
   @@index([date])
@@ -130,12 +136,12 @@ model Participant {
   userId           String
   activityId       String
   status           ParticipantStatus @default(CONFIRMED)
+  source           ParticipantSource @default(REQUESTED)
+  attendanceStatus AttendanceStatus  @default(PENDING)
   joinedAt         DateTime          @default(now())
   rejectionNote    String?
-  attendanceStatus AttendanceStatus  @default(PENDING)
-  source           ParticipantSource @default(REQUESTED)
-  activity         Activity          @relation(fields: [activityId], references: [id], onDelete: Cascade)
   user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activity         Activity          @relation(fields: [activityId], references: [id], onDelete: Cascade)
 
   @@unique([userId, activityId])
   @@index([activityId, status])
@@ -149,13 +155,15 @@ model Guest {
   contact     String
   activityId  String
   invitedById String
-  createdAt   DateTime @default(now())
   activity    Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
   invitedBy   User     @relation("invitedGuests", fields: [invitedById], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
 
   @@index([activityId])
   @@map("guest")
 }
+
+// ── Community Domain ─────────────────────────────────────────────────────
 
 model Group {
   id              String        @id @default(cuid())
@@ -165,11 +173,11 @@ model Group {
   iconBgColor     String
   profileImageUrl String?
   creatorId       String
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-  discussions     Discussion[]
   creator         User          @relation("createdGroups", fields: [creatorId], references: [id], onDelete: Cascade)
   members         GroupMember[]
+  discussions     Discussion[]
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 
   @@index([creatorId])
   @@map("group")
@@ -180,8 +188,8 @@ model GroupMember {
   userId   String
   groupId  String
   joinedAt DateTime @default(now())
-  group    Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group    Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
 
   @@unique([userId, groupId])
   @@index([groupId])
@@ -195,15 +203,15 @@ model Discussion {
   imageUrl         String?
   isPublic         Boolean          @default(true)
   authorId         String
+  author           User             @relation("authoredDiscussions", fields: [authorId], references: [id], onDelete: Cascade)
   groupId          String?
+  group            Group?           @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  linkedActivityId String?
+  linkedActivity   Activity?        @relation("linkedDiscussions", fields: [linkedActivityId], references: [id], onDelete: SetNull)
+  likes            DiscussionLike[]
+  comments         Comment[]
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
-  linkedActivityId String?
-  comments         Comment[]
-  author           User             @relation("authoredDiscussions", fields: [authorId], references: [id], onDelete: Cascade)
-  group            Group?           @relation(fields: [groupId], references: [id])
-  activity         Activity?        @relation(fields: [linkedActivityId], references: [id])
-  likes            DiscussionLike[]
 
   @@index([authorId])
   @@index([groupId])
@@ -215,8 +223,8 @@ model DiscussionLike {
   id           String     @id @default(cuid())
   userId       String
   discussionId String
-  discussion   Discussion @relation(fields: [discussionId], references: [id], onDelete: Cascade)
   user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  discussion   Discussion @relation(fields: [discussionId], references: [id], onDelete: Cascade)
 
   @@unique([userId, discussionId])
   @@index([discussionId])
@@ -228,11 +236,11 @@ model Comment {
   content      String
   authorId     String
   discussionId String
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
   author       User          @relation("authoredComments", fields: [authorId], references: [id], onDelete: Cascade)
   discussion   Discussion    @relation(fields: [discussionId], references: [id], onDelete: Cascade)
   likes        CommentLike[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 
   @@index([discussionId])
   @@map("comment")
@@ -242,13 +250,15 @@ model CommentLike {
   id        String  @id @default(cuid())
   userId    String
   commentId String
-  comment   Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
   user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comment   Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
 
   @@unique([userId, commentId])
   @@index([commentId])
   @@map("comment_like")
 }
+
+// ── Report Domain ───────────────────────────────────────────────────────
 
 model Report {
   id             String       @id
@@ -259,17 +269,19 @@ model Report {
   details        String
   anonymous      Boolean      @default(false)
   status         ReportStatus @default(PENDING)
+  adminNote      String?
   createdAt      DateTime     @default(now())
   resolvedAt     DateTime?
-  adminNote      String?
   activity       Activity?    @relation(fields: [activityId], references: [id])
-  reportedUser   User         @relation("reportsReceived", fields: [reportedUserId], references: [id], onDelete: Cascade)
   reporter       User         @relation("reportsFiled", fields: [reporterId], references: [id], onDelete: Cascade)
+  reportedUser   User         @relation("reportsReceived", fields: [reportedUserId], references: [id], onDelete: Cascade)
 
   @@index([createdAt])
   @@index([reportedUserId])
   @@map("report")
 }
+
+// ── Enums ────────────────────────────────────────────────────────────────
 
 enum UserRole {
   USER

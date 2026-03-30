@@ -3,6 +3,7 @@
 // Each function handles one type of notification.
 
 import { sendEmail } from "../email/send-email";
+import { prisma } from "../config/prisma";
 import ReminderEmail from "../email/email_templates/reminder-email";
 import RsvpConfirmationEmail from "../email/email_templates/rsvp-confirmation-email";
 import WithdrawalEmail from "../email/email_templates/withdrawal-email";
@@ -14,6 +15,16 @@ import PendingRequestEmail from "../email/email_templates/pending-request-email"
 import RequestOutcomeEmail from "../email/email_templates/request-outcome-email";
 import AttendanceReminderEmail from "../email/email_templates/attendance-reminder-email";
 import NoShowWarningEmail from "../email/email_templates/no-show-warning-email";
+
+// ── Preference helpers ───────────────────────────────────────────────────────
+
+async function getEmailPrefs(emails: string[]): Promise<Map<string, { emailNotificationsEnabled: boolean; activityRemindersEnabled: boolean }>> {
+  const rows = await prisma.user.findMany({
+    where: { email: { in: emails } },
+    select: { email: true, emailNotificationsEnabled: true, activityRemindersEnabled: true },
+  });
+  return new Map(rows.map((r) => [r.email, r]));
+}
 
 // ── Shared types ────────────────────────────────────────────────────────────
 
@@ -47,6 +58,8 @@ export async function sendRsvpConfirmation(
   user: NotificationUser,
   activity: ActivityDetails,
 ): Promise<void> {
+  const prefs = await getEmailPrefs([user.email]);
+  if (prefs.get(user.email)?.emailNotificationsEnabled === false) return;
   await sendEmail({
     to: user.email,
     subject: `You're confirmed for ${activity.name}!`,
@@ -72,6 +85,8 @@ export interface InvitationDetails {
 }
 
 export async function sendInvitation(details: InvitationDetails): Promise<void> {
+  const prefs = await getEmailPrefs([details.inviteeEmail]);
+  if (prefs.get(details.inviteeEmail)?.emailNotificationsEnabled === false) return;
   await sendEmail({
     to: details.inviteeEmail,
     subject: `${details.hostName} invited you to join ${details.activityName}`,
@@ -100,6 +115,8 @@ export interface InvitationOutcomeDetails {
 export async function sendInvitationOutcome(
   details: InvitationOutcomeDetails,
 ): Promise<void> {
+  const prefs = await getEmailPrefs([details.hostEmail]);
+  if (prefs.get(details.hostEmail)?.emailNotificationsEnabled === false) return;
   const subject = details.outcome === "accepted"
     ? `${details.inviteeName} accepted your invitation to ${details.activityName}`
     : `${details.inviteeName} declined your invitation to ${details.activityName}`;
@@ -133,6 +150,8 @@ export interface NewParticipantDetails {
 export async function sendNewParticipantNotification(
   details: NewParticipantDetails,
 ): Promise<void> {
+  const prefs = await getEmailPrefs([details.hostEmail]);
+  if (prefs.get(details.hostEmail)?.emailNotificationsEnabled === false) return;
   await sendEmail({
     to: details.hostEmail,
     subject: `${details.participantName} just joined ${details.activityName}`,
@@ -161,6 +180,8 @@ export interface WithdrawalDetails {
 export async function sendWithdrawalNotification(
   details: WithdrawalDetails,
 ): Promise<void> {
+  const prefs = await getEmailPrefs([details.hostEmail]);
+  if (prefs.get(details.hostEmail)?.emailNotificationsEnabled === false) return;
   await sendEmail({
     to: details.hostEmail,
     subject: `${details.participantName} has withdrawn from ${details.activityName}`,
@@ -181,8 +202,11 @@ export async function sendActivityCancelled(
   users: NotificationUser[],
   activity: ActivityDetails,
 ): Promise<void> {
+  const prefs = await getEmailPrefs(users.map((u) => u.email));
+  const allowed = users.filter((u) => prefs.get(u.email)?.emailNotificationsEnabled !== false);
+  if (allowed.length === 0) return;
   await Promise.all(
-    users.map((user) =>
+    allowed.map((user) =>
       sendEmail({
         to: user.email,
         subject: `${activity.name} has been cancelled`,
@@ -204,6 +228,8 @@ export async function sendActivityCancelled(
 export async function sendPendingRequestToHost(
   details: PendingRequestDetails,
 ): Promise<void> {
+  const prefs = await getEmailPrefs([details.hostEmail]);
+  if (prefs.get(details.hostEmail)?.emailNotificationsEnabled === false) return;
   await sendEmail({
     to: details.hostEmail,
     subject: `${details.requesterName} wants to join ${details.activityName}`,
@@ -226,6 +252,8 @@ export async function sendRequestOutcome(
   outcome: "approved" | "rejected",
   rejectionNote?: string,
 ): Promise<void> {
+  const prefs = await getEmailPrefs([user.email]);
+  if (prefs.get(user.email)?.emailNotificationsEnabled === false) return;
   const subject = outcome === "approved"
     ? `You're in! Request approved for ${activity.name}`
     : `Your request to join ${activity.name} was not accepted`;
@@ -258,10 +286,13 @@ export async function sendReminder(
   activity: ActivityDetails,
   type: "24h" | "1h",
 ): Promise<void> {
+  const prefs = await getEmailPrefs(users.map((u) => u.email));
+  const allowed = users.filter((u) => prefs.get(u.email)?.activityRemindersEnabled !== false);
+  if (allowed.length === 0) return;
   const timeUntil = type === "1h" ? "1 hour" : "24 hours";
 
   await Promise.all(
-    users.map((user) =>
+    allowed.map((user) =>
       sendEmail({
         to: user.email,
         subject: `Reminder: ${activity.name} is in ${timeUntil}`,

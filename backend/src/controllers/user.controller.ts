@@ -71,6 +71,8 @@ export const updateProfile = async (req: Request, res: Response) => {
       sportInterests,
       preferredTimes,
       locationSharingEnabled,
+      emailNotificationsEnabled,
+      activityRemindersEnabled,
       image,
       bio,
     } = req.body;
@@ -82,6 +84,8 @@ export const updateProfile = async (req: Request, res: Response) => {
       sportInterests,
       preferredTimes,
       locationSharingEnabled,
+      emailNotificationsEnabled,
+      activityRemindersEnabled,
       image,
       bio,
     });

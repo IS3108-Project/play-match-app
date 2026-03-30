@@ -19,6 +19,7 @@ export interface CreateDiscussionData {
   imageUrl?: string | null;
   groupId?: string | null;
   isPublic?: boolean;
+  linkedActivityId?: string | null;
 }
 
 // ── Groups ───────────────────────────────────────────────────────────────
@@ -33,7 +34,7 @@ export async function getGroups(userId: string) {
       members: {
         take: 4,
         include: {
-          user: { select: { image: true } },
+          user: { select: { image: true, name: true } },
         },
       },
     },
@@ -72,9 +73,10 @@ export async function getGroups(userId: string) {
     isJoined: membershipSet.has(g.id),
     isOwner: g.creatorId === userId,
     isFeatured: featuredSet.has(g.id),
-    avatarUrls: g.members
-      .map((m) => m.user.image)
-      .filter((img): img is string => img !== null && img !== undefined),
+    memberAvatars: g.members.map((m) => ({
+      name: m.user.name,
+      image: m.user.image ?? null,
+    })),
   }));
 }
 
@@ -119,7 +121,7 @@ export async function getGroupById(groupId: string, userId: string) {
       _count: { select: { members: true, discussions: true } },
       members: {
         take: 4,
-        include: { user: { select: { image: true } } },
+        include: { user: { select: { image: true, name: true } } },
       },
       discussions: {
         orderBy: { createdAt: "desc" },
@@ -127,6 +129,17 @@ export async function getGroupById(groupId: string, userId: string) {
           author: { select: { id: true, name: true, image: true } },
           _count: { select: { likes: true, comments: true } },
           likes: { where: { userId }, select: { id: true } },
+          linkedActivity: {
+            select: {
+              id: true, title: true, activityType: true, date: true,
+              startTime: true, endTime: true, location: true,
+              skillLevel: true, status: true,
+              requireApproval: true, maxParticipants: true, hostId: true,
+              host: { select: { id: true, name: true, image: true } },
+              _count: { select: { participants: { where: { status: "CONFIRMED" } }, guests: true } },
+              participants: { where: { userId }, select: { status: true }, take: 1 },
+            },
+          },
         },
       },
     },
@@ -150,9 +163,10 @@ export async function getGroupById(groupId: string, userId: string) {
     isJoined: !!isJoined,
     isOwner: group.creatorId === userId,
     isFeatured: false,
-    avatarUrls: group.members
-      .map((m) => m.user.image)
-      .filter((img): img is string => img !== null && img !== undefined),
+    memberAvatars: group.members.map((m) => ({
+      name: m.user.name,
+      image: m.user.image ?? null,
+    })),
     discussions: group.discussions.map((d) => ({
       id: d.id,
       title: d.title,
@@ -166,6 +180,24 @@ export async function getGroupById(groupId: string, userId: string) {
       likeCount: d._count.likes,
       commentCount: d._count.comments,
       isLiked: d.likes.length > 0,
+      isOwner: d.author.id === userId,
+      canDelete: d.author.id === userId || group.creatorId === userId,
+      linkedActivity: d.linkedActivity ? {
+        id: d.linkedActivity.id,
+        title: d.linkedActivity.title,
+        activityType: d.linkedActivity.activityType,
+        date: d.linkedActivity.date.toISOString(),
+        startTime: d.linkedActivity.startTime,
+        endTime: d.linkedActivity.endTime,
+        location: d.linkedActivity.location,
+        skillLevel: d.linkedActivity.skillLevel,
+        status: d.linkedActivity.status,
+        requireApproval: d.linkedActivity.requireApproval,
+        hostId: d.linkedActivity.hostId,
+        slotsLeft: Math.max(0, d.linkedActivity.maxParticipants - d.linkedActivity._count.participants - d.linkedActivity._count.guests),
+        myStatus: (d.linkedActivity.participants[0]?.status ?? null) as string | null,
+        host: d.linkedActivity.host,
+      } : null,
       createdAt: d.createdAt.toISOString(),
     })),
   };
@@ -196,6 +228,11 @@ export async function getDiscussions(userId: string, myGroupsOnly?: boolean) {
     groupIdFilter = { in: memberships.map((m) => m.groupId) };
   }
 
+  const ownedGroupIds = new Set(
+    (await prisma.group.findMany({ where: { creatorId: userId }, select: { id: true } }))
+      .map((g) => g.id)
+  );
+
   const discussions = await prisma.discussion.findMany({
     where: {
       isPublic: true,
@@ -209,6 +246,17 @@ export async function getDiscussions(userId: string, myGroupsOnly?: boolean) {
       group: { select: { id: true, name: true } },
       _count: { select: { likes: true, comments: true } },
       likes: { where: { userId }, select: { id: true } },
+      linkedActivity: {
+        select: {
+          id: true, title: true, activityType: true, date: true,
+          startTime: true, endTime: true, location: true,
+          skillLevel: true, status: true,
+          requireApproval: true, maxParticipants: true, hostId: true,
+          host: { select: { id: true, name: true, image: true } },
+          _count: { select: { participants: { where: { status: "CONFIRMED" } }, guests: true } },
+          participants: { where: { userId }, select: { status: true }, take: 1 },
+        },
+      },
     },
   });
 
@@ -225,6 +273,23 @@ export async function getDiscussions(userId: string, myGroupsOnly?: boolean) {
     commentCount: d._count.comments,
     isLiked: d.likes.length > 0,
     isOwner: d.authorId === userId,
+    canDelete: d.authorId === userId || (!!d.group?.id && ownedGroupIds.has(d.group.id)),
+    linkedActivity: d.linkedActivity ? {
+      id: d.linkedActivity.id,
+      title: d.linkedActivity.title,
+      activityType: d.linkedActivity.activityType,
+      date: d.linkedActivity.date.toISOString(),
+      startTime: d.linkedActivity.startTime,
+      endTime: d.linkedActivity.endTime,
+      location: d.linkedActivity.location,
+      skillLevel: d.linkedActivity.skillLevel,
+      status: d.linkedActivity.status,
+      requireApproval: d.linkedActivity.requireApproval,
+      hostId: d.linkedActivity.hostId,
+      slotsLeft: Math.max(0, d.linkedActivity.maxParticipants - d.linkedActivity._count.participants - d.linkedActivity._count.guests),
+      myStatus: (d.linkedActivity.participants[0]?.status ?? null) as string | null,
+      host: d.linkedActivity.host,
+    } : null,
     createdAt: d.createdAt.toISOString(),
   }));
 }
@@ -237,12 +302,24 @@ export async function createDiscussion(userId: string, data: CreateDiscussionDat
       imageUrl: data.imageUrl ?? null,
       groupId: data.groupId ?? null,
       isPublic: data.isPublic ?? true,
+      linkedActivityId: data.linkedActivityId ?? null,
       authorId: userId,
     },
     include: {
       author: { select: { id: true, name: true, image: true } },
       group: { select: { id: true, name: true } },
       _count: { select: { likes: true, comments: true } },
+      linkedActivity: {
+        select: {
+          id: true, title: true, activityType: true, date: true,
+          startTime: true, endTime: true, location: true,
+          skillLevel: true, status: true,
+          requireApproval: true, maxParticipants: true, hostId: true,
+          host: { select: { id: true, name: true, image: true } },
+          _count: { select: { participants: { where: { status: "CONFIRMED" } }, guests: true } },
+          participants: { where: { userId }, select: { status: true }, take: 1 },
+        },
+      },
     },
   });
 
@@ -260,6 +337,23 @@ export async function createDiscussion(userId: string, data: CreateDiscussionDat
     commentCount: 0,
     isLiked: false,
     isOwner: true,
+    canDelete: true,
+    linkedActivity: discussion.linkedActivity ? {
+      id: discussion.linkedActivity.id,
+      title: discussion.linkedActivity.title,
+      activityType: discussion.linkedActivity.activityType,
+      date: discussion.linkedActivity.date.toISOString(),
+      startTime: discussion.linkedActivity.startTime,
+      endTime: discussion.linkedActivity.endTime,
+      location: discussion.linkedActivity.location,
+      skillLevel: discussion.linkedActivity.skillLevel,
+      status: discussion.linkedActivity.status,
+      requireApproval: discussion.linkedActivity.requireApproval,
+      hostId: discussion.linkedActivity.hostId,
+      slotsLeft: Math.max(0, discussion.linkedActivity.maxParticipants - discussion.linkedActivity._count.participants - discussion.linkedActivity._count.guests),
+      myStatus: (discussion.linkedActivity.participants[0]?.status ?? null) as string | null,
+      host: discussion.linkedActivity.host,
+    } : null,
     createdAt: discussion.createdAt.toISOString(),
   };
 }
@@ -269,7 +363,7 @@ export async function getDiscussionById(discussionId: string, userId: string) {
     where: { id: discussionId },
     include: {
       author: { select: { id: true, name: true, image: true } },
-      group: { select: { id: true, name: true } },
+      group: { select: { id: true, name: true, creatorId: true } },
       _count: { select: { likes: true, comments: true } },
       likes: { where: { userId }, select: { id: true } },
       comments: {
@@ -278,6 +372,17 @@ export async function getDiscussionById(discussionId: string, userId: string) {
           author: { select: { id: true, name: true, image: true } },
           _count: { select: { likes: true } },
           likes: { where: { userId }, select: { id: true } },
+        },
+      },
+      linkedActivity: {
+        select: {
+          id: true, title: true, activityType: true, date: true,
+          startTime: true, endTime: true, location: true,
+          skillLevel: true, status: true,
+          requireApproval: true, maxParticipants: true, hostId: true,
+          host: { select: { id: true, name: true, image: true } },
+          _count: { select: { participants: { where: { status: "CONFIRMED" } }, guests: true } },
+          participants: { where: { userId }, select: { status: true }, take: 1 },
         },
       },
     },
@@ -299,6 +404,23 @@ export async function getDiscussionById(discussionId: string, userId: string) {
     commentCount: discussion._count.comments,
     isLiked: discussion.likes.length > 0,
     isOwner: discussion.authorId === userId,
+    canDelete: discussion.authorId === userId || (!!discussion.group && discussion.group.creatorId === userId),
+    linkedActivity: discussion.linkedActivity ? {
+      id: discussion.linkedActivity.id,
+      title: discussion.linkedActivity.title,
+      activityType: discussion.linkedActivity.activityType,
+      date: discussion.linkedActivity.date.toISOString(),
+      startTime: discussion.linkedActivity.startTime,
+      endTime: discussion.linkedActivity.endTime,
+      location: discussion.linkedActivity.location,
+      skillLevel: discussion.linkedActivity.skillLevel,
+      status: discussion.linkedActivity.status,
+      requireApproval: discussion.linkedActivity.requireApproval,
+      hostId: discussion.linkedActivity.hostId,
+      slotsLeft: Math.max(0, discussion.linkedActivity.maxParticipants - discussion.linkedActivity._count.participants - discussion.linkedActivity._count.guests),
+      myStatus: (discussion.linkedActivity.participants[0]?.status ?? null) as string | null,
+      host: discussion.linkedActivity.host,
+    } : null,
     createdAt: discussion.createdAt.toISOString(),
     comments: discussion.comments.map((c) => ({
       id: c.id,
@@ -396,9 +518,14 @@ export async function updateGroup(groupId: string, userId: string, data: Partial
 }
 
 export async function deleteDiscussion(discussionId: string, userId: string) {
-  const discussion = await prisma.discussion.findUnique({ where: { id: discussionId } });
+  const discussion = await prisma.discussion.findUnique({
+    where: { id: discussionId },
+    include: { group: { select: { creatorId: true } } },
+  });
   if (!discussion) throw new Error("NOT_FOUND");
-  if (discussion.authorId !== userId) throw new Error("FORBIDDEN");
+  const isAuthor = discussion.authorId === userId;
+  const isGroupOwner = !!discussion.group && discussion.group.creatorId === userId;
+  if (!isAuthor && !isGroupOwner) throw new Error("FORBIDDEN");
   // Comments and likes cascade automatically via DB foreign keys
   await prisma.discussion.delete({ where: { id: discussionId } });
 }
@@ -414,6 +541,7 @@ export async function updateDiscussion(discussionId: string, userId: string, dat
       ...(data.content && { content: data.content }),
       ...("imageUrl" in data && { imageUrl: data.imageUrl ?? null }),
       ...(data.isPublic !== undefined && { isPublic: data.isPublic }),
+      ...("linkedActivityId" in data && { linkedActivityId: data.linkedActivityId ?? null }),
     },
     include: {
       author: { select: { id: true, name: true, image: true } },
