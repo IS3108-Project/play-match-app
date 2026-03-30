@@ -44,8 +44,8 @@ export default function ActivityCard({
         toast.warning("Late cancellation recorded. This counts as a no-show.");
       } else {
         toast.success("Left activity");
-        setConfirmingCancel(false);
       }
+      setConfirmingCancel(false);
       onRefresh?.();
     } catch (err: any) {
       toast.error(err.message);
