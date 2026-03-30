@@ -24,6 +24,8 @@ model User {
   preferredTimes         String[]
   preferredAreas         String[]
   locationSharingEnabled Boolean          @default(false)
+  emailNotificationsEnabled Boolean        @default(true)
+  activityRemindersEnabled  Boolean        @default(true)
   lastLatitude           Float?
   lastLongitude          Float?
   lastLocationAt         DateTime?

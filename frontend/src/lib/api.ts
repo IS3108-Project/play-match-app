@@ -287,6 +287,8 @@ export interface UpdateProfilePayload {
   sportInterests?: string[];
   preferredTimes?: string[];
   locationSharingEnabled?: boolean;
+  emailNotificationsEnabled?: boolean;
+  activityRemindersEnabled?: boolean;
   image?: string | null;
   bio?: string;
 }
@@ -303,6 +305,8 @@ export interface UserProfile {
   sportInterests: string[];
   preferredTimes: string[];
   locationSharingEnabled: boolean;
+  emailNotificationsEnabled: boolean;
+  activityRemindersEnabled: boolean;
   reliability: {
     totalAttended: number;
     totalLate: number;
@@ -356,6 +360,8 @@ export const userApi = {
       sportInterests: string[];
       preferredTimes: string[];
       locationSharingEnabled: boolean;
+      emailNotificationsEnabled: boolean;
+      activityRemindersEnabled: boolean;
       bio: string | null;
     }>("/users/profile", {
       method: "PATCH",
