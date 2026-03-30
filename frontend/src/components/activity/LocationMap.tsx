@@ -4,8 +4,6 @@ import * as React from "react"
 import { APIProvider, Map, AdvancedMarker, useMapsLibrary } from "@vis.gl/react-google-maps"
 import { useGoogleMapsKey } from "@/hooks/useGoogleMapsKey"
 
-const DEFAULT_CENTER = { lat: 1.3521, lng: 103.8198 }
-
 function GeocodedMap({ location }: { location: string }) {
     const geocoding = useMapsLibrary("geocoding")
     const [position, setPosition] = React.useState<{ lat: number; lng: number } | null>(null)
@@ -16,7 +14,7 @@ function GeocodedMap({ location }: { location: string }) {
         const geocoder = new geocoding.Geocoder()
         geocoder.geocode(
             { address: `${location}, Singapore` },
-            (results, status) => {
+            (results: any, status: any) => {
                 if (status === "OK" && results?.[0]) {
                     setPosition({
                         lat: results[0].geometry.location.lat(),

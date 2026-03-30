@@ -68,12 +68,76 @@ async function sendUpcomingReminders(): Promise<void> {
   }
 }
 
+async function sendAttendanceReminders(): Promise<void> {
+  const now = new Date();
+  const queryStart = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000);
+  const queryEnd = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+
+  const candidates = await prisma.activity.findMany({
+    where: {
+      status: "ACTIVE",
+      date: {
+        gte: queryStart,
+        lte: queryEnd,
+      },
+    },
+    include: {
+      host: { select: { name: true, email: true } },
+      participants: {
+        where: {
+          status: "CONFIRMED",
+          attendanceStatus: "PENDING",
+        },
+      },
+    },
+  });
+
+  for (const activity of candidates) {
+    if (activity.participants.length === 0) continue;
+
+    const endParts = activity.endTime.split(":").map(Number);
+    const activityEnd = new Date(activity.date);
+    activityEnd.setHours(endParts[0] ?? 0, endParts[1] ?? 0, 0, 0);
+    const minutesSinceEnd =
+      (now.getTime() - activityEnd.getTime()) / (1000 * 60);
+
+    let urgency: "first" | "final" | null = null;
+    if (minutesSinceEnd >= 30 && minutesSinceEnd <= 90) {
+      urgency = "first";
+    } else if (minutesSinceEnd >= 23 * 60 && minutesSinceEnd <= 24 * 60) {
+      urgency = "final";
+    }
+
+    if (!urgency) continue;
+
+    const activityDetails: notificationService.ActivityDetails = {
+      name: activity.title,
+      date: format(activity.date, "EEEE, d MMM yyyy") + ", " + activity.startTime,
+      location: activity.location,
+    };
+
+    notificationService
+      .sendAttendanceReminder(
+        { name: activity.host.name, email: activity.host.email },
+        activityDetails,
+        urgency,
+      )
+      .catch((err) =>
+        console.error(
+          `Attendance reminder failed for activity ${activity.id}:`,
+          err,
+        ),
+      );
+  }
+}
+
 export function startReminderJob(): void {
   // Run at the top of every hour: "0 * * * *"
   cron.schedule("0 * * * *", () => {
     console.log("[reminder.job] Checking for activities in ~24h...");
     sendUpcomingReminders().catch(console.error);
+    sendAttendanceReminders().catch(console.error);
   });
 
-  console.log("[reminder.job] 24-hour reminder cron job registered (runs hourly)");
+  console.log("[reminder.job] Reminder cron jobs registered (runs hourly)");
 }

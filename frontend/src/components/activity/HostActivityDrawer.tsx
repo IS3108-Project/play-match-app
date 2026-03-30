@@ -154,7 +154,11 @@ export default function HostActivityForm({
             
             if (selectedDate < today) {
                 newErrors.datePast = true
-            } else if (selectedDate.getTime() === today.getTime() && form.startTime) {
+            } else if (
+                mode === "create" &&
+                selectedDate.getTime() === today.getTime() &&
+                form.startTime
+            ) {
                 // Same day - check if start time is in the past
                 const now = new Date()
                 const [hours, minutes] = form.startTime.split(":").map(Number)

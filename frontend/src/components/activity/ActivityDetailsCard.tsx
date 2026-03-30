@@ -86,10 +86,22 @@ export default function ActivityDetailsCard({ activityId, children, onRefresh, d
 
     const [confirmingLeave, setConfirmingLeave] = React.useState(false)
 
+    const isLateCancelRisk = React.useMemo(() => {
+        if (!detail) return false
+        const start = new Date(detail.date)
+        const [hours, minutes] = detail.startTime.split(":").map(Number)
+        start.setHours(hours ?? 0, minutes ?? 0, 0, 0)
+        return start.getTime() - Date.now() < 24 * 60 * 60 * 1000
+    }, [detail])
+
     const handleLeave = async () => {
         try {
-            await activityApi.leave(activityId)
-            toast.success("Left activity")
+            const result = await activityApi.leave(activityId)
+            if (result.isLateCancellation) {
+                toast.warning("Late cancellation recorded. This counts as a no-show.")
+            } else {
+                toast.success("Left activity")
+            }
             setConfirmingLeave(false)
             setOpen(false)
             onRefresh?.()
@@ -363,14 +375,16 @@ export default function ActivityDetailsCard({ activityId, children, onRefresh, d
                                 confirmingLeave ? (
                                     <div className="space-y-2">
                                         <p className="text-sm text-muted-foreground text-center">
-                                            Are you sure you want to leave this activity?
+                                            {isLateCancelRisk
+                                                ? "This activity starts in less than 24 hours. Leaving now will count as a no-show."
+                                                : "Are you sure you want to leave this activity?"}
                                         </p>
                                         <div className="flex gap-2">
                                             <Button className="flex-1" variant="outline" onClick={() => setConfirmingLeave(false)}>
-                                                Cancel
+                                                Go Back
                                             </Button>
                                             <Button className="flex-1" variant="destructive" onClick={handleLeave}>
-                                                Yes, Leave
+                                                {isLateCancelRisk ? "Cancel Anyway" : "Yes, Leave"}
                                             </Button>
                                         </div>
                                     </div>

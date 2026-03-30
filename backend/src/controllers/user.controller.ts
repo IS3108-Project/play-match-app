@@ -1,5 +1,5 @@
-// src/controllers/user.controller.ts
 import { Request, Response } from "express";
+import { AuthRequest } from "../middleware/auth.middleware";
 import * as userService from "../services/user.service";
 
 export const getUsers = async (req: Request, res: Response) => {
@@ -15,6 +15,26 @@ export const getUser = async (req: Request, res: Response) => {
   }
 
   res.json(user);
+};
+
+export const getUserProfile = async (req: AuthRequest, res: Response) => {
+  try {
+    const viewerId = req.user.id;
+    const profile = await userService.getUserProfile(
+      viewerId,
+      String(req.params.id),
+    );
+
+    if (!profile) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+
+    res.json(profile);
+  } catch (error) {
+    console.error("Error getting user profile:", error);
+    res.status(500).json({ error: "Failed to get user profile" });
+  }
 };
 
 export const updateLocationSharing = async (req: Request, res: Response) => {

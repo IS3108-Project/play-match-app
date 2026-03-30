@@ -22,7 +22,7 @@ export default function DeleteConfirmDrawer({
     open,
     onOpenChange,
     name,
-    itemType = "item",
+    itemType = "discussion",
     onConfirm,
 }: DeleteConfirmDrawerProps) {
     const [submitting, setSubmitting] = React.useState(false)

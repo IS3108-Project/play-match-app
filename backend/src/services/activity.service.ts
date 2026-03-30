@@ -4,6 +4,7 @@ import * as notificationService from "./notification.service";
 import { format } from "date-fns";
 import * as fs from "fs";
 import * as path from "path";
+import { getReliabilityBadge } from "./user.service";
 
 // ── Types ───────────────────────────────────────────────────────────────
 
@@ -15,7 +16,7 @@ function calculateDistanceKm(
   lat1: number,
   lon1: number,
   lat2: number,
-  lon2: number
+  lon2: number,
 ): number {
   const R = 6371; // Earth's radius in km
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
@@ -38,7 +39,7 @@ function getBoundingBox(lat: number, lng: number, distanceKm: number) {
   const latDelta = distanceKm / 111;
   // 1 degree of longitude varies by latitude
   const lngDelta = distanceKm / (111 * Math.cos((lat * Math.PI) / 180));
-  
+
   return {
     minLat: lat - latDelta,
     maxLat: lat + latDelta,
@@ -86,9 +87,13 @@ interface GuestInput {
 
 // ── Helpers ─────────────────────────────────────────────────────────────
 
-function activityToNotification(
-  activity: { title: string; date: Date; startTime: string; location: string; id: string },
-): notificationService.ActivityDetails {
+function activityToNotification(activity: {
+  title: string;
+  date: Date;
+  startTime: string;
+  location: string;
+  id: string;
+}): notificationService.ActivityDetails {
   return {
     name: activity.title,
     date: format(activity.date, "EEEE, d MMM yyyy") + ", " + activity.startTime,
@@ -97,9 +102,103 @@ function activityToNotification(
   };
 }
 
+function getActivityStartDateTime(activity: {
+  date: Date;
+  startTime: string;
+}): Date {
+  const result = new Date(activity.date);
+  const [hours, minutes] = activity.startTime.split(":").map(Number);
+  result.setHours(hours ?? 0, minutes ?? 0, 0, 0);
+  return result;
+}
+
+function getActivityEndDateTime(activity: {
+  date: Date;
+  endTime: string;
+}): Date {
+  const result = new Date(activity.date);
+  const [hours, minutes] = activity.endTime.split(":").map(Number);
+  result.setHours(hours ?? 0, minutes ?? 0, 0, 0);
+  return result;
+}
+
+function isWithinLateCancellationWindow(activity: {
+  date: Date;
+  startTime: string;
+}): boolean {
+  return (
+    getActivityStartDateTime(activity).getTime() - Date.now() <
+    24 * 60 * 60 * 1000
+  );
+}
+
+async function syncStartedHostAttendanceForActivities(
+  activities: Array<{
+    id: string;
+    date: Date;
+    startTime: string;
+    hostId: string;
+    status: ActivityStatus;
+  }>,
+) {
+  const now = new Date();
+  const eligibleActivities = activities.filter((activity) => {
+    if (activity.status !== "ACTIVE") return false;
+    return getActivityStartDateTime(activity).getTime() <= now.getTime();
+  });
+
+  if (eligibleActivities.length === 0) return;
+
+  const hostParticipantIds = await prisma.participant.findMany({
+    where: {
+      activityId: { in: eligibleActivities.map((activity) => activity.id) },
+      status: "CONFIRMED",
+      attendanceStatus: "PENDING",
+      OR: eligibleActivities.map((activity) => ({
+        activityId: activity.id,
+        userId: activity.hostId,
+      })),
+    },
+    select: { id: true },
+  });
+
+  if (hostParticipantIds.length === 0) return;
+
+  await prisma.participant.updateMany({
+    where: {
+      id: { in: hostParticipantIds.map((participant) => participant.id) },
+    },
+    data: { attendanceStatus: "ATTENDED" },
+  });
+}
+
+async function getNoShowCount(userId: string) {
+  return prisma.participant.count({
+    where: { userId, attendanceStatus: "NO_SHOW" },
+  });
+}
+
+async function maybeSendNoShowWarning(userId: string, previousCount: number) {
+  const totalNoShows = await getNoShowCount(userId);
+  if (previousCount < 5 && totalNoShows >= 5) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { name: true, email: true },
+    });
+    if (user) {
+      notificationService
+        .sendNoShowWarning({ name: user.name, email: user.email }, totalNoShows)
+        .catch(console.error);
+    }
+  }
+}
+
 // ── Create ──────────────────────────────────────────────────────────────
 
-export async function createActivity(hostId: string, input: CreateActivityInput) {
+export async function createActivity(
+  hostId: string,
+  input: CreateActivityInput,
+) {
   const activity = await prisma.activity.create({
     data: {
       title: input.title,
@@ -159,11 +258,16 @@ export async function getActivities(
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const where: any = { status: "ACTIVE" as ActivityStatus, date: { gte: today } };
+  const where: any = {
+    status: "ACTIVE" as ActivityStatus,
+    date: { gte: today },
+  };
 
   // Check if we need distance-based filtering or sorting
-  const useDistanceFilter = filters.lat != null && filters.lng != null && filters.maxDistance != null;
-  const sortByDistance = filters.sortBy === "distance" && filters.lat != null && filters.lng != null;
+  const useDistanceFilter =
+    filters.lat != null && filters.lng != null && filters.maxDistance != null;
+  const sortByDistance =
+    filters.sortBy === "distance" && filters.lat != null && filters.lng != null;
   const showDistances = filters.lat != null && filters.lng != null; // Always calculate distance when coords provided
 
   // Text search on title and description (case-insensitive)
@@ -202,7 +306,11 @@ export async function getActivities(
 
   // Add bounding box filter for distance queries (rough filter to reduce DB results)
   if (useDistanceFilter) {
-    const bbox = getBoundingBox(filters.lat!, filters.lng!, filters.maxDistance!);
+    const bbox = getBoundingBox(
+      filters.lat!,
+      filters.lng!,
+      filters.maxDistance!,
+    );
     where.AND = [
       ...(where.AND || []),
       { latitude: { not: null } },
@@ -239,36 +347,55 @@ export async function getActivities(
     // Calculate distance for each activity and filter/sort
     let activitiesWithDistance = allActivities.map((a) => ({
       ...a,
-      distance: a.latitude != null && a.longitude != null
-        ? calculateDistanceKm(filters.lat!, filters.lng!, a.latitude, a.longitude)
-        : null,
+      distance:
+        a.latitude != null && a.longitude != null
+          ? calculateDistanceKm(
+              filters.lat!,
+              filters.lng!,
+              a.latitude,
+              a.longitude,
+            )
+          : null,
     }));
 
     // Filter by maxDistance if specified
     if (useDistanceFilter) {
       activitiesWithDistance = activitiesWithDistance.filter(
-        (a) => a.distance !== null && a.distance <= filters.maxDistance!
+        (a) => a.distance !== null && a.distance <= filters.maxDistance!,
       );
     }
 
     // Sort by distance or date
     if (sortByDistance) {
-      activitiesWithDistance.sort((a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity));
+      activitiesWithDistance.sort(
+        (a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity),
+      );
     } else {
-      activitiesWithDistance.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      activitiesWithDistance.sort(
+        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+      );
     }
 
     // Manual pagination
     const total = activitiesWithDistance.length;
     const totalPages = Math.ceil(total / limit);
     const skip = (page - 1) * limit;
-    const paginatedActivities = activitiesWithDistance.slice(skip, skip + limit);
+    const paginatedActivities = activitiesWithDistance.slice(
+      skip,
+      skip + limit,
+    );
 
     // Map to response shape
     const data = paginatedActivities.map((a) => {
-      const confirmed = a.participants.filter((p) => p.status === "CONFIRMED").length;
+      const confirmed = a.participants.filter(
+        (p) => p.status === "CONFIRMED",
+      ).length;
       const guestCount = a._count.guests;
       const myParticipant = a.participants.find((p) => p.userId === userId);
+      const normalizedMyStatus =
+        myParticipant?.status === "CANCELLED"
+          ? null
+          : (myParticipant?.status ?? null);
 
       return {
         id: a.id,
@@ -290,7 +417,7 @@ export async function getActivities(
         host: a.host,
         _count: { confirmed },
         slotsLeft: a.maxParticipants - confirmed - guestCount,
-        myStatus: myParticipant?.status ?? null,
+        myStatus: normalizedMyStatus,
         createdAt: a.createdAt.toISOString(),
         distance: a.distance != null ? Math.round(a.distance * 10) / 10 : null, // Round to 1 decimal
       };
@@ -313,9 +440,10 @@ export async function getActivities(
   const skip = (page - 1) * limit;
 
   // Determine sort order
-  const orderBy = filters.sortBy === "createdAt"
-    ? { createdAt: "desc" as const }
-    : { date: "asc" as const };
+  const orderBy =
+    filters.sortBy === "createdAt"
+      ? { createdAt: "desc" as const }
+      : { date: "asc" as const };
 
   // Run count and findMany in parallel for efficiency
   const [total, activities] = await Promise.all([
@@ -344,6 +472,10 @@ export async function getActivities(
     ).length;
     const guestCount = a._count.guests;
     const myParticipant = a.participants.find((p) => p.userId === userId);
+    const normalizedMyStatus =
+      myParticipant?.status === "CANCELLED"
+        ? null
+        : (myParticipant?.status ?? null);
 
     return {
       id: a.id,
@@ -365,7 +497,7 @@ export async function getActivities(
       host: a.host,
       _count: { confirmed },
       slotsLeft: a.maxParticipants - confirmed - guestCount,
-      myStatus: myParticipant?.status ?? null,
+      myStatus: normalizedMyStatus,
       createdAt: a.createdAt.toISOString(),
       distance: null, // No distance info in standard query
     };
@@ -395,13 +527,43 @@ export async function getMyActivities(
   today.setHours(0, 0, 0, 0);
 
   if (tab === "hosted") {
-    const activities = await prisma.activity.findMany({
-      where: { hostId: userId, status: { not: "CANCELLED" }, date: { gte: today } },
+    let activities = await prisma.activity.findMany({
+      where: {
+        hostId: userId,
+        status: { not: "CANCELLED" },
+        date: { gte: today },
+      },
       orderBy: { date: "asc" },
       include: {
         host: { select: { id: true, name: true, image: true } },
         participants: {
           select: { id: true, userId: true, status: true, source: true },
+        },
+        _count: { select: { guests: true } },
+      },
+    });
+    await syncStartedHostAttendanceForActivities(
+      activities.map((activity) => ({
+        id: activity.id,
+        date: activity.date,
+        startTime: activity.startTime,
+        hostId: activity.hostId,
+        status: activity.status,
+      })),
+    );
+    activities = await prisma.activity.findMany({
+      where: { hostId: userId, status: { not: "CANCELLED" } },
+      orderBy: { date: "asc" },
+      include: {
+        host: { select: { id: true, name: true, image: true } },
+        participants: {
+          select: {
+            id: true,
+            userId: true,
+            status: true,
+            source: true,
+            attendanceStatus: true,
+          },
         },
         _count: { select: { guests: true } },
       },
@@ -440,6 +602,10 @@ function mapActivityResponse(a: any, userId: string) {
   ).length;
   const guestCount = a._count?.guests ?? 0;
   const myParticipant = a.participants.find((p: any) => p.userId === userId);
+  const normalizedMyStatus =
+    myParticipant?.status === "CANCELLED"
+      ? null
+      : (myParticipant?.status ?? null);
 
   return {
     id: a.id,
@@ -459,9 +625,10 @@ function mapActivityResponse(a: any, userId: string) {
     host: a.host,
     _count: { confirmed },
     slotsLeft: a.maxParticipants - confirmed - guestCount,
-    myStatus: myParticipant?.status ?? null,
+    myStatus: normalizedMyStatus,
     mySource: myParticipant?.source ?? null,
-    pendingCount: a.participants.filter((p: any) => p.status === "PENDING").length,
+    pendingCount: a.participants.filter((p: any) => p.status === "PENDING")
+      .length,
     createdAt: a.createdAt.toISOString(),
     // Include participant user IDs for invite tracking
     participantUserIds: a.participants.map((p: any) => p.userId),
@@ -471,7 +638,7 @@ function mapActivityResponse(a: any, userId: string) {
 // ── Get By ID (Detail) ──────────────────────────────────────────────────
 
 export async function getActivityById(activityId: string, userId: string) {
-  const activity = await prisma.activity.findUnique({
+  let activity = await prisma.activity.findUnique({
     where: { id: activityId },
     include: {
       host: { select: { id: true, name: true, image: true, email: true } },
@@ -488,11 +655,61 @@ export async function getActivityById(activityId: string, userId: string) {
   });
 
   if (!activity) return null;
+  await syncStartedHostAttendanceForActivities([
+    {
+      id: activity.id,
+      date: activity.date,
+      startTime: activity.startTime,
+      hostId: activity.hostId,
+      status: activity.status,
+    },
+  ]);
+  activity = await prisma.activity.findUnique({
+    where: { id: activityId },
+    include: {
+      host: { select: { id: true, name: true, image: true, email: true } },
+      participants: {
+        include: {
+          user: { select: { id: true, name: true, image: true, email: true } },
+        },
+        orderBy: { joinedAt: "asc" },
+      },
+      guests: {
+        orderBy: { createdAt: "asc" },
+      },
+    },
+  });
+  if (!activity) return null;
 
   const confirmed = activity.participants.filter(
     (p) => p.status === "CONFIRMED",
   ).length;
   const myParticipant = activity.participants.find((p) => p.userId === userId);
+  const normalizedMyStatus =
+    myParticipant?.status === "CANCELLED"
+      ? null
+      : (myParticipant?.status ?? null);
+  const participantUserIds = activity.participants.map(
+    (participant) => participant.userId,
+  );
+  const reliabilityEntries =
+    participantUserIds.length === 0
+      ? []
+      : await prisma.participant.findMany({
+          where: {
+            userId: { in: participantUserIds },
+            attendanceStatus: { in: ["ATTENDED", "LATE", "NO_SHOW"] },
+          },
+          select: {
+            userId: true,
+            attendanceStatus: true,
+          },
+        });
+  const reliabilityCounts = new Map<string, number>();
+  for (const entry of reliabilityEntries) {
+    const key = `${entry.userId}:${entry.attendanceStatus}`;
+    reliabilityCounts.set(key, (reliabilityCounts.get(key) ?? 0) + 1);
+  }
 
   return {
     ...activity,
@@ -501,8 +718,44 @@ export async function getActivityById(activityId: string, userId: string) {
     updatedAt: activity.updatedAt.toISOString(),
     _count: { confirmed },
     slotsLeft: activity.maxParticipants - confirmed - activity.guests.length,
-    myStatus: myParticipant?.status ?? null,
+    myStatus: normalizedMyStatus,
     mySource: myParticipant?.source ?? null,
+    participants: activity.participants.map((participant) => {
+      const totalAttended =
+        reliabilityCounts.get(`${participant.userId}:ATTENDED`) ?? 0;
+      const totalLate =
+        reliabilityCounts.get(`${participant.userId}:LATE`) ?? 0;
+      const totalNoShow =
+        reliabilityCounts.get(`${participant.userId}:NO_SHOW`) ?? 0;
+      const totalActivities = totalAttended + totalLate + totalNoShow;
+      const attendanceRate =
+        totalActivities === 0
+          ? 0
+          : Math.round(((totalAttended + totalLate) / totalActivities) * 100);
+      const noShowRate =
+        totalActivities === 0
+          ? 0
+          : Math.round((totalNoShow / totalActivities) * 100);
+
+      return {
+        ...participant,
+        joinedAt: participant.joinedAt.toISOString(),
+        reliability: {
+          totalAttended,
+          totalLate,
+          totalNoShow,
+          totalActivities,
+          attendanceRate,
+          noShowRate,
+        },
+        badge: getReliabilityBadge(
+          totalActivities,
+          totalLate,
+          attendanceRate,
+          noShowRate,
+        ),
+      };
+    }),
   };
 }
 
@@ -525,7 +778,7 @@ export async function updateActivity(
 
   if (!activity) throw new Error("NOT_FOUND");
   if (activity.hostId !== hostId) throw new Error("FORBIDDEN");
-  
+
   // Compare dates only (not time) to allow editing activities scheduled for today
   const activityDate = new Date(activity.date);
   activityDate.setHours(0, 0, 0, 0);
@@ -534,9 +787,17 @@ export async function updateActivity(
   if (activityDate < today) throw new Error("PAST_ACTIVITY");
 
   // Handle image removal/replacement - delete old file if it exists
-  if ("imageSrc" in input && activity.imageSrc && activity.imageSrc !== input.imageSrc) {
+  if (
+    "imageSrc" in input &&
+    activity.imageSrc &&
+    activity.imageSrc !== input.imageSrc
+  ) {
     if (activity.imageSrc.startsWith("/uploads/")) {
-      const oldFilePath = path.join(__dirname, "../../public", activity.imageSrc);
+      const oldFilePath = path.join(
+        __dirname,
+        "../../public",
+        activity.imageSrc,
+      );
       fs.unlink(oldFilePath, (err) => {
         if (err && err.code !== "ENOENT") {
           console.error("Failed to delete old image:", err);
@@ -555,7 +816,10 @@ export async function updateActivity(
   });
 
   // If maxParticipants increased, auto-promote from waitlist
-  if (input.maxParticipants && input.maxParticipants > activity.maxParticipants) {
+  if (
+    input.maxParticipants &&
+    input.maxParticipants > activity.maxParticipants
+  ) {
     const currentConfirmed = activity.participants.length;
     const newSlots = input.maxParticipants - currentConfirmed;
     if (newSlots > 0) {
@@ -611,6 +875,9 @@ export async function cancelActivity(
 
   if (!activity) throw new Error("NOT_FOUND");
   if (activity.hostId !== hostId) throw new Error("FORBIDDEN");
+  if (isWithinLateCancellationWindow(activity)) {
+    throw new Error("TOO_LATE_TO_CANCEL");
+  }
 
   // Transfer host path
   if (transferToUserId) {
@@ -673,7 +940,10 @@ export async function joinActivity(
   });
 
   // Allow re-join after rejection
-  if (existing && existing.status === "REJECTED") {
+  if (
+    existing &&
+    (existing.status === "REJECTED" || existing.status === "CANCELLED")
+  ) {
     await prisma.participant.delete({
       where: { userId_activityId: { userId, activityId } },
     });
@@ -711,11 +981,17 @@ export async function joinActivity(
     const activityDetails = activityToNotification(activity);
     // Confirm to the joining user
     notificationService
-      .sendRsvpConfirmation({ name: userName, email: userEmail }, activityDetails)
+      .sendRsvpConfirmation(
+        { name: userName, email: userEmail },
+        activityDetails,
+      )
       .catch(console.error);
     // Notify the host
     prisma.user
-      .findUnique({ where: { id: activity.hostId }, select: { name: true, email: true } })
+      .findUnique({
+        where: { id: activity.hostId },
+        select: { name: true, email: true },
+      })
       .then((host) => {
         if (host) {
           notificationService
@@ -724,7 +1000,10 @@ export async function joinActivity(
               hostEmail: host.email,
               participantName: userName,
               activityName: activity.title,
-              activityDate: format(activity.date, "EEEE, d MMM yyyy") + ", " + activity.startTime,
+              activityDate:
+                format(activity.date, "EEEE, d MMM yyyy") +
+                ", " +
+                activity.startTime,
               activityLocation: activity.location,
             })
             .catch(console.error);
@@ -736,7 +1015,10 @@ export async function joinActivity(
   // Notify host when a user requests to join (approval-required activity)
   if (result.status === "PENDING") {
     prisma.user
-      .findUnique({ where: { id: activity.hostId }, select: { name: true, email: true } })
+      .findUnique({
+        where: { id: activity.hostId },
+        select: { name: true, email: true },
+      })
       .then((host) => {
         if (host) {
           notificationService
@@ -745,7 +1027,10 @@ export async function joinActivity(
               hostEmail: host.email,
               requesterName: userName,
               activityName: activity.title,
-              activityDate: format(activity.date, "EEEE, d MMM yyyy") + ", " + activity.startTime,
+              activityDate:
+                format(activity.date, "EEEE, d MMM yyyy") +
+                ", " +
+                activity.startTime,
             })
             .catch(console.error);
         }
@@ -777,7 +1062,16 @@ export async function inviteUser(
     where: { userId_activityId: { userId: invitedUserId, activityId } },
   });
 
-  if (existing) {
+  if (
+    existing &&
+    (existing.status === "REJECTED" || existing.status === "CANCELLED")
+  ) {
+    await prisma.participant.delete({
+      where: {
+        userId_activityId: { userId: invitedUserId, activityId },
+      },
+    });
+  } else if (existing) {
     throw new Error("ALREADY_PARTICIPANT");
   }
 
@@ -819,7 +1113,10 @@ export async function inviteUser(
             inviteeEmail: invitee.email,
             hostName: host.name,
             activityName: activity.title,
-            activityDate: format(activity.date, "EEEE, d MMM yyyy") + ", " + activity.startTime,
+            activityDate:
+              format(activity.date, "EEEE, d MMM yyyy") +
+              ", " +
+              activity.startTime,
             activityLocation: activity.location,
           })
           .catch(console.error);
@@ -882,7 +1179,10 @@ export async function acceptInvitation(activityId: string, userId: string) {
             hostEmail: host.email,
             inviteeName: invitee.name,
             activityName: activity.title,
-            activityDate: format(activity.date, "EEEE, d MMM yyyy") + ", " + activity.startTime,
+            activityDate:
+              format(activity.date, "EEEE, d MMM yyyy") +
+              ", " +
+              activity.startTime,
             outcome: "accepted",
           })
           .catch(console.error);
@@ -931,7 +1231,10 @@ export async function declineInvitation(activityId: string, userId: string) {
             hostEmail: host.email,
             inviteeName: invitee.name,
             activityName: activity.title,
-            activityDate: format(activity.date, "EEEE, d MMM yyyy") + ", " + activity.startTime,
+            activityDate:
+              format(activity.date, "EEEE, d MMM yyyy") +
+              ", " +
+              activity.startTime,
             outcome: "declined",
           })
           .catch(console.error);
@@ -959,25 +1262,35 @@ export async function leaveActivity(activityId: string, userId: string) {
   if (activity.hostId === userId) throw new Error("HOST_CANNOT_LEAVE");
 
   const wasConfirmed = participant.status === "CONFIRMED";
+  const isLateCancellation = isWithinLateCancellationWindow(activity);
+  const attendanceStatus = isLateCancellation ? "NO_SHOW" : "CANCELLED";
+  const previousNoShowCount = isLateCancellation
+    ? await getNoShowCount(userId)
+    : null;
 
-  // Fetch leaving user's name before deleting
   const leavingUser = await prisma.user.findUnique({
     where: { id: userId },
     select: { name: true },
   });
 
-  // Delete participant + their guests
   await prisma.$transaction([
     prisma.guest.deleteMany({ where: { activityId, invitedById: userId } }),
-    prisma.participant.delete({
+    prisma.participant.update({
       where: { userId_activityId: { userId, activityId } },
+      data: {
+        status: "CANCELLED",
+        attendanceStatus,
+      },
     }),
   ]);
 
   // Notify host that a participant withdrew
   if (leavingUser) {
     prisma.user
-      .findUnique({ where: { id: activity.hostId }, select: { name: true, email: true } })
+      .findUnique({
+        where: { id: activity.hostId },
+        select: { name: true, email: true },
+      })
       .then((host) => {
         if (host) {
           notificationService
@@ -986,7 +1299,10 @@ export async function leaveActivity(activityId: string, userId: string) {
               hostEmail: host.email,
               participantName: leavingUser.name,
               activityName: activity.title,
-              activityDate: format(activity.date, "EEEE, d MMM yyyy") + ", " + activity.startTime,
+              activityDate:
+                format(activity.date, "EEEE, d MMM yyyy") +
+                ", " +
+                activity.startTime,
             })
             .catch(console.error);
         }
@@ -998,6 +1314,12 @@ export async function leaveActivity(activityId: string, userId: string) {
   if (wasConfirmed) {
     await promoteFromWaitlist(activityId, 1, activity.requireApproval);
   }
+
+  if (isLateCancellation && previousNoShowCount != null) {
+    await maybeSendNoShowWarning(userId, previousNoShowCount);
+  }
+
+  return { isLateCancellation, attendanceStatus };
 }
 
 // ── Approve / Reject ────────────────────────────────────────────────────
@@ -1067,11 +1389,11 @@ export async function rejectParticipant(
 
   /**
    * Retrieves a participant by their ID and includes related user information.
-   * 
+   *
    * @param participantId - The unique identifier of the participant to find
    * @returns Promise resolving to the participant object with nested user data (name and email),
    *          or null if the participant doesn't exist
-   * 
+   *
    * @remarks
    * The `include` option fetches the associated user record and selects only the `name` and `email`
    * fields from the user object, reducing the payload by excluding other user properties.
@@ -1161,7 +1483,8 @@ export async function removeGuest(
 export async function markAttendance(
   activityId: string,
   hostId: string,
-  participantIds: string[],
+  attendance?: Record<string, "ATTENDED" | "LATE" | "NO_SHOW">,
+  participantIds?: string[],
 ) {
   const activity = await prisma.activity.findUnique({
     where: { id: activityId },
@@ -1169,33 +1492,59 @@ export async function markAttendance(
   if (!activity) throw new Error("NOT_FOUND");
   if (activity.hostId !== hostId) throw new Error("FORBIDDEN");
 
-  // Check if activity has started
   const now = new Date();
-  const activityStart = new Date(activity.date);
-  const parts = activity.startTime.split(":").map(Number);
-  activityStart.setHours(parts[0] ?? 0, parts[1] ?? 0, 0, 0);
+  const activityStart = getActivityStartDateTime(activity);
+  const activityEnd = getActivityEndDateTime(activity);
+  const attendanceLockTime = new Date(
+    activityEnd.getTime() + 24 * 60 * 60 * 1000,
+  );
 
   if (now < activityStart) throw new Error("TOO_EARLY");
+  if (now > attendanceLockTime) throw new Error("ATTENDANCE_LOCKED");
 
-  // Bulk update: mark selected as attended, rest as no-show
-  await prisma.$transaction([
-    prisma.participant.updateMany({
-      where: {
-        activityId,
-        status: "CONFIRMED",
-        id: { in: participantIds },
-      },
-      data: { attendanceStatus: "ATTENDED" },
-    }),
-    prisma.participant.updateMany({
-      where: {
-        activityId,
-        status: "CONFIRMED",
-        id: { notIn: participantIds },
-      },
-      data: { attendanceStatus: "NO_SHOW" },
-    }),
-  ]);
+  const confirmedParticipants = await prisma.participant.findMany({
+    where: { activityId, status: "CONFIRMED" },
+    select: { id: true, userId: true },
+  });
+
+  const normalizedAttendance: Record<string, "ATTENDED" | "LATE" | "NO_SHOW"> =
+    attendance && Object.keys(attendance).length > 0
+      ? attendance
+      : Object.fromEntries(
+          confirmedParticipants.map((participant) => [
+            participant.id,
+            participantIds?.includes(participant.id) ? "ATTENDED" : "NO_SHOW",
+          ]),
+        );
+
+  const previousNoShowCounts = new Map<string, number>();
+  const touchedUserIds = new Set<string>();
+  const updates = confirmedParticipants.map((participant) => {
+    const nextStatus = normalizedAttendance[participant.id] ?? "NO_SHOW";
+
+    return prisma.participant.update({
+      where: { id: participant.id },
+      data: { attendanceStatus: nextStatus },
+    });
+  });
+
+  for (const participant of confirmedParticipants) {
+    touchedUserIds.add(participant.userId);
+    if (!previousNoShowCounts.has(participant.userId)) {
+      previousNoShowCounts.set(
+        participant.userId,
+        await getNoShowCount(participant.userId),
+      );
+    }
+  }
+
+  await prisma.$transaction(updates);
+
+  await Promise.all(
+    Array.from(touchedUserIds).map((userId) =>
+      maybeSendNoShowWarning(userId, previousNoShowCounts.get(userId) ?? 0),
+    ),
+  );
 }
 
 // ── Waitlist promotion (internal) ───────────────────────────────────────
@@ -1226,6 +1575,5 @@ async function promoteFromWaitlist(
       where: { id: p.id },
       data: { status: newStatus },
     });
-
   }
 }
