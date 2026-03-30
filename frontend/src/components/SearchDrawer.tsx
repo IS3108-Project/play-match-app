@@ -47,6 +47,8 @@ type SearchDrawerProps = {
 }
 
 export default function SearchDrawer({ activityInput, onActivityInputChange, selectedRegions, onSelectedRegionsChange, date, onDateChange, onSearch, onCancel }: SearchDrawerProps) {
+    void onSearch
+    void onCancel
     return (
         <Drawer
             key="bottom"

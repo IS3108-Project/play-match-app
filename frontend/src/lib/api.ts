@@ -50,10 +50,25 @@ export interface ActivityDetail extends Activity {
     id: string;
     userId: string;
     status: string;
-    attendanceStatus: "PENDING" | "ATTENDED" | "NO_SHOW" | "LATE_CANCEL" | "CANCELLED";
+    attendanceStatus:
+      | "PENDING"
+      | "ATTENDED"
+      | "LATE"
+      | "NO_SHOW"
+      | "LATE_CANCEL"
+      | "CANCELLED";
     joinedAt: string;
     rejectionNote?: string | null;
     user: { id: string; name: string; image?: string | null; email: string };
+    reliability: {
+      totalAttended: number;
+      totalLate: number;
+      totalNoShow: number;
+      totalActivities: number;
+      attendanceRate: number;
+      noShowRate: number;
+    };
+    badge: ReliabilityBadge;
   }>;
   guests: Array<{
     id: string;
@@ -99,6 +114,17 @@ export interface PaginationInfo {
 export interface PaginatedResponse<T> {
   data: T[];
   pagination: PaginationInfo;
+}
+
+export interface ReliabilityBadge {
+  label:
+    | "Always on Time!"
+    | "Consistent"
+    | "No-Show Warning"
+    | "Active"
+    | "New";
+  icon: string;
+  colour: "gold" | "green" | "red" | "blue" | "grey";
 }
 
 export interface ActivityListParams {
@@ -177,7 +203,11 @@ export const activityApi = {
     request<{ status: string }>(`/activities/${id}/join`, { method: "POST" }),
 
   leave: (id: string) =>
-    request<{ message: string }>(`/activities/${id}/leave`, { method: "POST" }),
+    request<{
+      message: string;
+      isLateCancellation: boolean;
+      attendanceStatus: "CANCELLED" | "NO_SHOW";
+    }>(`/activities/${id}/leave`, { method: "POST" }),
 
   approve: (id: string, participantId: string) =>
     request<{ status: string }>(`/activities/${id}/approve/${participantId}`, {
@@ -216,10 +246,19 @@ export const activityApi = {
       method: "DELETE",
     }),
 
-  markAttendance: (id: string, participantIds: string[]) =>
+  markAttendance: (
+    id: string,
+    attendanceOrParticipantIds:
+      | Record<string, "ATTENDED" | "LATE" | "NO_SHOW">
+      | string[],
+  ) =>
     request<{ message: string }>(`/activities/${id}/attendance`, {
       method: "POST",
-      body: JSON.stringify({ participantIds }),
+      body: JSON.stringify(
+        Array.isArray(attendanceOrParticipantIds)
+          ? { participantIds: attendanceOrParticipantIds }
+          : { attendance: attendanceOrParticipantIds },
+      ),
     }),
 
   uploadImage: async (file: File): Promise<string> => {
@@ -252,7 +291,54 @@ export interface UpdateProfilePayload {
   bio?: string;
 }
 
+export interface UserProfile {
+  id: string;
+  name: string;
+  email: string;
+  image?: string | null;
+  bio?: string | null;
+  memberSince: string;
+  preferredAreas: string[];
+  skillLevel?: string | null;
+  sportInterests: string[];
+  preferredTimes: string[];
+  locationSharingEnabled: boolean;
+  reliability: {
+    totalAttended: number;
+    totalLate: number;
+    totalNoShow: number;
+    totalActivities: number;
+    attendanceRate: number;
+    punctualityRate: number;
+    noShowRate: number;
+  };
+  badge: ReliabilityBadge;
+  stats: {
+    currentStreak: number;
+    longestStreak: number;
+    joinedThisMonth: number;
+    newFriendsMet: number;
+    activitiesHosted: number;
+    totalActivitiesJoined: number;
+    favoriteSport: string | null;
+    hostCancellationRate: number;
+    totalCancelledAsHost: number;
+  };
+  calendar: {
+    monthLabel: string;
+    streakActivities: number;
+    days: Array<{
+      date: string;
+      latestActivityType: string | null;
+    }>;
+  };
+  isOwnProfile: boolean;
+}
+
 export const userApi = {
+  getProfile: (userId: string) =>
+    request<UserProfile>(`/users/${userId}/profile`),
+
   updateLocationSharing: (enabled: boolean) =>
     request<{ locationSharingEnabled: boolean }>("/users/location-sharing", {
       method: "PATCH",

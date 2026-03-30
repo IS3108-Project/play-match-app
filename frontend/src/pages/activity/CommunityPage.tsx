@@ -127,7 +127,6 @@ export default function CommunityPage() {
     // Derived subsets for groups tab
     const myGroupIds = React.useMemo(() => new Set(groups.filter((g) => g.isJoined).map((g) => g.id)), [groups])
     const myGroups = groups.filter((g) => g.isJoined)
-    const featuredGroups = groups.filter((g) => g.isFeatured)
 
     const filteredGroups = React.useMemo(() => {
         const q = searchTerm.trim().toLowerCase()

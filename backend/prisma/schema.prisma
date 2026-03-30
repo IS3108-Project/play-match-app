@@ -7,99 +7,44 @@ datasource db {
   provider = "postgresql"
 }
 
-// ── Enums ───────────────────────────────────────────────────────────────
-
-enum UserRole {
-  USER
-  ADMIN
-}
-
-enum ParticipantStatus {
-  CONFIRMED
-  PENDING
-  WAITLISTED
-  CANCELLED
-  REJECTED
-}
-
-enum ActivityStatus {
-  ACTIVE
-  CANCELLED
-  COMPLETED
-}
-
-enum AttendanceStatus {
-  PENDING
-  ATTENDED
-  NO_SHOW
-  LATE_CANCEL
-  CANCELLED
-}
-
-enum ReportType {
-  NO_SHOW
-  RUDE_UNSAFE
-  MISREPRESENTED
-  SPAM
-  OTHER
-}
-
-enum ReportStatus {
-  PENDING
-  REVIEWED
-  DISMISSED
-}
-
-enum ParticipantSource {
-  REQUESTED  // User requested to join
-  INVITED    // Host invited the user
-}
-
 // ── Auth Domain ─────────────────────────────────────────────────────────
 
 model User {
-  id             String   @id
-  name           String
-  email          String   @unique
-  emailVerified  Boolean  @default(false)
-  image          String?
-  role           UserRole @default(USER)
-  bio            String?
-  banned         Boolean  @default(false)
-  bannedAt       DateTime?
-
-  sportInterests String[]
-  skillLevel     String?
-  preferredTimes String[]
-  preferredAreas String[]
-  locationSharingEnabled Boolean @default(false)
-
-  // Buddy matching location (stored snapshot, not live)
-  lastLatitude    Float?
-  lastLongitude   Float?
-  lastLocationAt  DateTime?
-  matchRadius     Int       @default(25) // km - for buddy matching distance preference
-
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-  sessions       Session[]
-  accounts       Account[]
-
-  shouldOnboard  Boolean @default(true)
-  completedSteps String?
-
-  hostedActivities Activity[]    @relation("hostedActivities")
-  participations   Participant[]
-  invitedGuests    Guest[]       @relation("invitedGuests")
-  reportsFiled     Report[]      @relation("reportsFiled")
-  reportsReceived  Report[]      @relation("reportsReceived")
-
-  createdGroups        Group[]          @relation("createdGroups")
-  groupMemberships     GroupMember[]
-  authoredDiscussions  Discussion[]     @relation("authoredDiscussions")
-  discussionLikes      DiscussionLike[]
-  authoredComments     Comment[]        @relation("authoredComments")
-  commentLikes         CommentLike[]
+  id                     String           @id
+  name                   String
+  email                  String           @unique
+  emailVerified          Boolean          @default(false)
+  image                  String?
+  role                   UserRole         @default(USER)
+  bio                    String?
+  banned                 Boolean          @default(false)
+  bannedAt               DateTime?
+  sportInterests         String[]
+  skillLevel             String?
+  preferredTimes         String[]
+  preferredAreas         String[]
+  locationSharingEnabled Boolean          @default(false)
+  lastLatitude           Float?
+  lastLongitude          Float?
+  lastLocationAt         DateTime?
+  matchRadius            Int              @default(25)
+  createdAt              DateTime         @default(now())
+  updatedAt              DateTime         @updatedAt
+  shouldOnboard          Boolean          @default(true)
+  completedSteps         String?
+  sessions               Session[]
+  accounts               Account[]
+  hostedActivities       Activity[]       @relation("hostedActivities")
+  participations         Participant[]
+  invitedGuests          Guest[]          @relation("invitedGuests")
+  reportsFiled           Report[]         @relation("reportsFiled")
+  reportsReceived        Report[]         @relation("reportsReceived")
+  createdGroups          Group[]          @relation("createdGroups")
+  groupMemberships       GroupMember[]
+  authoredDiscussions    Discussion[]     @relation("authoredDiscussions")
+  discussionLikes        DiscussionLike[]
+  authoredComments       Comment[]        @relation("authoredComments")
+  commentLikes           CommentLike[]
 
   @@map("user")
 }
@@ -169,16 +114,14 @@ model Activity {
   requireApproval Boolean        @default(false)
   status          ActivityStatus @default(ACTIVE)
   imageSrc        String?
-
-  hostId       String
-  host         User          @relation("hostedActivities", fields: [hostId], references: [id], onDelete: Cascade)
-  participants Participant[]
-  guests       Guest[]
-  reports      Report[]
+  hostId          String
+  host            User           @relation("hostedActivities", fields: [hostId], references: [id], onDelete: Cascade)
+  participants    Participant[]
+  guests          Guest[]
+  reports         Report[]
   linkedDiscussions Discussion[] @relation("linkedDiscussions")
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
 
   @@index([hostId])
   @@index([date])
@@ -195,9 +138,8 @@ model Participant {
   attendanceStatus AttendanceStatus  @default(PENDING)
   joinedAt         DateTime          @default(now())
   rejectionNote    String?
-
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activity         Activity          @relation(fields: [activityId], references: [id], onDelete: Cascade)
 
   @@unique([userId, activityId])
   @@index([activityId, status])
@@ -205,17 +147,15 @@ model Participant {
 }
 
 model Guest {
-  id          String @id @default(cuid())
+  id          String   @id @default(cuid())
   name        String
   contactType String
   contact     String
   activityId  String
   invitedById String
-
-  activity  Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
-  invitedBy User     @relation("invitedGuests", fields: [invitedById], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
+  activity    Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  invitedBy   User     @relation("invitedGuests", fields: [invitedById], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
 
   @@index([activityId])
   @@map("guest")
@@ -246,9 +186,8 @@ model GroupMember {
   userId   String
   groupId  String
   joinedAt DateTime @default(now())
-
-  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group    Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
 
   @@unique([userId, groupId])
   @@index([groupId])
@@ -256,26 +195,21 @@ model GroupMember {
 }
 
 model Discussion {
-  id       String  @id @default(cuid())
-  title    String
-  content  String
-  imageUrl String?
-  isPublic Boolean @default(true)
-
-  authorId String
-  author   User   @relation("authoredDiscussions", fields: [authorId], references: [id], onDelete: Cascade)
-
-  groupId String?
-  group   Group?  @relation(fields: [groupId], references: [id], onDelete: SetNull)
-
+  id               String           @id @default(cuid())
+  title            String
+  content          String
+  imageUrl         String?
+  isPublic         Boolean          @default(true)
+  authorId         String
+  author           User             @relation("authoredDiscussions", fields: [authorId], references: [id], onDelete: Cascade)
+  groupId          String?
+  group            Group?           @relation(fields: [groupId], references: [id], onDelete: SetNull)
   linkedActivityId String?
-  linkedActivity   Activity? @relation("linkedDiscussions", fields: [linkedActivityId], references: [id], onDelete: SetNull)
-
-  likes    DiscussionLike[]
-  comments Comment[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  linkedActivity   Activity?        @relation("linkedDiscussions", fields: [linkedActivityId], references: [id], onDelete: SetNull)
+  likes            DiscussionLike[]
+  comments         Comment[]
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
 
   @@index([authorId])
   @@index([groupId])
@@ -284,12 +218,11 @@ model Discussion {
 }
 
 model DiscussionLike {
-  id           String @id @default(cuid())
+  id           String     @id @default(cuid())
   userId       String
   discussionId String
-
-  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  discussion Discussion @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  discussion   Discussion @relation(fields: [discussionId], references: [id], onDelete: Cascade)
 
   @@unique([userId, discussionId])
   @@index([discussionId])
@@ -297,29 +230,26 @@ model DiscussionLike {
 }
 
 model Comment {
-  id           String @id @default(cuid())
+  id           String        @id @default(cuid())
   content      String
   authorId     String
   discussionId String
-
-  author     User       @relation("authoredComments", fields: [authorId], references: [id], onDelete: Cascade)
-  discussion Discussion @relation(fields: [discussionId], references: [id], onDelete: Cascade)
-  likes      CommentLike[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  author       User          @relation("authoredComments", fields: [authorId], references: [id], onDelete: Cascade)
+  discussion   Discussion    @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+  likes        CommentLike[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 
   @@index([discussionId])
   @@map("comment")
 }
 
 model CommentLike {
-  id        String @id @default(cuid())
+  id        String  @id @default(cuid())
   userId    String
   commentId String
-
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  comment Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comment   Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
 
   @@unique([userId, commentId])
   @@index([commentId])
@@ -340,12 +270,60 @@ model Report {
   adminNote      String?
   createdAt      DateTime     @default(now())
   resolvedAt     DateTime?
-
-  activity     Activity? @relation(fields: [activityId], references: [id])
-  reporter     User      @relation("reportsFiled", fields: [reporterId], references: [id], onDelete: Cascade)
-  reportedUser User      @relation("reportsReceived", fields: [reportedUserId], references: [id], onDelete: Cascade)
+  activity       Activity?    @relation(fields: [activityId], references: [id])
+  reporter       User         @relation("reportsFiled", fields: [reporterId], references: [id], onDelete: Cascade)
+  reportedUser   User         @relation("reportsReceived", fields: [reportedUserId], references: [id], onDelete: Cascade)
 
   @@index([createdAt])
   @@index([reportedUserId])
   @@map("report")
+}
+
+// ── Enums ────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum ParticipantStatus {
+  CONFIRMED
+  PENDING
+  WAITLISTED
+  CANCELLED
+  REJECTED
+}
+
+enum ActivityStatus {
+  ACTIVE
+  CANCELLED
+  COMPLETED
+}
+
+enum AttendanceStatus {
+  PENDING
+  ATTENDED
+  NO_SHOW
+  LATE_CANCEL
+  CANCELLED
+  LATE
+}
+
+enum ReportType {
+  NO_SHOW
+  RUDE_UNSAFE
+  MISREPRESENTED
+  SPAM
+  OTHER
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWED
+  DISMISSED
+}
+
+enum ParticipantSource {
+  REQUESTED
+  INVITED
 }
