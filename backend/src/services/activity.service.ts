@@ -527,7 +527,7 @@ export async function getMyActivities(
   today.setHours(0, 0, 0, 0);
 
   if (tab === "hosted") {
-    const activities = await prisma.activity.findMany({
+    let activities = await prisma.activity.findMany({
       where: {
         hostId: userId,
         status: { not: "CANCELLED" },

@@ -85,15 +85,47 @@ const badgeShowcase = [
     trim: "border-amber-300",
     ribbon: "bg-amber-600",
   },
-  {
-    label: "No-Show Warning",
-    description: "Triggered when your no-show rate reaches 20% or more.",
-    icon: Shield,
-    palette: "from-rose-400 via-orange-300 to-white",
-    trim: "border-rose-300",
-    ribbon: "bg-rose-600",
-  },
 ] as const;
+
+function getBadgeDisplay(badge: UserProfile["badge"]) {
+  switch (badge.label) {
+    case "Always on Time!":
+      return {
+        icon: Medal,
+        palette: "from-amber-300 via-yellow-200 to-white",
+        trim: "border-amber-300",
+        ribbon: "bg-amber-600",
+      };
+    case "Consistent":
+      return {
+        icon: BadgeCheck,
+        palette: "from-emerald-400 via-lime-300 to-white",
+        trim: "border-emerald-300",
+        ribbon: "bg-emerald-600",
+      };
+    case "Active":
+      return {
+        icon: Flame,
+        palette: "from-sky-400 via-cyan-300 to-white",
+        trim: "border-sky-300",
+        ribbon: "bg-sky-600",
+      };
+    case "New":
+      return {
+        icon: Star,
+        palette: "from-slate-200 via-slate-100 to-white",
+        trim: "border-slate-300",
+        ribbon: "bg-slate-500",
+      };
+    case "No-Show Warning":
+      return {
+        icon: Shield,
+        palette: "from-rose-400 via-orange-300 to-white",
+        trim: "border-rose-300",
+        ribbon: "bg-rose-600",
+      };
+  }
+}
 
 function getCalendarMatrix(monthLabel: string) {
   const [monthName, yearLabel] = monthLabel.split(" ");
@@ -332,19 +364,48 @@ export default function ProfilePage() {
                   <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     Reliability
                   </p>
-                  <div className="mt-4">
-                    <ReliabilityBadge
-                      badge={profile.badge}
-                      score={profile.reliability.attendanceRate}
-                      showScore
-                    />
+                  <div className="mt-4 flex items-center gap-4">
+                    {(() => {
+                      const display = getBadgeDisplay(profile.badge);
+                      const Icon = display.icon;
+
+                      return (
+                        <div className="flex items-center gap-4">
+                          <div className="flex flex-col items-center">
+                            <div
+                              className={[
+                                "relative flex h-20 w-20 items-center justify-center rounded-full border-4 bg-gradient-to-b shadow-sm",
+                                display.palette,
+                                display.trim,
+                              ].join(" ")}
+                            >
+                              <Icon className="h-8 w-8 text-foreground" />
+                            </div>
+                            <div className="mt-[-1px] flex items-start gap-2">
+                              <div
+                                className={[
+                                  "h-5 w-3 rounded-b-xl",
+                                  display.ribbon,
+                                ].join(" ")}
+                              />
+                              <div
+                                className={[
+                                  "h-5 w-3 rounded-b-xl",
+                                  display.ribbon,
+                                ].join(" ")}
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <p className="text-sm font-semibold">
+                              {profile.badge.label}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
-                <p className="mt-4 text-xs text-muted-foreground">
-                  {profile.reliability.totalActivities < 5
-                    ? "Complete 5 tracked activities to unlock your long-term reliability badge."
-                    : `${profile.reliability.totalAttended} attended, ${profile.reliability.totalLate} late, ${profile.reliability.totalNoShow} no-show.`}
-                </p>
               </section>
             )}
 
@@ -482,7 +543,7 @@ export default function ProfilePage() {
                     Badge Cabinet
                   </p>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    Earn streak and reliability badges as you keep showing up.
+                    Earn reliability badges as you keep showing up.
                   </p>
                 </div>
                 {profile && (

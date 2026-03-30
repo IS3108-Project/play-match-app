@@ -144,10 +144,6 @@ export function getReliabilityBadge(
     return { label: "Always on Time!", icon: "Zap", colour: "gold" };
   }
 
-  if (noShowRate >= 20) {
-    return { label: "No-Show Warning", icon: "TriangleAlert", colour: "red" };
-  }
-
   if (attendanceRate >= 90) {
     return { label: "Consistent", icon: "BadgeCheck", colour: "green" };
   }
