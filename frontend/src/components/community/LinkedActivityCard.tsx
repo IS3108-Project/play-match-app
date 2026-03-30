@@ -9,13 +9,14 @@ import { toast } from "sonner"
 
 type LinkedActivityCardProps = {
     activity: LinkedActivityPreview
+    showActions?: boolean
 }
 
 function getInitials(name: string) {
     return name.split(" ").map((p) => p[0]).join("").slice(0, 2).toUpperCase()
 }
 
-export default function LinkedActivityCard({ activity }: LinkedActivityCardProps) {
+export default function LinkedActivityCard({ activity, showActions = true }: LinkedActivityCardProps) {
     const { session } = useRole()
     const userId = session?.user?.id
 
@@ -85,7 +86,7 @@ export default function LinkedActivityCard({ activity }: LinkedActivityCardProps
     return (
         <div
             className={`mt-3 rounded-xl border bg-muted/30 p-3 ${isCancelled ? "opacity-60" : ""}`}
-            onClick={(e) => e.preventDefault()}
+            onClick={showActions ? (e) => e.preventDefault() : undefined}
         >
             {/* Label */}
             <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
@@ -137,7 +138,7 @@ export default function LinkedActivityCard({ activity }: LinkedActivityCardProps
                 )}
             </div>
 
-            {actionButton}
+            {showActions && actionButton}
         </div>
     )
 }

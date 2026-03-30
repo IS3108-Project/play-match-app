@@ -89,7 +89,7 @@ export default function DiscussionCard({ discussion, backTo = "/community/discus
             <p className="mt-3 line-clamp-2 text-sm leading-6 text-foreground/90">{discussion.content}</p>
 
             {discussion.linkedActivity && (
-                <LinkedActivityCard activity={discussion.linkedActivity} />
+                <LinkedActivityCard activity={discussion.linkedActivity} showActions={false} />
             )}
 
             <footer className="mt-4 flex items-center gap-5 border-t pt-3 text-sm text-muted-foreground">
