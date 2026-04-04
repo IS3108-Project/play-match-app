@@ -104,9 +104,6 @@ export default function CreateGroupDrawer({ onSubmit, initialValues, mode = "cre
         try {
             if (onSubmit) {
                 await onSubmit(form)
-            } else {
-                await new Promise((resolve) => setTimeout(resolve, 500))
-                console.log("Create group payload:", form)
             }
             setOpen(false)
             resetForm()

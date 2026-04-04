@@ -1,6 +1,12 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MapPin } from "lucide-react";
 
+function resolveImageSrc(src: string | null | undefined): string | undefined {
+  if (!src) return undefined;
+  if (src.startsWith("/uploads/")) return `http://localhost:3000${src}`;
+  return src;
+}
+
 type UserProfileCardProps = {
   image?: string | null;
   name?: string | null;
@@ -27,7 +33,7 @@ export default function UserProfileCard({
         <div className="absolute right-0 top-0">{editAction}</div>
       )}
       <Avatar className="mt-4 h-28 w-28 rounded-full border-4 border-background object-cover shadow-md">
-        <AvatarImage src={image ?? undefined} alt={displayName} />
+        <AvatarImage src={resolveImageSrc(image)} alt={displayName} />
         <AvatarFallback className="bg-primary text-4xl text-white">
           {fallbackInitial}
         </AvatarFallback>

@@ -30,9 +30,11 @@ export const router = createBrowserRouter([
       { path: "/login", element: <LoginPage /> },
       { path: "/register", element: <RegisterPage /> },
       { path: "/forgot-password", element: <ForgotPasswordPage /> },
-      { path: "/reset-password", element: <ResetPasswordPage /> },
     ],
   },
+
+  // Reset password - accessible regardless of auth state
+  { path: "/reset-password", element: <ResetPasswordPage /> },
 
   // Onboarding route - NO navbar, requires auth
   { path: "/onboarding", element: <OnboardingPage /> },

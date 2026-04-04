@@ -19,7 +19,6 @@ import {
 } from "@/components/ui/popover"
 import {
     Drawer,
-    DrawerClose,
     DrawerContent,
     DrawerDescription,
     DrawerFooter,
@@ -47,21 +46,34 @@ type SearchDrawerProps = {
 }
 
 export default function SearchDrawer({ activityInput, onActivityInputChange, selectedRegions, onSelectedRegionsChange, date, onDateChange, onSearch, onCancel }: SearchDrawerProps) {
-    void onSearch
-    void onCancel
+    const [open, setOpen] = React.useState(false)
+
+    const handleSearch = () => {
+        onSearch?.()
+        setOpen(false)
+    }
+
+    const handleCancel = () => {
+        onCancel?.()
+        onActivityInputChange("")
+        onDateChange(undefined)
+        onSelectedRegionsChange([])
+        setOpen(false)
+    }
+
     return (
         <Drawer
             key="bottom"
             direction="bottom"
-            // Remove input when drawer is closed
-            onOpenChange={(open) => {
-                if (!open) {
+            open={open}
+            onOpenChange={(isOpen) => {
+                setOpen(isOpen)
+                if (!isOpen) {
                     onActivityInputChange("")
                     onDateChange(undefined)
                     onSelectedRegionsChange([])
                 }
-            }
-            }
+            }}
         >
             <DrawerTrigger asChild>
                 <ButtonGroup className="w-full my-4">
@@ -151,11 +163,8 @@ export default function SearchDrawer({ activityInput, onActivityInputChange, sel
                     </Accordion>
                 </div>
                 <DrawerFooter>
-                    {/* TODO: Implement search functionality */}
-                    <Button>Search</Button>
-                    <DrawerClose asChild>
-                        <Button variant="outline">Cancel</Button>
-                    </DrawerClose>
+                    <Button onClick={handleSearch}>Search</Button>
+                    <Button variant="outline" onClick={handleCancel}>Cancel</Button>
                 </DrawerFooter>
             </DrawerContent>
         </Drawer >

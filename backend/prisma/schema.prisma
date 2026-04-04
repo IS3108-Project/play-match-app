@@ -329,3 +329,20 @@ enum ParticipantSource {
   REQUESTED
   INVITED
 }
+
+// ── Admin Audit Log ────────────────────────────────────────────────────
+
+model AdminAuditLog {
+  id          String   @id @default(cuid())
+  adminId     String
+  action      String   // BAN_USER, UNBAN_USER, DELETE_ACTIVITY, DELETE_DISCUSSION, RESOLVE_REPORT, etc.
+  targetType  String   // USER, ACTIVITY, DISCUSSION, REPORT
+  targetId    String
+  details     Json?    // Additional context (e.g., ban reason, admin note)
+  createdAt   DateTime @default(now())
+
+  @@index([adminId])
+  @@index([createdAt])
+  @@index([targetType, targetId])
+  @@map("admin_audit_log")
+}

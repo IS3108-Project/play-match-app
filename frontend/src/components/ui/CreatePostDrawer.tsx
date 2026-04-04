@@ -124,9 +124,6 @@ export default function CreatePostDrawer({
         try {
             if (onSubmit) {
                 await onSubmit(form)
-            } else {
-                await new Promise((resolve) => setTimeout(resolve, 500))
-                console.log("Create discussion payload:", form)
             }
             setOpen(false)
             setForm({ ...INITIAL_VALUES, groupId: defaultGroupId })

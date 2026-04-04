@@ -198,9 +198,6 @@ export default function HostActivityForm({
         try {
             if (onSubmit) {
                 await onSubmit(form)
-            } else {
-                await new Promise((resolve) => setTimeout(resolve, 500))
-                console.log("Host activity payload:", form)
             }
 
             setOpen(false)

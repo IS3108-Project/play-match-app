@@ -592,6 +592,34 @@ export const reportApi = {
 
 // ── Admin API ──────────────────────────────────────────────────────────
 
+export interface AdminPaginatedResponse<T> {
+  items: T[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+export interface AdminListParams {
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
+  search?: string;
+}
+
+export interface AdminUserListParams extends AdminListParams {
+  banned?: boolean;
+  hasReports?: boolean;
+  role?: "USER" | "ADMIN";
+}
+
+export interface AdminActivityListParams extends AdminListParams {
+  status?: string;
+}
+
 export interface AdminDashboardStats {
   totalUsers: number;
   bannedUsers: number;
@@ -668,33 +696,76 @@ export interface AdminDiscussion {
   _count: { likes: number; comments: number };
 }
 
+export interface AdminAuditLog {
+  id: string;
+  adminId: string;
+  action: string;
+  targetType: string;
+  targetId: string;
+  details: { 
+    targetName?: string; 
+    reason?: string; 
+    bulk?: boolean; 
+    title?: string;
+    status?: string;
+    adminNote?: string;
+    [key: string]: unknown;
+  } | null;
+  createdAt: string;
+  admin: { id: string; name: string; image: string | null } | null;
+}
+
+function buildAdminQueryString(params?: AdminListParams | AdminUserListParams | AdminActivityListParams): string {
+  if (!params) return "";
+  const searchParams = new URLSearchParams();
+  if (params.page) searchParams.set("page", String(params.page));
+  if (params.limit) searchParams.set("limit", String(params.limit));
+  if (params.sortBy) searchParams.set("sortBy", params.sortBy);
+  if (params.sortOrder) searchParams.set("sortOrder", params.sortOrder);
+  if (params.search) searchParams.set("search", params.search);
+  if ("banned" in params && params.banned !== undefined) searchParams.set("banned", String(params.banned));
+  if ("hasReports" in params && params.hasReports) searchParams.set("hasReports", "true");
+  if ("role" in params && params.role) searchParams.set("role", params.role);
+  if ("status" in params && params.status) searchParams.set("status", params.status);
+  const query = searchParams.toString();
+  return query ? `?${query}` : "";
+}
+
 export const adminApi = {
   getStats: () =>
     request<AdminDashboardStats>("/admin/stats"),
 
   // Users
-  listUsers: (params?: { search?: string; banned?: boolean }) => {
-    const searchParams = new URLSearchParams();
-    if (params?.search) searchParams.set("search", params.search);
-    if (params?.banned !== undefined) searchParams.set("banned", String(params.banned));
-    const query = searchParams.toString();
-    return request<AdminUser[]>(`/admin/users${query ? `?${query}` : ""}`);
-  },
+  listUsers: (params?: AdminUserListParams) =>
+    request<AdminPaginatedResponse<AdminUser>>(`/admin/users${buildAdminQueryString(params)}`),
 
   getUserDetail: (id: string) =>
     request<AdminUserDetail>(`/admin/users/${id}`),
 
-  banUser: (id: string) =>
-    request<{ message: string }>(`/admin/users/${id}/ban`, { method: "POST" }),
+  banUser: (id: string, reason?: string) =>
+    request<{ message: string }>(`/admin/users/${id}/ban`, { 
+      method: "POST",
+      body: JSON.stringify({ reason }),
+    }),
 
   unbanUser: (id: string) =>
     request<{ message: string }>(`/admin/users/${id}/unban`, { method: "POST" }),
 
+  bulkBanUsers: (userIds: string[], reason?: string) =>
+    request<{ count: number; skipped: number }>("/admin/users/bulk/ban", {
+      method: "POST",
+      body: JSON.stringify({ userIds, reason }),
+    }),
+
+  bulkUnbanUsers: (userIds: string[]) =>
+    request<{ count: number }>("/admin/users/bulk/unban", {
+      method: "POST",
+      body: JSON.stringify({ userIds }),
+    }),
+
   // Reports
-  listReports: (status?: string) => {
-    const query = status ? `?status=${status}` : "";
-    return request<AdminReport[]>(`/admin/reports${query}`);
-  },
+  listReports: (params?: AdminListParams & { status?: string }) =>
+    request<AdminPaginatedResponse<AdminReport>>(`/admin/reports${buildAdminQueryString(params)}`),
 
   resolveReport: (id: string, status: "REVIEWED" | "DISMISSED", adminNote?: string) =>
     request<{ message: string }>(`/admin/reports/${id}`, {
@@ -702,21 +773,51 @@ export const adminApi = {
       body: JSON.stringify({ status, adminNote }),
     }),
 
+  bulkResolveReports: (reportIds: string[], status: "REVIEWED" | "DISMISSED", adminNote?: string) =>
+    request<{ count: number }>("/admin/reports/bulk/resolve", {
+      method: "POST",
+      body: JSON.stringify({ reportIds, status, adminNote }),
+    }),
+
   // Activities
-  listActivities: (search?: string) => {
-    const query = search ? `?search=${encodeURIComponent(search)}` : "";
-    return request<AdminActivity[]>(`/admin/activities${query}`);
-  },
+  listActivities: (params?: AdminActivityListParams) =>
+    request<AdminPaginatedResponse<AdminActivity>>(`/admin/activities${buildAdminQueryString(params)}`),
 
   deleteActivity: (id: string) =>
     request<{ message: string }>(`/admin/activities/${id}`, { method: "DELETE" }),
 
+  bulkDeleteActivities: (activityIds: string[]) =>
+    request<{ count: number }>("/admin/activities/bulk/delete", {
+      method: "POST",
+      body: JSON.stringify({ activityIds }),
+    }),
+
   // Discussions
-  listDiscussions: (search?: string) => {
-    const query = search ? `?search=${encodeURIComponent(search)}` : "";
-    return request<AdminDiscussion[]>(`/admin/discussions${query}`);
-  },
+  listDiscussions: (params?: AdminListParams) =>
+    request<AdminPaginatedResponse<AdminDiscussion>>(`/admin/discussions${buildAdminQueryString(params)}`),
 
   deleteDiscussion: (id: string) =>
     request<{ message: string }>(`/admin/discussions/${id}`, { method: "DELETE" }),
+
+  bulkDeleteDiscussions: (discussionIds: string[]) =>
+    request<{ count: number }>("/admin/discussions/bulk/delete", {
+      method: "POST",
+      body: JSON.stringify({ discussionIds }),
+    }),
+
+  // Audit Logs
+  listAuditLogs: (params?: AdminListParams & { adminId?: string }) => {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.set("page", String(params.page));
+    if (params?.limit) searchParams.set("limit", String(params.limit));
+    if (params?.adminId) searchParams.set("adminId", params.adminId);
+    const query = searchParams.toString();
+    return request<AdminPaginatedResponse<AdminAuditLog>>(`/admin/audit-logs${query ? `?${query}` : ""}`);
+  },
+
+  // Export - these return CSV files, so we handle them differently
+  exportUsers: () => `${BASE_URL}/admin/export/users`,
+  exportActivities: () => `${BASE_URL}/admin/export/activities`,
+  exportReports: () => `${BASE_URL}/admin/export/reports`,
+  exportAuditLogs: () => `${BASE_URL}/admin/export/audit-logs`,
 };

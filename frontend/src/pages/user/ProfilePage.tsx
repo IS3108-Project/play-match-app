@@ -238,18 +238,22 @@ export default function ProfilePage() {
         imageUrl = await activityApi.uploadImage(values.imageFile);
       }
 
-      await userApi.updateProfile({
+      // Use authClient.updateUser for name and image - this syncs the session automatically
+      await authClient.updateUser({
         name: values.name,
+        ...(imageUrl !== undefined ? { image: imageUrl } : {}),
+      });
+
+      // Use our API for custom fields not in better-auth
+      await userApi.updateProfile({
         bio: values.bio,
         preferredAreas: values.locations,
         skillLevel: values.skillLevel,
         sportInterests: values.sportsPreferences,
         preferredTimes: values.preferredTimings,
         locationSharingEnabled: values.locationSharingEnabled,
-        image: imageUrl,
       });
 
-      await authClient.getSession({ fetchOptions: { cache: "no-store" } });
       toast.success("Profile updated!");
       fetchProfile();
     } catch (error: any) {
