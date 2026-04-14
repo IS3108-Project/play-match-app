@@ -20,9 +20,19 @@ export const getUser = async (req: Request, res: Response) => {
 export const getUserProfile = async (req: AuthRequest, res: Response) => {
   try {
     const viewerId = req.user.id;
+    const rawYear = req.query.year ? Number(req.query.year) : undefined;
+    const rawMonth = req.query.month ? Number(req.query.month) : undefined;
+    const calendarYear =
+      rawYear && Number.isFinite(rawYear) ? rawYear : undefined;
+    const calendarMonth =
+      rawMonth && Number.isFinite(rawMonth) && rawMonth >= 1 && rawMonth <= 12
+        ? rawMonth
+        : undefined;
     const profile = await userService.getUserProfile(
       viewerId,
       String(req.params.id),
+      calendarYear,
+      calendarMonth,
     );
 
     if (!profile) {

@@ -159,7 +159,12 @@ export const getUserById = async (id: number): Promise<User | null> => {
   return { id: Number(id), name: "Jordan" };
 };
 
-export async function getUserProfile(viewerId: string, targetUserId: string) {
+export async function getUserProfile(
+  viewerId: string,
+  targetUserId: string,
+  calendarYear?: number,
+  calendarMonth?: number,
+) {
   await syncStartedHostAttendanceForUser(targetUserId);
 
   const user = await prisma.user.findUnique({
@@ -291,18 +296,27 @@ export async function getUserProfile(viewerId: string, targetUserId: string) {
       ? 0
       : Math.round((totalCancelledAsHost / hostStatsDenominator) * 100);
 
-  const currentMonthStart = new Date();
-  currentMonthStart.setDate(1);
-  currentMonthStart.setHours(0, 0, 0, 0);
+  const now = new Date();
+  const currentMonthStart = new Date(
+    calendarYear ?? now.getFullYear(),
+    calendarMonth != null ? calendarMonth - 1 : now.getMonth(),
+    1,
+    0,
+    0,
+    0,
+    0,
+  );
   const nextMonthStart = new Date(currentMonthStart);
   nextMonthStart.setMonth(nextMonthStart.getMonth() + 1);
 
   const calendarEntries = new Map<string, CalendarDaySummary>();
+  let monthActivityCount = 0;
   for (const entry of attendedOrLate) {
     if (
       entry.activity.date >= currentMonthStart &&
       entry.activity.date < nextMonthStart
     ) {
+      monthActivityCount += 1;
       const key = entry.activity.date.toISOString().slice(0, 10);
       const latestStartAt = getActivityStartDateTime({
         date: entry.activity.date,
@@ -359,7 +373,9 @@ export async function getUserProfile(viewerId: string, targetUserId: string) {
         month: "long",
         year: "numeric",
       }),
-      streakActivities: attendedOrLate.length,
+      year: currentMonthStart.getFullYear(),
+      month: currentMonthStart.getMonth() + 1,
+      streakActivities: monthActivityCount,
       days: Array.from(calendarEntries.entries()).map(([date, summary]) => ({
         date,
         latestActivityType: summary.latestActivityType,

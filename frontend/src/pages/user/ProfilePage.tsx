@@ -9,6 +9,8 @@ import { useRole } from "@/hooks/useRole";
 import {
   BadgeCheck,
   Bike,
+  ChevronLeft,
+  ChevronRight,
   Dumbbell,
   Flame,
   Footprints,
@@ -20,6 +22,7 @@ import {
   Trophy,
   Waves,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { activityApi, userApi, type UserProfile } from "@/lib/api";
 import { toast } from "sonner";
 import { authClient } from "@/lib/client-auth";
@@ -127,10 +130,8 @@ function getBadgeDisplay(badge: UserProfile["badge"]) {
   }
 }
 
-function getCalendarMatrix(monthLabel: string) {
-  const [monthName, yearLabel] = monthLabel.split(" ");
-  const monthIndex = new Date(`${monthName} 1, ${yearLabel}`).getMonth();
-  const year = Number(yearLabel);
+function getCalendarMatrix(year: number, month: number) {
+  const monthIndex = month - 1;
   const firstDay = new Date(year, monthIndex, 1);
   const lastDay = new Date(year, monthIndex + 1, 0);
 
@@ -158,23 +159,61 @@ export default function ProfilePage() {
   const [profile, setProfile] = React.useState<UserProfile | null>(null);
   const [loading, setLoading] = React.useState(false);
   const [activeTab, setActiveTab] = React.useState("overview");
+  const [selectedMonth, setSelectedMonth] = React.useState(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  });
 
-  const fetchProfile = React.useCallback(async () => {
-    if (!userId) return;
-    setLoading(true);
-    try {
-      const data = await userApi.getProfile(userId);
-      setProfile(data);
-    } catch (error: any) {
-      toast.error(error.message || "Failed to load profile");
-    } finally {
-      setLoading(false);
-    }
-  }, [userId]);
+  const fetchProfile = React.useCallback(
+    async (targetMonth?: Date) => {
+      if (!userId) return;
+      setLoading(true);
+      try {
+        const month = targetMonth ?? selectedMonth;
+        const data = await userApi.getProfile(userId, {
+          year: month.getFullYear(),
+          month: month.getMonth() + 1,
+        });
+        setProfile(data);
+      } catch (error: any) {
+        toast.error(error.message || "Failed to load profile");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [userId, selectedMonth],
+  );
 
   React.useEffect(() => {
     fetchProfile();
   }, [fetchProfile]);
+
+  const isCurrentMonth = React.useMemo(() => {
+    const now = new Date();
+    return (
+      selectedMonth.getFullYear() === now.getFullYear() &&
+      selectedMonth.getMonth() === now.getMonth()
+    );
+  }, [selectedMonth]);
+
+  const handlePrevMonth = () => {
+    const prev = new Date(
+      selectedMonth.getFullYear(),
+      selectedMonth.getMonth() - 1,
+      1,
+    );
+    setSelectedMonth(prev);
+  };
+
+  const handleNextMonth = () => {
+    if (isCurrentMonth) return;
+    const next = new Date(
+      selectedMonth.getFullYear(),
+      selectedMonth.getMonth() + 1,
+      1,
+    );
+    setSelectedMonth(next);
+  };
 
   const statsItems: UserStatsItem[] = profile
     ? [
@@ -217,7 +256,7 @@ export default function ProfilePage() {
   );
 
   const calendarCells = React.useMemo(
-    () => (profile ? getCalendarMatrix(profile.calendar.monthLabel) : []),
+    () => (profile ? getCalendarMatrix(profile.calendar.year, profile.calendar.month) : []),
     [profile],
   );
 
@@ -460,9 +499,28 @@ export default function ProfilePage() {
         <TabsContent value="calendar" className="mt-6 space-y-6">
           <div className="grid gap-4 md:grid-cols-2">
             <section className="rounded-3xl border bg-card p-5 shadow-sm">
-              <h2 className="text-2xl font-bold">
-                {profile?.calendar.monthLabel}
-              </h2>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handlePrevMonth}
+                  aria-label="Previous month"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </Button>
+                <h2 className="flex-1 text-center text-2xl font-bold">
+                  {profile?.calendar.monthLabel}
+                </h2>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleNextMonth}
+                  disabled={isCurrentMonth}
+                  aria-label="Next month"
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </Button>
+              </div>
               <div className="mt-4 grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-muted-foreground">Your Streak</p>
