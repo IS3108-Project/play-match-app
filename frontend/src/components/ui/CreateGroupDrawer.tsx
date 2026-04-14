@@ -51,12 +51,17 @@ export default function CreateGroupDrawer({ onSubmit, initialValues, mode = "cre
     const [emojiPickerOpen, setEmojiPickerOpen] = React.useState(false)
     const [isSubmitting, setIsSubmitting] = React.useState(false)
     const [uploading, setUploading] = React.useState(false)
+    const [pendingFile, setPendingFile] = React.useState<File | null>(null)
+    const [previewUrl, setPreviewUrl] = React.useState<string | null>(null)
     const [form, setForm] = React.useState<CreateGroupValues>(initialValues ?? INITIAL_VALUES)
     const fileInputRef = React.useRef<HTMLInputElement>(null)
 
     React.useEffect(() => {
         if (open) {
             setForm(initialValues ?? INITIAL_VALUES)
+            setPendingFile(null)
+            if (previewUrl) URL.revokeObjectURL(previewUrl)
+            setPreviewUrl(null)
         }
     }, [open, initialValues])
 
@@ -66,18 +71,15 @@ export default function CreateGroupDrawer({ onSubmit, initialValues, mode = "cre
 
     const resetForm = () => {
         setForm(INITIAL_VALUES)
+        setPendingFile(null)
+        if (previewUrl) URL.revokeObjectURL(previewUrl)
+        setPreviewUrl(null)
     }
 
     const handleImageUpload = async (file: File) => {
-        setUploading(true)
-        try {
-            const url = await communityApi.uploadImage(file)
-            handleChange("profileImageUrl", url)
-        } catch (err: unknown) {
-            toast.error(err instanceof Error ? err.message : "Failed to upload image")
-        } finally {
-            setUploading(false)
-        }
+        setPendingFile(file)
+        setPreviewUrl(URL.createObjectURL(file))
+        handleChange("profileImageUrl", "pending")
     }
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -92,18 +94,30 @@ export default function CreateGroupDrawer({ onSubmit, initialValues, mode = "cre
         if (file && file.type.startsWith("image/")) handleImageUpload(file)
     }
 
-    const previewSrc = form.profileImageUrl
-        ? form.profileImageUrl.startsWith("/uploads/")
-            ? `http://localhost:3000${form.profileImageUrl}`
-            : form.profileImageUrl
-        : null
+    const previewSrc = previewUrl || (form.profileImageUrl && form.profileImageUrl !== "pending" ? form.profileImageUrl : null)
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
         setIsSubmitting(true)
         try {
+            let finalForm = { ...form }
+            if (pendingFile) {
+                setUploading(true)
+                try {
+                    const url = await communityApi.uploadImage(pendingFile, "groups")
+                    finalForm = { ...finalForm, profileImageUrl: url }
+                } catch (err: unknown) {
+                    toast.error(err instanceof Error ? err.message : "Failed to upload image")
+                    return
+                } finally {
+                    setUploading(false)
+                }
+            } else if (form.profileImageUrl === "pending") {
+                finalForm = { ...finalForm, profileImageUrl: null }
+            }
+
             if (onSubmit) {
-                await onSubmit(form)
+                await onSubmit(finalForm)
             }
             setOpen(false)
             resetForm()
@@ -247,7 +261,12 @@ export default function CreateGroupDrawer({ onSubmit, initialValues, mode = "cre
                                         variant="destructive"
                                         size="icon"
                                         className="absolute top-2 right-2 h-7 w-7"
-                                        onClick={() => handleChange("profileImageUrl", null)}
+                                        onClick={() => {
+                                            handleChange("profileImageUrl", null)
+                                            setPendingFile(null)
+                                            if (previewUrl) URL.revokeObjectURL(previewUrl)
+                                            setPreviewUrl(null)
+                                        }}
                                     >
                                         <X className="size-4" />
                                     </Button>

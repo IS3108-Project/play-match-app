@@ -2,8 +2,7 @@ import { prisma } from "../config/prisma";
 import { ParticipantStatus, ActivityStatus } from "../generated/prisma/client";
 import * as notificationService from "./notification.service";
 import { format } from "date-fns";
-import * as fs from "fs";
-import * as path from "path";
+import { deleteFromR2 } from "../config/storage";
 import { getReliabilityBadge } from "./user.service";
 
 // ── Types ───────────────────────────────────────────────────────────────
@@ -786,24 +785,15 @@ export async function updateActivity(
   today.setHours(0, 0, 0, 0);
   if (activityDate < today) throw new Error("PAST_ACTIVITY");
 
-  // Handle image removal/replacement - delete old file if it exists
+  // Handle image removal/replacement - delete old file from R2
   if (
     "imageSrc" in input &&
     activity.imageSrc &&
     activity.imageSrc !== input.imageSrc
   ) {
-    if (activity.imageSrc.startsWith("/uploads/")) {
-      const oldFilePath = path.join(
-        __dirname,
-        "../../public",
-        activity.imageSrc,
-      );
-      fs.unlink(oldFilePath, (err) => {
-        if (err && err.code !== "ENOENT") {
-          console.error("Failed to delete old image:", err);
-        }
-      });
-    }
+    deleteFromR2(activity.imageSrc).catch((err) => {
+      console.error("Failed to delete old image from R2:", err);
+    });
   }
 
   const data: any = { ...input };

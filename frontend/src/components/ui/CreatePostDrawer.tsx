@@ -67,12 +67,17 @@ export default function CreatePostDrawer({
     const [form, setForm] = React.useState<CreatePostValues>(initialValues ?? { ...INITIAL_VALUES, groupId: defaultGroupId })
     const [isSubmitting, setIsSubmitting] = React.useState(false)
     const [uploading, setUploading] = React.useState(false)
+    const [pendingFile, setPendingFile] = React.useState<File | null>(null)
+    const [previewUrl, setPreviewUrl] = React.useState<string | null>(null)
     const [hostedActivities, setHostedActivities] = React.useState<Activity[]>([])
     const fileInputRef = React.useRef<HTMLInputElement>(null)
 
     React.useEffect(() => {
         if (open) {
             setForm(initialValues ?? { ...INITIAL_VALUES, groupId: defaultGroupId })
+            setPendingFile(null)
+            if (previewUrl) URL.revokeObjectURL(previewUrl)
+            setPreviewUrl(null)
             activityApi.mine("hosted")
                 .then((activities) => setHostedActivities(
                     activities.filter((a) => a.status !== "CANCELLED" && new Date(a.date) > new Date())
@@ -89,15 +94,9 @@ export default function CreatePostDrawer({
     const selectedActivity = hostedActivities.find((a) => a.id === form.linkedActivityId) ?? null
 
     const handleImageUpload = async (file: File) => {
-        setUploading(true)
-        try {
-            const url = await communityApi.uploadImage(file)
-            handleChange("imageUrl", url)
-        } catch (err: unknown) {
-            toast.error(err instanceof Error ? err.message : "Failed to upload image")
-        } finally {
-            setUploading(false)
-        }
+        setPendingFile(file)
+        setPreviewUrl(URL.createObjectURL(file))
+        handleChange("imageUrl", "pending")
     }
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -112,21 +111,36 @@ export default function CreatePostDrawer({
         if (file && file.type.startsWith("image/")) handleImageUpload(file)
     }
 
-    const previewSrc = form.imageUrl
-        ? form.imageUrl.startsWith("/uploads/")
-            ? `http://localhost:3000${form.imageUrl}`
-            : form.imageUrl
-        : null
+    const previewSrc = previewUrl || (form.imageUrl && form.imageUrl !== "pending" ? form.imageUrl : null)
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
         setIsSubmitting(true)
         try {
+            let finalForm = { ...form }
+            if (pendingFile) {
+                setUploading(true)
+                try {
+                    const url = await communityApi.uploadImage(pendingFile, "discussions")
+                    finalForm = { ...finalForm, imageUrl: url }
+                } catch (err: unknown) {
+                    toast.error(err instanceof Error ? err.message : "Failed to upload image")
+                    return
+                } finally {
+                    setUploading(false)
+                }
+            } else if (form.imageUrl === "pending") {
+                finalForm = { ...finalForm, imageUrl: null }
+            }
+
             if (onSubmit) {
-                await onSubmit(form)
+                await onSubmit(finalForm)
             }
             setOpen(false)
             setForm({ ...INITIAL_VALUES, groupId: defaultGroupId })
+            setPendingFile(null)
+            if (previewUrl) URL.revokeObjectURL(previewUrl)
+            setPreviewUrl(null)
         } finally {
             setIsSubmitting(false)
         }
@@ -202,7 +216,12 @@ export default function CreatePostDrawer({
                                         variant="destructive"
                                         size="icon"
                                         className="absolute top-2 right-2 h-7 w-7"
-                                        onClick={() => handleChange("imageUrl", null)}
+                                        onClick={() => {
+                                            handleChange("imageUrl", null)
+                                            setPendingFile(null)
+                                            if (previewUrl) URL.revokeObjectURL(previewUrl)
+                                            setPreviewUrl(null)
+                                        }}
                                     >
                                         <X className="size-4" />
                                     </Button>

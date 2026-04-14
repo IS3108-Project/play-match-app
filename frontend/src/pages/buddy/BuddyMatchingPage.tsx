@@ -31,15 +31,6 @@ import {
 } from "@/components/ui/drawer"
 import ActivityDetailsCard from "@/components/activity/ActivityDetailsCard"
 
-// Helper to get full image URL for backend uploads
-const getImageUrl = (imagePath: string | null) => {
-  if (!imagePath) return null
-  if (imagePath.startsWith("/uploads/")) {
-    return `http://localhost:3000${imagePath}`
-  }
-  return imagePath
-}
-
 export default function BuddyMatchingPage() {
   const [matches, setMatches] = React.useState<BuddyMatch[]>([])
   const [currentIndex, setCurrentIndex] = React.useState(0)
@@ -217,7 +208,7 @@ export default function BuddyMatchingPage() {
           <div className="relative h-72 bg-muted">
             {currentMatch.image ? (
               <img
-                src={getImageUrl(currentMatch.image) || undefined}
+                src={currentMatch.image || undefined}
                 alt={currentMatch.name}
                 className="w-full h-full object-cover"
               />

@@ -274,7 +274,9 @@ export default function ProfilePage() {
     try {
       let imageUrl = values.image;
       if (values.imageFile) {
-        imageUrl = await activityApi.uploadImage(values.imageFile);
+        // Delete old profile image from R2 before uploading new one
+        await activityApi.deleteProfileImage();
+        imageUrl = await activityApi.uploadImage(values.imageFile, "profiles");
       }
 
       // Use authClient.updateUser for name and image - this syncs the session automatically

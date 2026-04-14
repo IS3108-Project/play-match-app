@@ -18,6 +18,12 @@ const envSchema = z.object({
 
   DATABASE_URL: z.string().min(1),
   DIRECT_URL: z.string().min(1),
+
+  R2_ENDPOINT: z.string().url(),
+  R2_ACCESS_KEY_ID: z.string().min(1),
+  R2_SECRET_ACCESS_KEY: z.string().min(1),
+  STORAGE_BUCKET: z.string().min(1),
+  STORAGE_PUBLIC_URL: z.string().url(),
 });
 
 const parsed = envSchema.safeParse(process.env);

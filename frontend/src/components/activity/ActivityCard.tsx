@@ -108,12 +108,8 @@ export default function ActivityCard({
   const isWaitlisted = activity.myStatus === "WAITLISTED";
   const isNotJoined = !activity.myStatus;
 
-  // Resolve image src — uploaded images served from backend
-  const imgSrc = activity.imageSrc
-    ? activity.imageSrc.startsWith("/uploads/")
-      ? `http://localhost:3000${activity.imageSrc}`
-      : activity.imageSrc
-    : "/assets/default-activity-image/default.png";
+  // Resolve image src
+  const imgSrc = activity.imageSrc || "/assets/default-activity-image/default.png";
 
   return (
     <div className="relative flex flex-row overflow-hidden rounded-lg border bg-card shadow-sm lg:flex-col">

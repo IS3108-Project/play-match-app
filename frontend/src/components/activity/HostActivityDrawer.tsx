@@ -85,6 +85,8 @@ export default function HostActivityForm({
     )
     const [isSubmitting, setIsSubmitting] = React.useState(false)
     const [uploading, setUploading] = React.useState(false)
+    const [pendingFile, setPendingFile] = React.useState<File | null>(null)
+    const [previewUrl, setPreviewUrl] = React.useState<string | null>(null)
     const [errors, setErrors] = React.useState<{
         activityName?: boolean
         activityType?: boolean
@@ -113,15 +115,9 @@ export default function HostActivityForm({
     }
 
     const handleImageUpload = async (file: File) => {
-        setUploading(true)
-        try {
-            const url = await activityApi.uploadImage(file)
-            handleChange("imageSrc", url)
-        } catch (err: any) {
-            toast.error(err.message || "Failed to upload image")
-        } finally {
-            setUploading(false)
-        }
+        setPendingFile(file)
+        setPreviewUrl(URL.createObjectURL(file))
+        handleChange("imageSrc", "pending")
     }
 
     const handleDrop = (e: React.DragEvent) => {
@@ -196,8 +192,25 @@ export default function HostActivityForm({
         setIsSubmitting(true)
 
         try {
+            // Upload image to R2 only on submit
+            let finalForm = { ...form }
+            if (pendingFile) {
+                setUploading(true)
+                try {
+                    const url = await activityApi.uploadImage(pendingFile, "activities")
+                    finalForm = { ...finalForm, imageSrc: url }
+                } catch (err: any) {
+                    toast.error(err.message || "Failed to upload image")
+                    return
+                } finally {
+                    setUploading(false)
+                }
+            } else if (form.imageSrc === "pending") {
+                finalForm = { ...finalForm, imageSrc: undefined }
+            }
+
             if (onSubmit) {
-                await onSubmit(form)
+                await onSubmit(finalForm)
             }
 
             setOpen(false)
@@ -205,6 +218,9 @@ export default function HostActivityForm({
                 setForm(INITIAL_VALUES)
                 setSelectedDate(undefined)
                 setErrors({})
+                setPendingFile(null)
+                if (previewUrl) URL.revokeObjectURL(previewUrl)
+                setPreviewUrl(null)
             }
         } finally {
             setIsSubmitting(false)
@@ -214,11 +230,7 @@ export default function HostActivityForm({
     const isEdit = mode === "edit"
 
     // Resolve preview URL for uploaded images
-    const previewSrc = form.imageSrc
-        ? form.imageSrc.startsWith("/uploads/")
-            ? `http://localhost:3000${form.imageSrc}`
-            : form.imageSrc
-        : null
+    const previewSrc = previewUrl || (form.imageSrc && form.imageSrc !== "pending" ? form.imageSrc : null)
 
     return (
         <Drawer direction="bottom" open={open} onOpenChange={setOpen}>
@@ -276,7 +288,12 @@ export default function HostActivityForm({
                                         variant="destructive"
                                         size="icon"
                                         className="absolute top-2 right-2 h-7 w-7"
-                                        onClick={() => handleChange("imageSrc", undefined)}
+                                        onClick={() => {
+                                            handleChange("imageSrc", undefined)
+                                            setPendingFile(null)
+                                            if (previewUrl) URL.revokeObjectURL(previewUrl)
+                                            setPreviewUrl(null)
+                                        }}
                                     >
                                         <X className="size-4" />
                                     </Button>

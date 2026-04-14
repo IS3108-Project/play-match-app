@@ -21,12 +21,6 @@ import {
 } from "@/components/ui/drawer"
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"
 
-function resolveImageSrc(src: string | null | undefined): string | undefined {
-    if (!src) return undefined;
-    if (src.startsWith("/uploads/")) return `http://localhost:3000${src}`;
-    return src;
-}
-
 // TODO: Replace with actual data from database
 const LOCATION_OPTIONS = ["North", "South", "East", "West", "Central"] as const
 const SKILL_OPTIONS = ["beginner", "intermediate", "advanced"] as const
@@ -126,7 +120,7 @@ export default function EditProfileDrawer({
                     <section className="space-y-3 flex flex-col items-center text-center mb-8">
                         <div className="relative w-fit">
                             <Avatar className="mt-2 h-28 w-28 rounded-full border-4 border-background object-cover shadow-md">
-                                <AvatarImage src={resolveImageSrc(image)} alt={name || "Profile preview"} />
+                                <AvatarImage src={image || undefined} alt={name || "Profile preview"} />
                                 <AvatarFallback className="bg-primary text-2xl text-white">
                                     {(name?.trim()?.charAt(0) || "U").toUpperCase()}
                                 </AvatarFallback>

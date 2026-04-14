@@ -16,12 +16,6 @@ import { useTheme } from "@/hooks/useTheme";
 import { useRole } from "@/hooks/useRole";
 import { authClient } from "@/lib/client-auth";
 
-function resolveImageSrc(src: string | null | undefined): string | undefined {
-  if (!src) return undefined;
-  if (src.startsWith("/uploads/")) return `http://localhost:3000${src}`;
-  return src;
-}
-
 const navLinks = [
   { name: "Explore", shortName: "Explore", href: "/" },
   { name: "My Activities", shortName: "Activities", href: "/my-activities" },
@@ -86,7 +80,7 @@ export default function Navbar() {
         <DropdownMenu>
           <DropdownMenuTrigger className="flex items-center gap-2 outline-none">
             <Avatar className="h-8 w-8">
-              <AvatarImage src={resolveImageSrc(user?.image)} alt={user?.name ?? "User"} />
+              <AvatarImage src={user?.image || undefined} alt={user?.name ?? "User"} />
               <AvatarFallback className="bg-primary text-primary-foreground">
                 {user?.name?.charAt(0).toUpperCase() ?? "U"}
               </AvatarFallback>

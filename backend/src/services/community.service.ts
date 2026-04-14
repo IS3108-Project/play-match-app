@@ -2,6 +2,7 @@
 // Business logic for Groups, Discussions, Comments, and Likes.
 
 import { prisma } from "../config/prisma";
+import { deleteFromR2 } from "../config/storage";
 
 // ── Types ────────────────────────────────────────────────────────────────
 
@@ -481,6 +482,12 @@ export async function deleteGroup(groupId: string, userId: string) {
   const group = await prisma.group.findUnique({ where: { id: groupId } });
   if (!group) throw new Error("NOT_FOUND");
   if (group.creatorId !== userId) throw new Error("FORBIDDEN");
+
+  // Delete group image from R2
+  if (group.profileImageUrl) {
+    deleteFromR2(group.profileImageUrl).catch((err) => console.error("Failed to delete group image from R2:", err));
+  }
+
   // Delete all discussions in this group first (cascades to comments/likes)
   await prisma.discussion.deleteMany({ where: { groupId } });
   await prisma.group.delete({ where: { id: groupId } });
@@ -490,6 +497,12 @@ export async function updateGroup(groupId: string, userId: string, data: Partial
   const group = await prisma.group.findUnique({ where: { id: groupId } });
   if (!group) throw new Error("NOT_FOUND");
   if (group.creatorId !== userId) throw new Error("FORBIDDEN");
+
+  // Delete old image from R2 if being replaced
+  if ("profileImageUrl" in data && group.profileImageUrl && group.profileImageUrl !== data.profileImageUrl) {
+    deleteFromR2(group.profileImageUrl).catch((err) => console.error("Failed to delete old group image from R2:", err));
+  }
+
   const updated = await prisma.group.update({
     where: { id: groupId },
     data: {
@@ -526,6 +539,12 @@ export async function deleteDiscussion(discussionId: string, userId: string) {
   const isAuthor = discussion.authorId === userId;
   const isGroupOwner = !!discussion.group && discussion.group.creatorId === userId;
   if (!isAuthor && !isGroupOwner) throw new Error("FORBIDDEN");
+
+  // Delete discussion image from R2
+  if (discussion.imageUrl) {
+    deleteFromR2(discussion.imageUrl).catch((err) => console.error("Failed to delete discussion image from R2:", err));
+  }
+
   // Comments and likes cascade automatically via DB foreign keys
   await prisma.discussion.delete({ where: { id: discussionId } });
 }
@@ -534,6 +553,12 @@ export async function updateDiscussion(discussionId: string, userId: string, dat
   const discussion = await prisma.discussion.findUnique({ where: { id: discussionId } });
   if (!discussion) throw new Error("NOT_FOUND");
   if (discussion.authorId !== userId) throw new Error("FORBIDDEN");
+
+  // Delete old image from R2 if being replaced
+  if ("imageUrl" in data && discussion.imageUrl && discussion.imageUrl !== data.imageUrl) {
+    deleteFromR2(discussion.imageUrl).catch((err) => console.error("Failed to delete old discussion image from R2:", err));
+  }
+
   const updated = await prisma.discussion.update({
     where: { id: discussionId },
     data: {

@@ -261,10 +261,10 @@ export const activityApi = {
       ),
     }),
 
-  uploadImage: async (file: File): Promise<string> => {
+  uploadImage: async (file: File, folder: string = "activities"): Promise<string> => {
     const formData = new FormData();
     formData.append("image", file);
-    const res = await fetch(`${BASE_URL}/upload/image`, {
+    const res = await fetch(`${BASE_URL}/upload/image?folder=${folder}`, {
       method: "POST",
       credentials: "include",
       body: formData,
@@ -276,6 +276,12 @@ export const activityApi = {
     const data = await res.json();
     return data.url;
   },
+
+  deleteProfileImage: () =>
+    fetch(`${BASE_URL}/upload/profile-image`, {
+      method: "DELETE",
+      credentials: "include",
+    }),
 };
 
 // ── User API ────────────────────────────────────────────────────────────
@@ -562,10 +568,10 @@ export const communityApi = {
       method: "POST",
     }),
 
-  uploadImage: async (file: File): Promise<string> => {
+  uploadImage: async (file: File, folder: string = "discussions"): Promise<string> => {
     const formData = new FormData();
     formData.append("image", file);
-    const res = await fetch(`${BASE_URL}/upload/image`, {
+    const res = await fetch(`${BASE_URL}/upload/image?folder=${folder}`, {
       method: "POST",
       credentials: "include",
       body: formData,
