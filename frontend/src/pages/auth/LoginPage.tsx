@@ -1,7 +1,21 @@
 import logo from "@/assets/logo.svg";
 import { LoginForm } from "@/components/auth";
+import { useSearchParams } from "react-router";
+import { toast } from "sonner";
+import * as React from "react";
 
 export default function LoginPage() {
+  const [searchParams] = useSearchParams();
+  const shownRef = React.useRef(false);
+
+  React.useEffect(() => {
+    if (searchParams.get("error") === "banned" && !shownRef.current) {
+      shownRef.current = true;
+      toast.error("Your account has been banned. Please contact support.");
+      window.history.replaceState({}, "", "/login");
+    }
+  }, []);
+
   return (
     <div className="w-full max-w-md space-y-8">
       {/* Header */}

@@ -1,5 +1,6 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
+import { createAuthMiddleware, APIError } from "better-auth/api";
 import {
   onboarding,
   createOnboardingStep,
@@ -76,6 +77,40 @@ export const auth = betterAuth({
         input: false,
       },
     },
+  },
+  hooks: {
+    after: createAuthMiddleware(async (ctx) => {
+      const isSignIn =
+        ctx.path.startsWith("/callback") ||
+        ctx.path === "/sign-in/email" ||
+        ctx.path === "/sign-in/social";
+
+      if (!isSignIn) return;
+
+      const newSession = ctx.context.newSession;
+      if (!newSession) return;
+
+      const user = await prisma.user.findUnique({
+        where: { id: newSession.user.id },
+        select: { banned: true },
+      });
+
+      if (!user?.banned) return;
+
+      // Delete the session so the banned user can't use it
+      await prisma.session.delete({
+        where: { id: newSession.session.id },
+      }).catch(() => {});
+
+      // OAuth callbacks need a redirect; API calls need a JSON error
+      if (ctx.path.startsWith("/callback")) {
+        throw ctx.redirect("http://localhost:5173/login?error=banned");
+      }
+
+      throw new APIError("FORBIDDEN", {
+        message: "Your account has been banned. Please contact support.",
+      });
+    }),
   },
   plugins: [
     // @ts-expect-error
