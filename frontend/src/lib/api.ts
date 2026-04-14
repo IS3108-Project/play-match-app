@@ -330,6 +330,8 @@ export interface UserProfile {
   };
   calendar: {
     monthLabel: string;
+    year: number;
+    month: number;
     streakActivities: number;
     days: Array<{
       date: string;
@@ -340,8 +342,13 @@ export interface UserProfile {
 }
 
 export const userApi = {
-  getProfile: (userId: string) =>
-    request<UserProfile>(`/users/${userId}/profile`),
+  getProfile: (userId: string, opts?: { year?: number; month?: number }) => {
+    const params = new URLSearchParams();
+    if (opts?.year != null) params.set("year", String(opts.year));
+    if (opts?.month != null) params.set("month", String(opts.month));
+    const qs = params.toString();
+    return request<UserProfile>(`/users/${userId}/profile${qs ? `?${qs}` : ""}`);
+  },
 
   updateLocationSharing: (enabled: boolean) =>
     request<{ locationSharingEnabled: boolean }>("/users/location-sharing", {
