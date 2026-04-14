@@ -55,7 +55,7 @@ export default function Navbar() {
         </Link>
 
         {/* Nav Links */}
-        <ul className="flex items-center gap-1 sm:gap-4 justify-between">
+        <ul className="flex min-w-0 flex-1 items-center justify-center gap-0.5 overflow-x-auto sm:flex-none sm:gap-4">
           {allNavLinks.map((link) => {
             const isActive = location.pathname === link.href;
             return (
@@ -78,7 +78,7 @@ export default function Navbar() {
 
         {/* User Menu */}
         <DropdownMenu>
-          <DropdownMenuTrigger className="flex items-center gap-2 outline-none">
+          <DropdownMenuTrigger className="flex shrink-0 items-center gap-2 outline-none">
             <Avatar className="h-8 w-8">
               <AvatarImage src={user?.image || undefined} alt={user?.name ?? "User"} />
               <AvatarFallback className="bg-primary text-primary-foreground">
