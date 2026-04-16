@@ -55,7 +55,7 @@ export default function Navbar() {
         </Link>
 
         {/* Nav Links */}
-        <ul className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto scrollbar-none sm:flex-none sm:justify-center sm:gap-4">
+        <ul className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto overflow-y-hidden scrollbar-none sm:flex-none sm:justify-center sm:gap-4">
           {allNavLinks.map((link) => {
             const isActive = location.pathname === link.href;
             return (
