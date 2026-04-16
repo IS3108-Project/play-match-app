@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { ChevronDown, SearchIcon, SlidersHorizontal } from "lucide-react"
+import { SearchIcon } from "lucide-react"
 import { useSearchParams } from "react-router"
 import { toast } from "sonner"
 
@@ -9,12 +9,6 @@ import { CustomTabs, CustomTabsList, CustomTabsTrigger } from "@/components/ui/c
 import { ButtonGroup } from "@/components/ui/button-group"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import CreatePostDrawer from "@/components/ui/CreatePostDrawer"
 import type { CreatePostValues } from "@/components/ui/CreatePostDrawer"
 import CreateGroupDrawer from "@/components/ui/CreateGroupDrawer"
@@ -37,7 +31,6 @@ export default function CommunityPage() {
 
     // Filter state (all client-side)
     const [myGroupsOnly, setMyGroupsOnly] = React.useState(false)
-    const [filterGroupId, setFilterGroupId] = React.useState<string | null>(null)
 
     const [groups, setGroups] = React.useState<CommunityGroup[]>([])
     const [discussions, setDiscussions] = React.useState<CommunityDiscussion[]>([])
@@ -149,10 +142,6 @@ export default function CommunityPage() {
             result = result.filter((d) => d.groupId && myGroupIds.has(d.groupId))
         }
 
-        if (filterGroupId) {
-            result = result.filter((d) => d.groupId === filterGroupId)
-        }
-
         const q = searchTerm.trim().toLowerCase()
         if (q) {
             result = result.filter(
@@ -165,10 +154,9 @@ export default function CommunityPage() {
         }
 
         return result
-    }, [discussions, myGroupsOnly, filterGroupId, myGroupIds, searchTerm])
+    }, [discussions, myGroupsOnly, myGroupIds, searchTerm])
 
-    const filterGroupName = groups.find((g) => g.id === filterGroupId)?.name ?? null
-    const hasActiveFilter = myGroupsOnly || !!filterGroupId
+    const hasActiveFilter = myGroupsOnly
 
     return (
         <div className="container mx-auto px-4 py-8">
@@ -286,81 +274,26 @@ export default function CommunityPage() {
                     </div>
 
                     {/* Filter bar */}
-                    <div className="flex flex-wrap items-center gap-2 rounded-xl border bg-muted/30 px-3 py-2.5">
-                        <SlidersHorizontal className="h-4 w-4 shrink-0 text-muted-foreground" />
-                        <span className="text-sm font-medium text-muted-foreground">Filters:</span>
-
-                        {/* Show toggle */}
-                        <div className="flex items-center rounded-lg border bg-background p-0.5 text-sm">
-                            <button
-                                type="button"
-                                onClick={() => setMyGroupsOnly(false)}
-                                className={`rounded-md px-3 py-1 text-xs transition-colors ${!myGroupsOnly
-                                    ? "bg-primary text-primary-foreground font-medium"
-                                    : "text-muted-foreground hover:text-foreground"
-                                    }`}
-                            >
-                                All discussions
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setMyGroupsOnly(true)}
-                                className={`rounded-md px-3 py-1 text-xs transition-colors ${myGroupsOnly
-                                    ? "bg-primary text-primary-foreground font-medium"
-                                    : "text-muted-foreground hover:text-foreground"
-                                    }`}
-                            >
-                                My groups only
-                            </button>
-                        </div>
-
-                        {/* Group filter */}
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <button
-                                    type="button"
-                                    className={`ml-auto flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs transition-colors hover:bg-accent ${filterGroupId ? "border-primary text-primary font-medium" : "text-muted-foreground"}`}
-                                >
-                                    Group: {filterGroupName ?? "All"}
-                                    <ChevronDown className="h-3 w-3" />
-                                </button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => setFilterGroupId(null)}>
-                                    All groups
-                                </DropdownMenuItem>
-                                {groups.map((g) => (
-                                    <DropdownMenuItem key={g.id} onClick={() => setFilterGroupId(g.id)}>
-                                        {g.name}
-                                    </DropdownMenuItem>
-                                ))}
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+                    <div className="flex items-center gap-2 overflow-x-auto p-1">
+                        <Button
+                            type="button"
+                            variant={!myGroupsOnly ? "default" : "outline"}
+                            size="sm"
+                            className="h-9 shrink-0 rounded-xl px-4"
+                            onClick={() => setMyGroupsOnly(false)}
+                        >
+                            All discussions
+                        </Button>
+                        <Button
+                            type="button"
+                            variant={myGroupsOnly ? "default" : "outline"}
+                            size="sm"
+                            className="h-9 shrink-0 rounded-xl px-4"
+                            onClick={() => setMyGroupsOnly(true)}
+                        >
+                            My groups only
+                        </Button>
                     </div>
-
-                    {/* Active filter chips */}
-                    {hasActiveFilter && (
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <span>Showing:</span>
-                            {myGroupsOnly && (
-                                <span className="rounded-full bg-primary/10 px-2 py-0.5 text-primary font-medium">
-                                    My groups only
-                                </span>
-                            )}
-                            {filterGroupId && (
-                                <span className="rounded-full bg-primary/10 px-2 py-0.5 text-primary font-medium">
-                                    {filterGroupName}
-                                </span>
-                            )}
-                            <button
-                                type="button"
-                                onClick={() => { setMyGroupsOnly(false); setFilterGroupId(null) }}
-                                className="ml-auto underline hover:text-foreground"
-                            >
-                                Clear filters
-                            </button>
-                        </div>
-                    )}
 
                     {loadingDiscussions ? (
                         <p className="text-sm text-muted-foreground">Loading...</p>
