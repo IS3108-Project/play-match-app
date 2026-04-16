@@ -13,12 +13,11 @@ import {
   Signal,
   Sparkles,
   Users,
-  ChevronLeft,
-  ChevronRight,
   Send,
   UserPlus,
   Calendar,
-  CheckCircle2
+  CheckCircle2,
+  ChevronRight,
 } from "lucide-react"
 import { Link } from "react-router"
 import logo from "@/assets/logo.svg"
@@ -30,6 +29,10 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer"
 import ActivityDetailsCard from "@/components/activity/ActivityDetailsCard"
+import { Swiper, SwiperSlide } from "swiper/react"
+import { EffectCards } from "swiper/modules"
+import "swiper/css"
+import "swiper/css/effect-cards"
 
 export default function BuddyMatchingPage() {
   const [matches, setMatches] = React.useState<BuddyMatch[]>([])
@@ -68,27 +71,14 @@ export default function BuddyMatchingPage() {
     fetchData()
   }, [])
 
-  const currentMatch = matches[currentIndex]
-
-  // Check if current buddy is already invited to any of my activities
-  const hasPendingInvite = React.useMemo(() => {
-    if (!currentMatch) return false
-    return allHostedActivities.some(a => 
-      a.participantUserIds?.includes(currentMatch.id)
+  // Check if a buddy is already invited to any of my activities
+  const isPendingInvite = React.useCallback((match: BuddyMatch) => {
+    return allHostedActivities.some(a =>
+      a.participantUserIds?.includes(match.id)
     )
-  }, [currentMatch, allHostedActivities])
+  }, [allHostedActivities])
 
-  const handlePrevious = () => {
-    if (currentIndex > 0) {
-      setCurrentIndex((prev) => prev - 1)
-    }
-  }
-
-  const handleNext = () => {
-    if (currentIndex < matches.length - 1) {
-      setCurrentIndex((prev) => prev + 1)
-    }
-  }
+  const currentMatch = matches[currentIndex]
 
   const handleInviteToActivity = async (activityId: string) => {
     if (!currentMatch) return
@@ -197,143 +187,115 @@ export default function BuddyMatchingPage() {
         </p>
       </div>
 
-      {/* Match Card — fills remaining space */}
-      <div className="relative flex-1 min-h-0">
-        <div className="relative h-full rounded-3xl shadow-lg overflow-hidden border">
-          {/* Full-bleed image */}
-          {currentMatch.image ? (
-            <img
-              src={currentMatch.image || undefined}
-              alt={currentMatch.name}
-              className="absolute inset-0 w-full h-full object-cover"
-            />
-          ) : (
-            <div className="absolute inset-0 bg-muted flex items-center justify-center">
-              <Avatar className="h-32 w-32">
-                <AvatarFallback className="text-4xl bg-primary text-primary-foreground">
-                  {currentMatch.name.charAt(0).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-            </div>
-          )}
+      {/* Swiper Card Stack */}
+      <div className="flex-1 min-h-0 flex items-center justify-center">
+        <Swiper
+          effect="cards"
+          grabCursor
+          modules={[EffectCards]}
+          onSlideChange={(swiper) => setCurrentIndex(swiper.activeIndex)}
+          className="w-full h-full max-h-full"
+        >
+          {matches.map((match) => {
+            const pending = isPendingInvite(match)
+            return (
+              <SwiperSlide key={match.id} className="rounded-3xl overflow-hidden">
+                <div className="relative w-full h-full">
+                  {/* Full-bleed image */}
+                  {match.image ? (
+                    <img
+                      src={match.image || undefined}
+                      alt={match.name}
+                      className="absolute inset-0 w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 bg-muted flex items-center justify-center">
+                      <Avatar className="h-32 w-32">
+                        <AvatarFallback className="text-4xl bg-primary text-primary-foreground">
+                          {match.name.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                    </div>
+                  )}
 
-          {/* Gradient scrim */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+                  {/* Gradient scrim */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
 
-          {/* Compatibility Score Badge */}
-          <div className="absolute top-4 right-4 bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-1">
-            <Sparkles className="h-4 w-4" />
-            {currentMatch.compatibilityScore}% Match
-          </div>
+                  {/* Compatibility Score Badge */}
+                  <div className="absolute top-4 right-4 bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-1">
+                    <Sparkles className="h-4 w-4" />
+                    {match.compatibilityScore}% Match
+                  </div>
 
-          {/* Overlaid content at bottom */}
-          <div className="absolute inset-x-0 bottom-0 p-5 text-white">
-            {/* Name & Skill */}
-            <h2 className="text-2xl font-bold">{currentMatch.name}</h2>
-            {currentMatch.skillLevel && (
-              <div className="flex items-center gap-1 text-white/80 text-sm mt-1">
-                <Signal className="h-4 w-4" />
-                {currentMatch.skillLevel.charAt(0).toUpperCase() + currentMatch.skillLevel.slice(1)}
-              </div>
-            )}
+                  {/* Overlaid content at bottom */}
+                  <div className="absolute inset-x-0 bottom-0 p-5 text-white">
+                    <h2 className="text-2xl font-bold">{match.name}</h2>
+                    {match.skillLevel && (
+                      <div className="flex items-center gap-1 text-white/80 text-sm mt-1">
+                        <Signal className="h-4 w-4" />
+                        {match.skillLevel.charAt(0).toUpperCase() + match.skillLevel.slice(1)}
+                      </div>
+                    )}
 
-            {/* Bio */}
-            {currentMatch.bio && (
-              <p className="text-white/80 text-sm mt-2 line-clamp-2">
-                {currentMatch.bio}
-              </p>
-            )}
+                    {match.bio && (
+                      <p className="text-white/80 text-sm mt-2 line-clamp-2">{match.bio}</p>
+                    )}
 
-            {/* Common badges */}
-            <div className="flex flex-wrap gap-1.5 mt-3">
-              {currentMatch.commonSports.map((sport) => (
-                <span key={sport} className="bg-white/20 backdrop-blur-sm text-white px-2.5 py-0.5 rounded-full text-xs font-medium">
-                  <Dumbbell className="inline h-3 w-3 mr-1" />
-                  {sport}
-                </span>
-              ))}
-              {currentMatch.commonTimes.map((time) => (
-                <span key={time} className="bg-white/20 backdrop-blur-sm text-white px-2.5 py-0.5 rounded-full text-xs font-medium">
-                  <Clock className="inline h-3 w-3 mr-1" />
-                  {time}
-                </span>
-              ))}
-              {currentMatch.commonAreas.map((area) => (
-                <span key={area} className="bg-white/20 backdrop-blur-sm text-white px-2.5 py-0.5 rounded-full text-xs font-medium">
-                  <MapPin className="inline h-3 w-3 mr-1" />
-                  {area}
-                </span>
-              ))}
-            </div>
+                    {/* Common badges */}
+                    <div className="flex flex-wrap gap-1.5 mt-3">
+                      {match.commonSports.map((sport) => (
+                        <span key={sport} className="bg-white/20 backdrop-blur-sm text-white px-2.5 py-0.5 rounded-full text-xs font-medium">
+                          <Dumbbell className="inline h-3 w-3 mr-1" />{sport}
+                        </span>
+                      ))}
+                      {match.commonTimes.map((time) => (
+                        <span key={time} className="bg-white/20 backdrop-blur-sm text-white px-2.5 py-0.5 rounded-full text-xs font-medium">
+                          <Clock className="inline h-3 w-3 mr-1" />{time}
+                        </span>
+                      ))}
+                      {match.commonAreas.map((area) => (
+                        <span key={area} className="bg-white/20 backdrop-blur-sm text-white px-2.5 py-0.5 rounded-full text-xs font-medium">
+                          <MapPin className="inline h-3 w-3 mr-1" />{area}
+                        </span>
+                      ))}
+                    </div>
 
-            {/* Action Buttons */}
-            <div className="flex flex-col gap-2 mt-4">
-              {hasPendingInvite && (
-                <div className="flex items-center justify-center gap-2 py-2.5 px-4 bg-white/20 backdrop-blur-sm rounded-lg">
-                  <CheckCircle2 className="h-5 w-5 text-green-400" />
-                  <span className="text-sm font-medium">Invitation sent to {currentMatch.name.split(' ')[0]}</span>
+                    {/* Action Buttons */}
+                    <div className="flex flex-col gap-2 mt-4">
+                      {pending && (
+                        <div className="flex items-center justify-center gap-2 py-2.5 px-4 bg-white/20 backdrop-blur-sm rounded-lg">
+                          <CheckCircle2 className="h-5 w-5 text-green-400" />
+                          <span className="text-sm font-medium">Invitation sent to {match.name.split(' ')[0]}</span>
+                        </div>
+                      )}
+
+                      {!pending && myActivities.length > 0 && (
+                        <Button className="w-full gap-2" onClick={() => setShowInviteSheet(true)}>
+                          <Send className="h-4 w-4" />
+                          Invite to My Activity
+                        </Button>
+                      )}
+
+                      {match.upcomingActivities.length > 0 && (
+                        <Button variant="secondary" className="w-full gap-2" onClick={() => setShowJoinSheet(true)}>
+                          <UserPlus className="h-4 w-4" />
+                          Join Their Activity ({match.upcomingActivities.length})
+                        </Button>
+                      )}
+
+                      {!pending && myActivities.length === 0 && match.upcomingActivities.length === 0 && (
+                        <HostActivityDrawer
+                          onSubmit={handleHostActivitySubmit}
+                          triggerLabel={`Host & Invite ${match.name.split(' ')[0]}`}
+                        />
+                      )}
+                    </div>
+                  </div>
                 </div>
-              )}
-
-              {!hasPendingInvite && myActivities.length > 0 && (
-                <Button
-                  className="w-full gap-2"
-                  onClick={() => setShowInviteSheet(true)}
-                >
-                  <Send className="h-4 w-4" />
-                  Invite to My Activity
-                </Button>
-              )}
-              
-              {currentMatch.upcomingActivities.length > 0 && (
-                <Button
-                  variant="secondary"
-                  className="w-full gap-2"
-                  onClick={() => setShowJoinSheet(true)}
-                >
-                  <UserPlus className="h-4 w-4" />
-                  Join Their Activity ({currentMatch.upcomingActivities.length})
-                </Button>
-              )}
-
-              {!hasPendingInvite && myActivities.length === 0 && currentMatch.upcomingActivities.length === 0 && (
-                <HostActivityDrawer 
-                  onSubmit={handleHostActivitySubmit} 
-                  triggerLabel={`Host & Invite ${currentMatch.name.split(' ')[0]}`}
-                />
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Navigation Buttons — always visible below card */}
-      <div className="flex items-center justify-between mt-4 shrink-0">
-        <Button
-          variant="outline"
-          size="lg"
-          className="gap-2"
-          onClick={handlePrevious}
-          disabled={currentIndex === 0}
-        >
-          <ChevronLeft className="h-5 w-5" />
-          Previous
-        </Button>
-        
-        <span className="text-sm text-muted-foreground">
-          {currentIndex + 1} / {matches.length}
-        </span>
-        
-        <Button
-          variant="outline"
-          size="lg"
-          className="gap-2"
-          onClick={handleNext}
-          disabled={currentIndex === matches.length - 1}
-        >
-          Next
-          <ChevronRight className="h-5 w-5" />
-        </Button>
+              </SwiperSlide>
+            )
+          })}
+        </Swiper>
       </div>
 
       {/* Invite to Activity Drawer */}
