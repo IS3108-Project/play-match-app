@@ -14,39 +14,11 @@ import type { CreateGroupValues } from "@/components/ui/CreateGroupDrawer"
 import { communityApi } from "@/lib/api"
 import type { CommunityGroup, CommunityDiscussion } from "@/lib/api"
 
-function getImageBrightness(imageUrl: string): Promise<number> {
-    return new Promise((resolve, reject) => {
-        const image = new window.Image()
-        image.crossOrigin = "anonymous"
-        image.src = imageUrl
-
-        image.onload = () => {
-            const canvas = document.createElement("canvas")
-            canvas.width = 1
-            canvas.height = 1
-
-            const context = canvas.getContext("2d")
-            if (!context) {
-                reject(new Error("Unable to create canvas context"))
-                return
-            }
-
-            context.drawImage(image, 0, 0, 1, 1)
-            const pixel = context.getImageData(0, 0, 1, 1).data
-            const brightness = (pixel[0]! * 299 + pixel[1]! * 587 + pixel[2]! * 114) / 1000
-            resolve(brightness)
-        }
-
-        image.onerror = () => reject(new Error("Unable to load image"))
-    })
-}
-
 export default function GroupDetailPage() {
     const { groupId } = useParams<{ groupId: string }>()
     const navigate = useNavigate()
     const [group, setGroup] = React.useState<(CommunityGroup & { discussions?: CommunityDiscussion[] }) | null | undefined>(undefined)
     const [isJoining, setIsJoining] = React.useState(false)
-    const [isDarkBackground, setIsDarkBackground] = React.useState(false)
     const [deleteGroupConfirm, setDeleteGroupConfirm] = React.useState(false)
 
     const fetchGroup = React.useCallback(async () => {
@@ -67,18 +39,6 @@ export default function GroupDetailPage() {
         const withImage = group.discussions?.find((d) => d.imageUrl)
         return withImage?.imageUrl ?? null
     }, [group])
-
-    React.useEffect(() => {
-        let cancelled = false
-        if (!headerBackground) {
-            setIsDarkBackground(false)
-            return () => { cancelled = true }
-        }
-        getImageBrightness(headerBackground)
-            .then((brightness) => { if (!cancelled) setIsDarkBackground(brightness < 135) })
-            .catch(() => { if (!cancelled) setIsDarkBackground(true) })
-        return () => { cancelled = true }
-    }, [headerBackground])
 
     const handleJoin = async () => {
         if (!groupId || !group) return
@@ -182,15 +142,15 @@ export default function GroupDetailPage() {
     }
 
     const titleColorClass = headerBackground
-        ? isDarkBackground ? "text-white" : "text-slate-900"
+        ? "text-white"
         : "text-foreground"
 
     const subtitleColorClass = headerBackground
-        ? isDarkBackground ? "text-white/90" : "text-slate-900/80"
+        ? "text-white/90"
         : "text-muted-foreground"
 
     const backIconClass = headerBackground
-        ? isDarkBackground ? "text-white" : "text-slate-900"
+        ? "text-white"
         : "text-muted-foreground"
 
     const groupDiscussions = group.discussions ?? []
@@ -207,7 +167,7 @@ export default function GroupDetailPage() {
                                     alt={`${group.name} cover`}
                                     className="absolute inset-0 h-full w-full object-cover"
                                 />
-                                <div className="absolute inset-0" />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
                             </>
                         ) : (
                             <div className="absolute w-150 inset-0 bg-secondary/20" />
