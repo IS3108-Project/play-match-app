@@ -174,7 +174,7 @@ export default function ActivityCard({
             </ActivityDetailsCard>
             <div className="mt-2 space-y-2">
               {/* Row 1: Attendance (only after activity date) + Pending */}
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 {new Date() > new Date(activity.date) && (
                   <AttendanceDrawer
                     activityId={activity.id}
