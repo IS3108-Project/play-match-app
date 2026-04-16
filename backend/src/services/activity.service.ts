@@ -571,6 +571,7 @@ export async function getMyActivities(
   }
 
   // upcoming or past — find via participation, both sorted ASC
+  const now = new Date();
   const activities = await prisma.activity.findMany({
     where: {
       status: "ACTIVE",
@@ -592,7 +593,21 @@ export async function getMyActivities(
     },
   });
 
-  return activities.map((a) => mapActivityResponse(a, userId));
+  // For upcoming: filter out same-day activities whose endTime has already passed
+  // For past: include same-day activities whose endTime has already passed
+  const filtered = activities.filter((a) => {
+    const activityDate = new Date(a.date);
+    activityDate.setHours(0, 0, 0, 0);
+    const isToday = activityDate.getTime() === today.getTime();
+    if (!isToday) return true;
+
+    const [endH = 0, endM = 0] = a.endTime.split(":").map(Number);
+    const endPassed = now.getHours() > endH || (now.getHours() === endH && now.getMinutes() >= endM);
+
+    return tab === "upcoming" ? !endPassed : endPassed;
+  });
+
+  return filtered.map((a) => mapActivityResponse(a, userId));
 }
 
 function mapActivityResponse(a: any, userId: string) {

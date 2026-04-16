@@ -112,7 +112,7 @@ export default function ActivityCard({
   const imgSrc = activity.imageSrc || "/assets/default-activity-image/default.png";
 
   return (
-    <div className="relative flex flex-row overflow-hidden rounded-lg border bg-card shadow-sm lg:flex-col">
+    <div className="relative flex h-full flex-row overflow-hidden rounded-lg border bg-card shadow-sm lg:flex-col">
       {/* Actions Menu */}
       {(isJoined || isPending || isWaitlisted) && (
         <div className="absolute right-3 top-3 z-10">
@@ -141,7 +141,7 @@ export default function ActivityCard({
       </div>
 
       {/* Description */}
-      <div className="basis-[55%] min-w-0 p-4 lg:basis-auto">
+      <div className="flex basis-[55%] min-w-0 flex-col p-4 lg:basis-auto">
         <div className="flex flex-wrap gap-2">
           <span className="inline-block w-fit rounded bg-chart-1 px-2 py-1 text-xs text-primary">
             {activity.activityType.toUpperCase()}
@@ -153,7 +153,7 @@ export default function ActivityCard({
             </span>
           )}
         </div>
-        <h3 className="mt-2 font-semibold">{activity.title}</h3>
+        <h3 className="mt-2 truncate font-semibold">{activity.title}</h3>
         <p className="text-sm text-muted-foreground">{activity.location}</p>
         <p className="text-sm text-muted-foreground">{displayDate}</p>
         <p className="text-sm text-muted-foreground">{displayTime}</p>
@@ -164,6 +164,7 @@ export default function ActivityCard({
           </span>
         </p>
 
+        <div className="mt-auto">
         {isHosted ? (
           <>
             <ActivityDetailsCard activityId={activity.id} onRefresh={onRefresh}>
@@ -271,6 +272,7 @@ export default function ActivityCard({
             )}
           </>
         )}
+        </div>
       </div>
 
       {confirmingCancel && (
