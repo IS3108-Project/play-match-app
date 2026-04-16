@@ -227,9 +227,9 @@ export default function CommunityPage() {
                         )}
                     </div>
 
-                    {/* Group List */}
+                    {/* All Groups */}
                     <div>
-                        <h3 className="text-lg font-semibold mb-3">Group List</h3>
+                        <h3 className="text-lg font-semibold mb-3">All Groups</h3>
                         {loadingGroups ? (
                             <p className="text-sm text-muted-foreground">Loading...</p>
                         ) : filteredGroups.length === 0 ? (
