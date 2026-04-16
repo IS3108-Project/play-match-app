@@ -185,142 +185,96 @@ export default function BuddyMatchingPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-lg">
+    <div className="container mx-auto px-4 py-4 max-w-lg flex flex-col" style={{ height: "calc(100dvh - 5rem)" }}>
       {/* Header */}
-      <div className="mb-8 text-center">
-        <div className="mb-4 flex justify-center md:hidden">
-          <img src={logo} alt="PlayMatch" className="h-10 w-auto" />
+      <div className="mb-3 text-center shrink-0">
+        <div className="mb-2 flex justify-center md:hidden">
+          <img src={logo} alt="PlayMatch" className="h-8 w-auto" />
         </div>
-        <h1 className="text-3xl font-bold">Find Your Buddy</h1>
-        <p className="mt-2 text-muted-foreground">
-          Connect with like-minded athletes who match your sport, skill level, and schedule.
+        <h1 className="text-2xl font-bold">Find Your Buddy</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {currentIndex + 1} of {matches.length} matches
         </p>
       </div>
 
-      <p className="text-center text-sm text-muted-foreground mb-4">
-        {currentIndex + 1} of {matches.length} matches
-      </p>
-
-      {/* Match Card */}
-      <div className="relative">
-        <div className="bg-card rounded-3xl shadow-lg overflow-hidden border min-h-[600px]">
-          {/* Profile Image */}
-          <div className="relative h-72 bg-muted">
-            {currentMatch.image ? (
-              <img
-                src={currentMatch.image || undefined}
-                alt={currentMatch.name}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <Avatar className="h-32 w-32">
-                  <AvatarFallback className="text-4xl bg-primary text-primary-foreground">
-                    {currentMatch.name.charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-              </div>
-            )}
-            
-            {/* Compatibility Score Badge */}
-            <div className="absolute top-4 right-4 bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-1">
-              <Sparkles className="h-4 w-4" />
-              {currentMatch.compatibilityScore}% Match
+      {/* Match Card — fills remaining space */}
+      <div className="relative flex-1 min-h-0">
+        <div className="relative h-full rounded-3xl shadow-lg overflow-hidden border">
+          {/* Full-bleed image */}
+          {currentMatch.image ? (
+            <img
+              src={currentMatch.image || undefined}
+              alt={currentMatch.name}
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          ) : (
+            <div className="absolute inset-0 bg-muted flex items-center justify-center">
+              <Avatar className="h-32 w-32">
+                <AvatarFallback className="text-4xl bg-primary text-primary-foreground">
+                  {currentMatch.name.charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
             </div>
+          )}
+
+          {/* Gradient scrim */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+
+          {/* Compatibility Score Badge */}
+          <div className="absolute top-4 right-4 bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-1">
+            <Sparkles className="h-4 w-4" />
+            {currentMatch.compatibilityScore}% Match
           </div>
 
-          {/* Profile Info */}
-          <div className="p-6">
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <h2 className="text-2xl font-bold">{currentMatch.name}</h2>
-                {currentMatch.skillLevel && (
-                  <div className="flex items-center gap-1 text-muted-foreground text-sm mt-1">
-                    <Signal className="h-4 w-4" />
-                    {currentMatch.skillLevel.charAt(0).toUpperCase() + currentMatch.skillLevel.slice(1)}
-                  </div>
-                )}
+          {/* Overlaid content at bottom */}
+          <div className="absolute inset-x-0 bottom-0 p-5 text-white">
+            {/* Name & Skill */}
+            <h2 className="text-2xl font-bold">{currentMatch.name}</h2>
+            {currentMatch.skillLevel && (
+              <div className="flex items-center gap-1 text-white/80 text-sm mt-1">
+                <Signal className="h-4 w-4" />
+                {currentMatch.skillLevel.charAt(0).toUpperCase() + currentMatch.skillLevel.slice(1)}
               </div>
-            </div>
+            )}
 
             {/* Bio */}
             {currentMatch.bio && (
-              <p className="text-muted-foreground mb-4 line-clamp-2">
+              <p className="text-white/80 text-sm mt-2 line-clamp-2">
                 {currentMatch.bio}
               </p>
             )}
 
-            {/* Common Interests */}
-            {currentMatch.commonSports.length > 0 && (
-              <div className="mb-4">
-                <div className="flex items-center gap-2 text-sm font-medium mb-2">
-                  <Dumbbell className="h-4 w-4 text-primary" />
-                  Sports in Common
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {currentMatch.commonSports.map((sport) => (
-                    <span
-                      key={sport}
-                      className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm"
-                    >
-                      {sport}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Common Times */}
-            {currentMatch.commonTimes.length > 0 && (
-              <div className="mb-4">
-                <div className="flex items-center gap-2 text-sm font-medium mb-2">
-                  <Clock className="h-4 w-4 text-primary" />
-                  Available Same Time
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {currentMatch.commonTimes.map((time) => (
-                    <span
-                      key={time}
-                      className="bg-muted px-3 py-1 rounded-full text-sm"
-                    >
-                      {time}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Common Areas */}
-            {currentMatch.commonAreas.length > 0 && (
-              <div className="mb-4">
-                <div className="flex items-center gap-2 text-sm font-medium mb-2">
-                  <MapPin className="h-4 w-4 text-primary" />
-                  Same Preferred Areas
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {currentMatch.commonAreas.map((area) => (
-                    <span
-                      key={area}
-                      className="bg-muted px-3 py-1 rounded-full text-sm"
-                    >
-                      {area}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
+            {/* Common badges */}
+            <div className="flex flex-wrap gap-1.5 mt-3">
+              {currentMatch.commonSports.map((sport) => (
+                <span key={sport} className="bg-white/20 backdrop-blur-sm text-white px-2.5 py-0.5 rounded-full text-xs font-medium">
+                  <Dumbbell className="inline h-3 w-3 mr-1" />
+                  {sport}
+                </span>
+              ))}
+              {currentMatch.commonTimes.map((time) => (
+                <span key={time} className="bg-white/20 backdrop-blur-sm text-white px-2.5 py-0.5 rounded-full text-xs font-medium">
+                  <Clock className="inline h-3 w-3 mr-1" />
+                  {time}
+                </span>
+              ))}
+              {currentMatch.commonAreas.map((area) => (
+                <span key={area} className="bg-white/20 backdrop-blur-sm text-white px-2.5 py-0.5 rounded-full text-xs font-medium">
+                  <MapPin className="inline h-3 w-3 mr-1" />
+                  {area}
+                </span>
+              ))}
+            </div>
 
             {/* Action Buttons */}
-            <div className="flex flex-col gap-3 mt-6 pt-4 border-t">
-              {/* Show invitation pending state */}
+            <div className="flex flex-col gap-2 mt-4">
               {hasPendingInvite && (
-                <div className="flex items-center justify-center gap-2 py-3 px-4 bg-primary/10 rounded-lg">
-                  <CheckCircle2 className="h-5 w-5 text-primary" />
-                  <span className="text-sm font-medium text-primary">Invitation sent to {currentMatch.name.split(' ')[0]}</span>
+                <div className="flex items-center justify-center gap-2 py-2.5 px-4 bg-white/20 backdrop-blur-sm rounded-lg">
+                  <CheckCircle2 className="h-5 w-5 text-green-400" />
+                  <span className="text-sm font-medium">Invitation sent to {currentMatch.name.split(' ')[0]}</span>
                 </div>
               )}
 
-              {/* Invite to Activity - only show if user has activities and no pending invite */}
               {!hasPendingInvite && myActivities.length > 0 && (
                 <Button
                   className="w-full gap-2"
@@ -331,10 +285,9 @@ export default function BuddyMatchingPage() {
                 </Button>
               )}
               
-              {/* Request to Join - only show if match has activities */}
               {currentMatch.upcomingActivities.length > 0 && (
                 <Button
-                  variant="outline"
+                  variant="secondary"
                   className="w-full gap-2"
                   onClick={() => setShowJoinSheet(true)}
                 >
@@ -343,50 +296,44 @@ export default function BuddyMatchingPage() {
                 </Button>
               )}
 
-              {/* Show message if no actions available and no pending invite */}
               {!hasPendingInvite && myActivities.length === 0 && currentMatch.upcomingActivities.length === 0 && (
-                <div className="text-center py-2 space-y-2">
-                  <p className="text-sm text-muted-foreground">
-                    No activities available to invite {currentMatch.name}!
-                  </p>
-                  <HostActivityDrawer 
-                    onSubmit={handleHostActivitySubmit} 
-                    triggerLabel={`Host & Invite ${currentMatch.name.split(' ')[0]}`}
-                  />
-                </div>
+                <HostActivityDrawer 
+                  onSubmit={handleHostActivitySubmit} 
+                  triggerLabel={`Host & Invite ${currentMatch.name.split(' ')[0]}`}
+                />
               )}
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Navigation Buttons */}
-        <div className="flex items-center justify-between mt-6">
-          <Button
-            variant="outline"
-            size="lg"
-            className="gap-2"
-            onClick={handlePrevious}
-            disabled={currentIndex === 0}
-          >
-            <ChevronLeft className="h-5 w-5" />
-            Previous
-          </Button>
-          
-          <span className="text-sm text-muted-foreground">
-            {currentIndex + 1} / {matches.length}
-          </span>
-          
-          <Button
-            variant="outline"
-            size="lg"
-            className="gap-2"
-            onClick={handleNext}
-            disabled={currentIndex === matches.length - 1}
-          >
-            Next
-            <ChevronRight className="h-5 w-5" />
-          </Button>
-        </div>
+      {/* Navigation Buttons — always visible below card */}
+      <div className="flex items-center justify-between mt-4 shrink-0">
+        <Button
+          variant="outline"
+          size="lg"
+          className="gap-2"
+          onClick={handlePrevious}
+          disabled={currentIndex === 0}
+        >
+          <ChevronLeft className="h-5 w-5" />
+          Previous
+        </Button>
+        
+        <span className="text-sm text-muted-foreground">
+          {currentIndex + 1} / {matches.length}
+        </span>
+        
+        <Button
+          variant="outline"
+          size="lg"
+          className="gap-2"
+          onClick={handleNext}
+          disabled={currentIndex === matches.length - 1}
+        >
+          Next
+          <ChevronRight className="h-5 w-5" />
+        </Button>
       </div>
 
       {/* Invite to Activity Drawer */}
