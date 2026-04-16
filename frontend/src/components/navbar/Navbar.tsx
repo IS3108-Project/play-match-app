@@ -55,11 +55,11 @@ export default function Navbar() {
         </Link>
 
         {/* Nav Links */}
-        <ul className="flex min-w-0 flex-1 items-center justify-center gap-0.5 overflow-x-auto sm:flex-none sm:gap-4">
+        <ul className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto scrollbar-none sm:flex-none sm:justify-center sm:gap-4">
           {allNavLinks.map((link) => {
             const isActive = location.pathname === link.href;
             return (
-              <li key={link.href}>
+              <li key={link.href} className="shrink-0">
                 <Link
                   to={link.href}
                   className={`relative px-2 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm font-medium transition-all whitespace-nowrap rounded-lg ${
