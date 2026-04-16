@@ -581,7 +581,7 @@ export async function getMyActivities(
           status: { in: ["CONFIRMED", "PENDING", "WAITLISTED"] },
         },
       },
-      date: tab === "upcoming" ? { gte: today } : { lt: today },
+      date: tab === "upcoming" ? { gte: today } : { lte: today },
     },
     orderBy: { date: "asc" },
     include: {
