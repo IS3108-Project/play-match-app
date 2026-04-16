@@ -519,20 +519,121 @@ export async function getActivities(
 
 export async function getMyActivities(
   userId: string,
-  tab: "upcoming" | "past" | "hosted",
+  options: {
+    time?: ("upcoming" | "past")[];
+    host?: ("me" | "others")[];
+    search?: string;
+    page?: number;
+    limit?: number;
+  } = {},
 ) {
-  // Use start of today for date comparison (activities today should be "upcoming")
+  const page = Math.max(1, options.page ?? 1);
+  const limit = Math.min(50, Math.max(1, options.limit ?? 12));
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+  const now = new Date();
 
-  if (tab === "hosted") {
-    let activities = await prisma.activity.findMany({
+  const timeFilters = options.time?.length ? options.time : ["upcoming", "past"];
+  const hostFilters = options.host?.length ? options.host : ["me", "others"];
+
+  // Fetch based on what we need
+  const needHosted = hostFilters.includes("me");
+  const needJoined = hostFilters.includes("others");
+  const needUpcoming = timeFilters.includes("upcoming");
+  const needPast = timeFilters.includes("past");
+
+  let allResults: { activity: any; isHosted: boolean }[] = [];
+
+  // Hosted by me
+  if (needHosted) {
+    const dateFilter: any = {};
+    if (needUpcoming && !needPast) dateFilter.gte = today;
+    else if (needPast && !needUpcoming) dateFilter.lte = today;
+
+    let hosted = await prisma.activity.findMany({
       where: {
         hostId: userId,
         status: { not: "CANCELLED" },
-        date: { gte: today },
+        ...(Object.keys(dateFilter).length > 0 ? { date: dateFilter } : {}),
       },
-      orderBy: { date: "asc" },
+      orderBy: { date: "desc" },
+      include: {
+        host: { select: { id: true, name: true, image: true } },
+        participants: {
+          select: { id: true, userId: true, status: true, source: true, attendanceStatus: true },
+        },
+        _count: { select: { guests: true } },
+      },
+    });
+
+    // Sync attendance for hosted activities
+    await syncStartedHostAttendanceForActivities(
+      hosted.map((activity) => ({
+        id: activity.id,
+        date: activity.date,
+        startTime: activity.startTime,
+        hostId: activity.hostId,
+        status: activity.status,
+      })),
+    );
+
+    // Re-fetch after sync
+    hosted = await prisma.activity.findMany({
+      where: {
+        hostId: userId,
+        status: { not: "CANCELLED" },
+        ...(Object.keys(dateFilter).length > 0 ? { date: dateFilter } : {}),
+      },
+      orderBy: { date: "desc" },
+      include: {
+        host: { select: { id: true, name: true, image: true } },
+        participants: {
+          select: { id: true, userId: true, status: true, source: true, attendanceStatus: true },
+        },
+        _count: { select: { guests: true } },
+      },
+    });
+
+    // Apply same-day time filtering
+    const filtered = hosted.filter((a) => {
+      const activityDate = new Date(a.date);
+      activityDate.setHours(0, 0, 0, 0);
+      const isToday = activityDate.getTime() === today.getTime();
+      if (!isToday) return true;
+      if (needUpcoming && needPast) return true;
+
+      const [endH = 0, endM = 0] = a.endTime.split(":").map(Number);
+      const endPassed = now.getHours() > endH || (now.getHours() === endH && now.getMinutes() >= endM);
+      if (needUpcoming && !needPast) return !endPassed;
+      if (needPast && !needUpcoming) return endPassed;
+      return true;
+    });
+
+    for (const a of filtered) {
+      allResults.push({ activity: a, isHosted: true });
+    }
+  }
+
+  // Joined (hosted by others)
+  if (needJoined) {
+    const dateFilter: any = {};
+    if (needUpcoming && !needPast) dateFilter.gte = today;
+    else if (needPast && !needUpcoming) dateFilter.lte = today;
+
+    const joined = await prisma.activity.findMany({
+      where: {
+        status: "ACTIVE",
+        hostId: { not: userId },
+        participants: {
+          some: {
+            userId,
+            status: { in: ["CONFIRMED", "PENDING", "WAITLISTED"] },
+          },
+        },
+        ...(Object.keys(dateFilter).length > 0 ? { date: dateFilter } : {}),
+      },
+      orderBy: { date: "desc" },
       include: {
         host: { select: { id: true, name: true, image: true } },
         participants: {
@@ -541,73 +642,68 @@ export async function getMyActivities(
         _count: { select: { guests: true } },
       },
     });
-    await syncStartedHostAttendanceForActivities(
-      activities.map((activity) => ({
-        id: activity.id,
-        date: activity.date,
-        startTime: activity.startTime,
-        hostId: activity.hostId,
-        status: activity.status,
-      })),
-    );
-    activities = await prisma.activity.findMany({
-      where: { hostId: userId, status: { not: "CANCELLED" } },
-      orderBy: { date: "asc" },
-      include: {
-        host: { select: { id: true, name: true, image: true } },
-        participants: {
-          select: {
-            id: true,
-            userId: true,
-            status: true,
-            source: true,
-            attendanceStatus: true,
-          },
-        },
-        _count: { select: { guests: true } },
-      },
+
+    // Apply same-day time filtering
+    const filtered = joined.filter((a) => {
+      const activityDate = new Date(a.date);
+      activityDate.setHours(0, 0, 0, 0);
+      const isToday = activityDate.getTime() === today.getTime();
+      if (!isToday) return true;
+      if (needUpcoming && needPast) return true;
+
+      const [endH = 0, endM = 0] = a.endTime.split(":").map(Number);
+      const endPassed = now.getHours() > endH || (now.getHours() === endH && now.getMinutes() >= endM);
+      if (needUpcoming && !needPast) return !endPassed;
+      if (needPast && !needUpcoming) return endPassed;
+      return true;
     });
-    return activities.map((a) => mapActivityResponse(a, userId));
+
+    for (const a of filtered) {
+      allResults.push({ activity: a, isHosted: false });
+    }
   }
 
-  // upcoming or past — find via participation, both sorted ASC
-  const now = new Date();
-  const activities = await prisma.activity.findMany({
-    where: {
-      status: "ACTIVE",
-      participants: {
-        some: {
-          userId,
-          status: { in: ["CONFIRMED", "PENDING", "WAITLISTED"] },
-        },
-      },
-      date: tab === "upcoming" ? { gte: today } : { lte: today },
-    },
-    orderBy: { date: "asc" },
-    include: {
-      host: { select: { id: true, name: true, image: true } },
-      participants: {
-        select: { id: true, userId: true, status: true, source: true },
-      },
-      _count: { select: { guests: true } },
-    },
+  // Deduplicate by id
+  const seen = new Set<string>();
+  allResults = allResults.filter(({ activity }) => {
+    if (seen.has(activity.id)) return false;
+    seen.add(activity.id);
+    return true;
   });
 
-  // For upcoming: filter out same-day activities whose endTime has already passed
-  // For past: include same-day activities whose endTime has already passed
-  const filtered = activities.filter((a) => {
-    const activityDate = new Date(a.date);
-    activityDate.setHours(0, 0, 0, 0);
-    const isToday = activityDate.getTime() === today.getTime();
-    if (!isToday) return true;
+  // Apply search filter
+  if (options.search) {
+    const q = options.search.toLowerCase();
+    allResults = allResults.filter(({ activity }) =>
+      activity.title.toLowerCase().includes(q) ||
+      activity.location.toLowerCase().includes(q) ||
+      activity.activityType.toLowerCase().includes(q)
+    );
+  }
 
-    const [endH = 0, endM = 0] = a.endTime.split(":").map(Number);
-    const endPassed = now.getHours() > endH || (now.getHours() === endH && now.getMinutes() >= endM);
+  // Sort by date descending
+  allResults.sort((a, b) =>
+    new Date(b.activity.date).getTime() - new Date(a.activity.date).getTime()
+  );
 
-    return tab === "upcoming" ? !endPassed : endPassed;
-  });
+  const total = allResults.length;
+  const totalPages = Math.ceil(total / limit);
+  const paginated = allResults.slice((page - 1) * limit, page * limit);
 
-  return filtered.map((a) => mapActivityResponse(a, userId));
+  return {
+    data: paginated.map(({ activity, isHosted }) => ({
+      ...mapActivityResponse(activity, userId),
+      isHosted,
+    })),
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPrevPage: page > 1,
+    },
+  };
 }
 
 function mapActivityResponse(a: any, userId: string) {

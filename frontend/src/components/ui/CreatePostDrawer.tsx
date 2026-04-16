@@ -78,9 +78,9 @@ export default function CreatePostDrawer({
             setPendingFile(null)
             if (previewUrl) URL.revokeObjectURL(previewUrl)
             setPreviewUrl(null)
-            activityApi.mine("hosted")
-                .then((activities) => setHostedActivities(
-                    activities.filter((a) => a.status !== "CANCELLED" && new Date(a.date) > new Date())
+            activityApi.mine({ host: ["me"], time: ["upcoming"], limit: 50 })
+                .then((res) => setHostedActivities(
+                    res.data.filter((a) => a.status !== "CANCELLED" && new Date(a.date) > new Date())
                 ))
                 .catch(() => setHostedActivities([]))
         }

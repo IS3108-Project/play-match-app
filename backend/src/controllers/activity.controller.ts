@@ -43,12 +43,17 @@ export async function getActivities(req: AuthRequest, res: Response) {
 
 export async function getMyActivities(req: AuthRequest, res: Response) {
   try {
-    const tab = (req.query as Record<string, string | undefined>).tab || "upcoming";
-    const activities = await activityService.getMyActivities(
-      req.user.id,
-      tab as "upcoming" | "past" | "hosted",
-    );
-    res.json(activities);
+    const query = req.query as Record<string, string | undefined>;
+    const time = query.time?.split(",").filter(Boolean) as ("upcoming" | "past")[] | undefined;
+    const host = query.host?.split(",").filter(Boolean) as ("me" | "others")[] | undefined;
+    const result = await activityService.getMyActivities(req.user.id, {
+      ...(time?.length ? { time } : {}),
+      ...(host?.length ? { host } : {}),
+      ...(query.search ? { search: query.search } : {}),
+      ...(query.page ? { page: parseInt(query.page) } : {}),
+      ...(query.limit ? { limit: parseInt(query.limit) } : {}),
+    });
+    res.json(result);
   } catch (error) {
     console.error("Failed to fetch my activities:", error);
     res.status(500).json({ error: "Failed to fetch activities" });

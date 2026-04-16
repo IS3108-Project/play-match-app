@@ -48,17 +48,17 @@ export default function BuddyMatchingPage() {
     const fetchData = async () => {
       setLoading(true)
       try {
-        const [matchesData, activitiesData] = await Promise.all([
+        const [matchesData, activitiesRes] = await Promise.all([
           buddyApi.getPotentialMatches(),
-          activityApi.mine("hosted"),
+          activityApi.mine({ host: ["me"], time: ["upcoming"], limit: 50 }),
         ])
         setMatches(matchesData)
         // Store all hosted activities (for pending invite check)
-        setAllHostedActivities(activitiesData)
+        setAllHostedActivities(activitiesRes.data)
         // Filter to only upcoming activities with slots available (for invite drawer)
         const now = new Date()
         setMyActivities(
-          activitiesData.filter(
+          activitiesRes.data.filter(
             (a) => new Date(a.date) >= now && a.slotsLeft > 0 && a.status === "ACTIVE"
           )
         )
@@ -96,17 +96,17 @@ export default function BuddyMatchingPage() {
   // Refresh matches after joining an activity
   const handleActivityRefresh = async () => {
     try {
-      const [matchesData, activitiesData] = await Promise.all([
+      const [matchesData, activitiesRes] = await Promise.all([
         buddyApi.getPotentialMatches(),
-        activityApi.mine("hosting"),
+        activityApi.mine({ host: ["me"], time: ["upcoming"], limit: 50 }),
       ])
       setMatches(matchesData)
       // Store all hosted activities (for pending invite check)
-      setAllHostedActivities(activitiesData)
+      setAllHostedActivities(activitiesRes.data)
       // Filter to only upcoming activities with slots available (for invite drawer)
       const now = new Date()
       setMyActivities(
-        activitiesData.filter(
+        activitiesRes.data.filter(
           (a) => new Date(a.date) >= now && a.slotsLeft > 0 && a.status === "ACTIVE"
         )
       )

@@ -86,7 +86,7 @@ export default function ExplorePage() {
         <img src={logo} alt="PlayMatch" className="h-10 w-auto" />
       </div>
       <div className="mb-8 text-center">
-        <h1 className="text-3xl font-bold">Find Your Activity</h1>
+        <h1 className="text-3xl font-bold">Explore Activities</h1>
         <p className="mt-2 text-muted-foreground">
           Join local activities organized by the community. Or... Try out our new feature:
         </p>

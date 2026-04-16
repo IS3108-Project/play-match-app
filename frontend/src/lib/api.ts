@@ -169,8 +169,22 @@ export const activityApi = {
     return request<PaginatedResponse<Activity>>(`/activities${query ? `?${query}` : ""}`);
   },
 
-  mine: (tab: string) =>
-    request<Activity[]>(`/activities/mine?tab=${tab}`),
+  mine: (params: {
+    time?: string[];
+    host?: string[];
+    search?: string;
+    page?: number;
+    limit?: number;
+  } = {}) => {
+    const searchParams = new URLSearchParams();
+    if (params.time?.length) searchParams.set("time", params.time.join(","));
+    if (params.host?.length) searchParams.set("host", params.host.join(","));
+    if (params.search) searchParams.set("search", params.search);
+    if (params.page) searchParams.set("page", String(params.page));
+    if (params.limit) searchParams.set("limit", String(params.limit));
+    const query = searchParams.toString();
+    return request<PaginatedResponse<Activity & { isHosted: boolean }>>(`/activities/mine${query ? `?${query}` : ""}`);
+  },
 
   get: (id: string) =>
     request<ActivityDetail>(`/activities/${id}`),
