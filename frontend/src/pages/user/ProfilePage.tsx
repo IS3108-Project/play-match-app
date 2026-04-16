@@ -4,7 +4,7 @@ import UserStatsCard from "@/components/profile/UserStatsCard";
 import ReliabilityBadge from "@/components/profile/ReliabilityBadge";
 import EditProfileDrawer from "@/components/community/EditProfileDrawer";
 import type { UserStatsItem } from "@/components/profile/UserStatsCard";
-import { Spinner } from "@/components/ui/spinner";
+import { ProfileSkeleton } from "@/components/ui/skeletons";
 import { useRole } from "@/hooks/useRole";
 import {
   BadgeCheck,
@@ -303,11 +303,7 @@ export default function ProfilePage() {
   };
 
   if (loading && !profile) {
-    return (
-      <div className="grid min-h-[60vh] place-items-center">
-        <Spinner className="size-10 text-primary" />
-      </div>
-    );
+    return <ProfileSkeleton />;
   }
 
   return (

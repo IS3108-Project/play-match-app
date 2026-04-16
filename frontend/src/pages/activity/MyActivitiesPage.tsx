@@ -4,7 +4,7 @@ import ActivityCard from "@/components/activity/ActivityCard"
 import HostActivityDrawer, { type HostActivityValues } from "@/components/activity/HostActivityDrawer"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Spinner } from "@/components/ui/spinner"
+import { ActivityGridSkeleton } from "@/components/ui/skeletons"
 import {
     DropdownMenu,
     DropdownMenuCheckboxItem,
@@ -222,9 +222,7 @@ export default function MyActivitiesPage() {
 
             {/* Activity Cards */}
             {loading ? (
-                <div className="flex justify-center py-16">
-                    <Spinner className="size-8 text-primary" />
-                </div>
+                <ActivityGridSkeleton />
             ) : activities.length === 0 ? (
                 <div className="text-center py-16">
                     <p className="text-muted-foreground">

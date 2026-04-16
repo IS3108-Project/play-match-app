@@ -1,7 +1,7 @@
 "use client"
 import * as React from "react"
 import { Button } from "@/components/ui/button"
-import { Spinner } from "@/components/ui/spinner"
+import { BuddyCardSkeleton } from "@/components/ui/skeletons"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { buddyApi, activityApi, type BuddyMatch, type Activity } from "@/lib/api"
 import { toast } from "sonner"
@@ -150,8 +150,13 @@ export default function BuddyMatchingPage() {
 
   if (loading) {
     return (
-      <div className="flex h-[calc(100vh-200px)] items-center justify-center">
-        <Spinner className="h-8 w-8 text-primary" />
+      <div className="container mx-auto px-4 py-4 max-w-lg flex flex-col" style={{ height: "calc(100dvh - 5rem)" }}>
+        <div className="mb-3 text-center shrink-0">
+          <h1 className="text-2xl font-bold">Find Your Buddy</h1>
+        </div>
+        <div className="flex-1 min-h-0">
+          <BuddyCardSkeleton />
+        </div>
       </div>
     )
   }

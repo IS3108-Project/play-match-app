@@ -6,7 +6,7 @@ import ActivityDetailsCard from "@/components/activity/ActivityDetailsCard"
 import FilterBar, { type MaxDistance } from "@/components/FilterBar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Spinner } from "@/components/ui/spinner"
+import { ActivityGridSkeleton } from "@/components/ui/skeletons"
 import { SearchIcon } from "lucide-react"
 import logo from "@/assets/logo.svg"
 import { activityApi, type Activity, type PaginationInfo } from "@/lib/api"
@@ -122,9 +122,7 @@ export default function ExplorePage() {
 
       {/* Activities Grid */}
       {loading ? (
-        <div className="flex justify-center py-16">
-          <Spinner className="size-8 text-primary" />
-        </div>
+        <ActivityGridSkeleton />
       ) : sortedActivities.length === 0 ? (
         <div className="text-center py-16">
           <p className="text-muted-foreground">No activities found. Be the first to host one!</p>
