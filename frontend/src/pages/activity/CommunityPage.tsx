@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { SearchIcon } from "lucide-react"
+import { ChevronDown, SearchIcon, SlidersHorizontal, Users } from "lucide-react"
 import { useSearchParams } from "react-router"
 import { toast } from "sonner"
 
@@ -9,6 +9,13 @@ import { CustomTabs, CustomTabsList, CustomTabsTrigger } from "@/components/ui/c
 import { ButtonGroup } from "@/components/ui/button-group"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuCheckboxItem,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import CreatePostDrawer from "@/components/ui/CreatePostDrawer"
 import type { CreatePostValues } from "@/components/ui/CreatePostDrawer"
 import CreateGroupDrawer from "@/components/ui/CreateGroupDrawer"
@@ -260,10 +267,6 @@ export default function CommunityPage() {
                     <p className="text-sm text-muted-foreground">
                         See trending discussions across the PlayMatch community. Browse posts from all groups or filter to your own.
                     </p>
-                    <p className="text-xs text-muted-foreground/70">
-                        Posts live inside groups — tap any post to read replies and join the conversation.
-                    </p>
-
                     {/* Header row */}
                     <div className="flex items-center justify-between gap-2">
                         <h3 className="text-lg font-semibold">Community Discussions</h3>
@@ -275,24 +278,63 @@ export default function CommunityPage() {
 
                     {/* Filter bar */}
                     <div className="flex items-center gap-2 overflow-x-auto p-1">
-                        <Button
-                            type="button"
-                            variant={!myGroupsOnly ? "default" : "outline"}
-                            size="sm"
-                            className="h-9 shrink-0 rounded-xl px-4"
-                            onClick={() => setMyGroupsOnly(false)}
-                        >
-                            All discussions
-                        </Button>
-                        <Button
-                            type="button"
-                            variant={myGroupsOnly ? "default" : "outline"}
-                            size="sm"
-                            className="h-9 shrink-0 rounded-xl px-4"
-                            onClick={() => setMyGroupsOnly(true)}
-                        >
-                            My groups only
-                        </Button>
+                        {/* Clear filters button */}
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <div className="relative">
+                                    <Button
+                                        size="icon"
+                                        className="h-9 w-9 shrink-0 rounded-xl"
+                                        aria-label="Filters"
+                                    >
+                                        <SlidersHorizontal className="h-4 w-4" />
+                                    </Button>
+                                    {myGroupsOnly && (
+                                        <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+                                            1
+                                        </span>
+                                    )}
+                                </div>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start">
+                                <DropdownMenuItem
+                                    onClick={() => setMyGroupsOnly(false)}
+                                    disabled={!myGroupsOnly}
+                                    className="text-destructive focus:text-destructive"
+                                >
+                                    Clear all filters
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+
+                        {/* Show filter dropdown */}
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline" className="h-9 shrink-0 rounded-xl px-4">
+                                    <Users className="mr-1 h-4 w-4" />
+                                    {myGroupsOnly ? (
+                                        <span className="font-normal text-primary">My groups only</span>
+                                    ) : (
+                                        "All discussions"
+                                    )}
+                                    <ChevronDown className="ml-1 size-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start">
+                                <DropdownMenuCheckboxItem
+                                    checked={!myGroupsOnly}
+                                    onCheckedChange={() => setMyGroupsOnly(false)}
+                                >
+                                    All discussions
+                                </DropdownMenuCheckboxItem>
+                                <DropdownMenuCheckboxItem
+                                    checked={myGroupsOnly}
+                                    onCheckedChange={() => setMyGroupsOnly(true)}
+                                >
+                                    My groups only
+                                </DropdownMenuCheckboxItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                     </div>
 
                     {loadingDiscussions ? (
