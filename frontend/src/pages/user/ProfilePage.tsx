@@ -551,8 +551,8 @@ export default function ProfilePage() {
 
             <section className="rounded-3xl border bg-card p-5 shadow-sm md:col-span-2">
               <div className="grid grid-cols-7 gap-3 text-center text-sm text-muted-foreground">
-                {["M", "T", "W", "T", "F", "S", "S"].map((label) => (
-                  <span key={label} className="font-medium">
+                {["M", "T", "W", "T", "F", "S", "S"].map((label, i) => (
+                  <span key={i} className="font-medium">
                     {label}
                   </span>
                 ))}
