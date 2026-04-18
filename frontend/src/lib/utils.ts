@@ -23,7 +23,7 @@ export function toLocalDateTime(utcDate: Date | string, time: string): Date {
 }
 
 const DEFAULT_PROFILE_IMAGE =
-  "https://pub-34f3a2d97cda434eb3fb17be1fae8b2f.r2.dev/profiles/play-match-default-profile-pic.png"
+  "https://pub-34f3a2d97cda434eb3fb17be1fae8b2f.r2.dev/profiles/play-match-default-profile-pic.jpg"
 
 /** Resolve a user profile image — replaces Google URLs and empty strings with the R2 default */
 export function resolveProfileImage(image: string | null | undefined): string {
