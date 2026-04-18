@@ -15,6 +15,7 @@ import logo from "@/assets/logo.svg";
 import { useTheme } from "@/hooks/useTheme";
 import { useRole } from "@/hooks/useRole";
 import { authClient } from "@/lib/client-auth";
+import { resolveProfileImage } from "@/lib/utils";
 
 const navLinks = [
   { name: "Explore", shortName: "Explore", href: "/" },
@@ -80,7 +81,7 @@ export default function Navbar() {
         <DropdownMenu>
           <DropdownMenuTrigger className="flex shrink-0 items-center gap-2 outline-none">
             <Avatar className="h-8 w-8">
-              <AvatarImage src={user?.image || undefined} alt={user?.name ?? "User"} />
+              <AvatarImage src={resolveProfileImage(user?.image)} alt={user?.name ?? "User"} />
               <AvatarFallback className="bg-primary text-primary-foreground">
                 {user?.name?.charAt(0).toUpperCase() ?? "U"}
               </AvatarFallback>

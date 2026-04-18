@@ -3,6 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { resolveProfileImage } from "@/lib/utils";
 import { Spinner } from "@/components/ui/spinner";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -443,7 +444,7 @@ function ReportsTab({ onStatsChange }: { onStatsChange: () => void }) {
                       />
                     )}
                     <Avatar className="h-9 w-9">
-                      <AvatarImage src={report.reportedUser.image ?? undefined} />
+                      <AvatarImage src={resolveProfileImage(report.reportedUser.image)} />
                       <AvatarFallback className="bg-destructive/10 text-destructive text-xs">
                         {report.reportedUser.name.charAt(0).toUpperCase()}
                       </AvatarFallback>
@@ -832,7 +833,7 @@ function UsersTab() {
                     />
                   )}
                   <Avatar className="h-9 w-9 shrink-0">
-                    <AvatarImage src={user.image ?? undefined} />
+                    <AvatarImage src={resolveProfileImage(user.image)} />
                     <AvatarFallback className="bg-primary text-primary-foreground text-xs">
                       {user.name.charAt(0).toUpperCase()}
                     </AvatarFallback>
@@ -944,7 +945,7 @@ function UsersTab() {
               {/* Profile Header */}
               <div className="flex items-center gap-4">
                 <Avatar className="h-14 w-14">
-                  <AvatarImage src={userDetail.image ?? undefined} />
+                  <AvatarImage src={resolveProfileImage(userDetail.image)} />
                   <AvatarFallback className="bg-primary text-primary-foreground text-lg">
                     {userDetail.name.charAt(0).toUpperCase()}
                   </AvatarFallback>

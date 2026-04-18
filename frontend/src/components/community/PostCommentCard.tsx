@@ -1,6 +1,7 @@
 import * as React from "react"
 import { ThumbsUp, Trash2 } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { resolveProfileImage } from "@/lib/utils"
 import PostActionMenu from "@/components/community/PostActionMenu"
 import DeleteConfirmDrawer from "@/components/ui/DeleteConfirmDrawer"
 
@@ -47,7 +48,7 @@ export default function PostCommentCard({
             <div className="flex items-start justify-between gap-3">
                 <div className="flex min-w-0 items-start gap-3">
                     <Avatar className="h-9 w-9">
-                        <AvatarImage src={authorImage ?? undefined} alt={authorName} />
+                        <AvatarImage src={resolveProfileImage(authorImage)} alt={authorName} />
                         <AvatarFallback>{getInitials(authorName)}</AvatarFallback>
                     </Avatar>
                     <div className="min-w-0">

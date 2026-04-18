@@ -2,6 +2,7 @@ import * as React from "react"
 import { Crown, MessageCircle, Trash2, ThumbsUp } from "lucide-react"
 import { Link } from "react-router"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { resolveProfileImage } from "@/lib/utils"
 import { formatDistanceToNow } from "date-fns"
 import DeleteConfirmDrawer from "@/components/ui/DeleteConfirmDrawer"
 import LinkedActivityCard from "@/components/community/LinkedActivityCard"
@@ -50,7 +51,7 @@ export default function DiscussionCard({ discussion, backTo = "/community/discus
             <header className="flex items-start justify-between gap-3">
                 <div className="flex min-w-0 items-start gap-3">
                     <Avatar className="h-9 w-9">
-                        <AvatarImage src={discussion.authorImage ?? undefined} alt={discussion.authorName} />
+                        <AvatarImage src={resolveProfileImage(discussion.authorImage)} alt={discussion.authorName} />
                         <AvatarFallback>{getInitials(discussion.authorName)}</AvatarFallback>
                     </Avatar>
 

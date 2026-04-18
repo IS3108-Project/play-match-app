@@ -2,7 +2,6 @@
 import * as React from "react"
 import { Button } from "@/components/ui/button"
 import { BuddyCardSkeleton } from "@/components/ui/skeletons"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { buddyApi, activityApi, type BuddyMatch, type Activity } from "@/lib/api"
 import { toast } from "sonner"
 import HostActivityDrawer, { type HostActivityValues } from "@/components/activity/HostActivityDrawer"
@@ -31,7 +30,10 @@ import {
 import ActivityDetailsCard from "@/components/activity/ActivityDetailsCard"
 import { Swiper, SwiperSlide } from "swiper/react"
 import { EffectCards } from "swiper/modules"
+import { resolveProfileImage } from "@/lib/utils"
+// @ts-ignore - swiper CSS has no type declarations
 import "swiper/css"
+// @ts-ignore - swiper CSS has no type declarations
 import "swiper/css/effect-cards"
 
 export default function BuddyMatchingPage() {
@@ -207,24 +209,14 @@ export default function BuddyMatchingPage() {
               <SwiperSlide key={match.id} className="rounded-3xl overflow-hidden">
                 <div className="relative w-full h-full">
                   {/* Full-bleed image */}
-                  {match.image ? (
-                    <img
-                      src={match.image || undefined}
-                      alt={match.name}
-                      className="absolute inset-0 w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="absolute inset-0 bg-muted flex items-center justify-center">
-                      <Avatar className="h-32 w-32">
-                        <AvatarFallback className="text-4xl bg-primary text-primary-foreground">
-                          {match.name.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                    </div>
-                  )}
+                  <img
+                    src={resolveProfileImage(match.image)}
+                    alt={match.name}
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
 
                   {/* Gradient scrim */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+                  <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/40 to-transparent" />
 
                   {/* Compatibility Score Badge */}
                   <div className="absolute top-4 right-4 bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-1">

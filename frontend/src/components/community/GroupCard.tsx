@@ -2,6 +2,7 @@ import { CheckCircle, Crown, MessageSquare, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Link } from "react-router"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { resolveProfileImage } from "@/lib/utils"
 
 type Group = {
   id: string
@@ -69,7 +70,7 @@ export default function GroupCard({ group }: GroupCardProps) {
             <div className="flex -space-x-2">
               {group.memberAvatars.slice(0, 4).map((member, idx) => (
                 <Avatar key={`${group.id}-avatar-${idx}`} className="h-7 w-7 border-2 border-background">
-                  <AvatarImage src={member.image ?? undefined} alt={member.name} />
+                  <AvatarImage src={resolveProfileImage(member.image)} alt={member.name} />
                   <AvatarFallback className="text-[10px]">{getInitials(member.name)}</AvatarFallback>
                 </Avatar>
               ))}

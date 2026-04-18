@@ -2,6 +2,7 @@ import * as React from "react"
 import { CalendarDays, Clock3, MapPin } from "lucide-react"
 import { format } from "date-fns"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { resolveProfileImage } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { activityApi, type LinkedActivityPreview } from "@/lib/api"
 import { useRole } from "@/hooks/useRole"
@@ -124,7 +125,7 @@ export default function LinkedActivityCard({ activity, showActions = true }: Lin
             {/* Host row */}
             <div className="mt-2 flex items-center gap-1.5 border-t pt-2 text-xs text-muted-foreground">
                 <Avatar className="h-5 w-5">
-                    <AvatarImage src={activity.host.image ?? undefined} alt={activity.host.name} />
+                    <AvatarImage src={resolveProfileImage(activity.host.image)} alt={activity.host.name} />
                     <AvatarFallback className="text-[9px]">{getInitials(activity.host.name)}</AvatarFallback>
                 </Avatar>
                 <span>Hosted by <span className="font-medium text-foreground">{activity.host.name}</span></span>

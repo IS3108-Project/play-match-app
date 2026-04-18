@@ -5,6 +5,7 @@ import { Link, Navigate, useLocation, useNavigate, useParams } from "react-route
 import { toast } from "sonner"
 import { formatDistanceToNow } from "date-fns"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { resolveProfileImage } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import PostCommentCard from "@/components/community/PostCommentCard"
@@ -280,7 +281,7 @@ export default function DiscussionPostPage() {
                 <footer className="sticky bottom-0 border-t bg-card px-3 py-2">
                     <div className="flex items-center gap-2">
                         <Avatar className="h-8 w-8">
-                            <AvatarImage src={user?.image ?? undefined} alt={user?.name ?? "You"} />
+                            <AvatarImage src={resolveProfileImage(user?.image)} alt={user?.name ?? "You"} />
                             <AvatarFallback className="bg-primary text-primary-foreground">
                                 {user?.name ? getInitials(user.name) : "U"}
                             </AvatarFallback>

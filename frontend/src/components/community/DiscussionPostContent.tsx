@@ -1,5 +1,6 @@
 import { MessageCircle, Share2, ThumbsUp } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { resolveProfileImage } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Image } from "@/components/ui/image"
 
@@ -43,7 +44,7 @@ export default function DiscussionPostContent({
         <article className="space-y-4 px-4 py-5">
             <div className="flex items-start gap-3">
                 <Avatar className="h-10 w-10">
-                    <AvatarImage src={authorImage ?? undefined} alt={authorName} />
+                    <AvatarImage src={resolveProfileImage(authorImage)} alt={authorName} />
                     <AvatarFallback>{getInitials(authorName)}</AvatarFallback>
                 </Avatar>
                 <div>

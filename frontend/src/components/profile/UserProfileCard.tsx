@@ -1,4 +1,5 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { resolveProfileImage } from "@/lib/utils";
 import { MapPin } from "lucide-react";
 
 type UserProfileCardProps = {
@@ -27,7 +28,7 @@ export default function UserProfileCard({
         <div className="absolute right-0 top-0">{editAction}</div>
       )}
       <Avatar className="mt-4 h-28 w-28 rounded-full border-4 border-background object-cover shadow-md">
-        <AvatarImage src={image || undefined} alt={displayName} />
+        <AvatarImage src={resolveProfileImage(image)} alt={displayName} />
         <AvatarFallback className="bg-primary text-4xl text-white">
           {fallbackInitial}
         </AvatarFallback>
