@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { activityApi, type LinkedActivityPreview } from "@/lib/api"
 import { useRole } from "@/hooks/useRole"
 import { toast } from "sonner"
+import ActivityDetailsCard from "@/components/activity/ActivityDetailsCard"
 
 type LinkedActivityCardProps = {
     activity: LinkedActivityPreview
@@ -33,6 +34,7 @@ export default function LinkedActivityCard({ activity, showActions = true }: Lin
     const handleJoin = async (e: React.MouseEvent) => {
         e.preventDefault()
         e.stopPropagation()
+        e.nativeEvent.stopImmediatePropagation()
         setLoading(true)
         try {
             const result = await activityApi.join(activity.id)
@@ -84,61 +86,74 @@ export default function LinkedActivityCard({ activity, showActions = true }: Lin
         }
     }
 
+    // Info section — wrapped in ActivityDetailsCard so clicking it opens the detail drawer
+    const infoSection = (
+        <div className="min-w-0">
+            <div className="flex items-center gap-2">
+                <span className="inline-block rounded bg-chart-1 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                    {activity.activityType.toUpperCase()}
+                </span>
+                {isCancelled && (
+                    <span className="inline-block rounded bg-destructive/10 px-1.5 py-0.5 text-[10px] font-medium text-destructive">
+                        CANCELLED
+                    </span>
+                )}
+            </div>
+            <p className="mt-1 text-sm font-semibold leading-snug text-foreground">
+                {activity.title}
+            </p>
+            <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
+                <div className="flex items-center gap-1">
+                    <CalendarDays className="h-3 w-3 shrink-0" />
+                    <span>{displayDate}</span>
+                    <Clock3 className="ml-1 h-3 w-3 shrink-0" />
+                    <span>{displayTime}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                    <MapPin className="h-3 w-3 shrink-0" />
+                    <span className="truncate">{activity.location}</span>
+                </div>
+            </div>
+        </div>
+    )
+
     return (
+        // Stop propagation on the outer container so clicking anywhere here
+        // doesn't bubble up to any parent <Link> (e.g. DiscussionCard)
         <div
             className={`mt-3 rounded-xl border bg-muted/30 p-3 ${isCancelled ? "opacity-60" : ""}`}
-            onClick={showActions ? (e) => e.preventDefault() : undefined}
+            onClick={(e) => { e.preventDefault(); e.stopPropagation() }}
         >
             {/* Label */}
             <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                 Linked Activity
             </p>
 
-            <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                    <span className="inline-block rounded bg-chart-1 px-1.5 py-0.5 text-[10px] font-medium text-primary">
-                        {activity.activityType.toUpperCase()}
-                    </span>
-                    {isCancelled && (
-                        <span className="inline-block rounded bg-destructive/10 px-1.5 py-0.5 text-[10px] font-medium text-destructive">
-                            CANCELLED
-                        </span>
-                    )}
-                </div>
-                <p className="mt-1 text-sm font-semibold leading-snug text-foreground">
-                    {activity.title}
-                </p>
-                <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                        <CalendarDays className="h-3 w-3 shrink-0" />
-                        <span>{displayDate}</span>
-                        <Clock3 className="ml-1 h-3 w-3 shrink-0" />
-                        <span>{displayTime}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                        <MapPin className="h-3 w-3 shrink-0" />
-                        <span className="truncate">{activity.location}</span>
+            {/* Clicking the info section opens the full Activity Details drawer */}
+            <ActivityDetailsCard activityId={activity.id}>
+                <div className="cursor-pointer">
+                    {infoSection}
+
+                    {/* Host row */}
+                    <div className="mt-2 flex items-center gap-1.5 border-t pt-2 text-xs text-muted-foreground">
+                        <Avatar className="h-5 w-5">
+                            <AvatarImage src={resolveProfileImage(activity.host.image)} alt={activity.host.name} />
+                            <AvatarFallback className="text-[9px]">{getInitials(activity.host.name)}</AvatarFallback>
+                        </Avatar>
+                        <span>Hosted by <span className="font-medium text-foreground">{activity.host.name}</span></span>
+                        {!isCancelled && !isHost && (
+                            <span className="ml-auto text-[10px] text-muted-foreground">
+                                {isFull ? "Full" : `${activity.slotsLeft} spot${activity.slotsLeft === 1 ? "" : "s"} left`}
+                            </span>
+                        )}
+                        {isHost && (
+                            <span className="ml-auto text-[10px] font-medium text-primary">You're hosting</span>
+                        )}
                     </div>
                 </div>
-            </div>
+            </ActivityDetailsCard>
 
-            {/* Host row */}
-            <div className="mt-2 flex items-center gap-1.5 border-t pt-2 text-xs text-muted-foreground">
-                <Avatar className="h-5 w-5">
-                    <AvatarImage src={resolveProfileImage(activity.host.image)} alt={activity.host.name} />
-                    <AvatarFallback className="text-[9px]">{getInitials(activity.host.name)}</AvatarFallback>
-                </Avatar>
-                <span>Hosted by <span className="font-medium text-foreground">{activity.host.name}</span></span>
-                {!isCancelled && !isHost && (
-                    <span className="ml-auto text-[10px] text-muted-foreground">
-                        {isFull ? "Full" : `${activity.slotsLeft} spot${activity.slotsLeft === 1 ? "" : "s"} left`}
-                    </span>
-                )}
-                {isHost && (
-                    <span className="ml-auto text-[10px] font-medium text-primary">You're hosting</span>
-                )}
-            </div>
-
+            {/* Quick-join button sits outside the drawer trigger */}
             {showActions && actionButton}
         </div>
     )
