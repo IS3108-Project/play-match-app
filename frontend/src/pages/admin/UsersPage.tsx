@@ -51,7 +51,6 @@ import {
   type AdminDashboardStats,
   type AdminUserDetail,
   type AdminAuditLog,
-  type PaginatedResponse,
 } from "@/lib/api";
 
 // ── Main Page ──────────────────────────────────────────────────────────

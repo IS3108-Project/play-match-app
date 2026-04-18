@@ -10,7 +10,7 @@ import LinkedActivityCard from "@/components/community/LinkedActivityCard"
 type Discussion = {
     id: string
     title: string
-    authorName: string
+    authorName: string  
     authorImage?: string | null
     groupName?: string | null
     content: string
@@ -18,6 +18,8 @@ type Discussion = {
     commentCount: number
     isLiked: boolean
     isOwner?: boolean
+    canDelete?: boolean
+    linkedActivity?: { id: string; title: string; activityType: string; date: string; startTime: string; endTime: string; location: string; skillLevel: string; status: string; requireApproval: boolean; hostId: string; slotsLeft: number; myStatus: string | null; host: { id: string; name: string; image?: string | null } } | null
     createdAt: string
 }
 
