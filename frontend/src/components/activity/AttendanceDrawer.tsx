@@ -15,7 +15,7 @@ import { Spinner } from "@/components/ui/spinner"
 import { ClipboardCheck } from "lucide-react"
 import { activityApi, type ActivityDetail } from "@/lib/api"
 import { toast } from "sonner"
-import { cn } from "@/lib/utils"
+import { cn, toLocalDateTime } from "@/lib/utils"
 
 type AttendanceDrawerProps = {
     activityId: string
@@ -88,13 +88,8 @@ export default function AttendanceDrawer({
 
     const activityTimings = React.useMemo(() => {
         if (!detail) return { hasStarted: false, isLocked: false }
-        const start = new Date(detail.date)
-        const [startHours, startMinutes] = detail.startTime.split(":").map(Number)
-        start.setHours(startHours ?? 0, startMinutes ?? 0, 0, 0)
-
-        const end = new Date(detail.date)
-        const [endHours, endMinutes] = detail.endTime.split(":").map(Number)
-        end.setHours(endHours ?? 0, endMinutes ?? 0, 0, 0)
+        const start = toLocalDateTime(detail.date, detail.startTime)
+        const end = toLocalDateTime(detail.date, detail.endTime)
 
         const lockTime = new Date(end.getTime() + 24 * 60 * 60 * 1000)
         const now = new Date()

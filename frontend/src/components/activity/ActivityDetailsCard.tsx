@@ -24,6 +24,7 @@ import { Spinner } from "../ui/spinner"
 import { activityApi, type ActivityDetail } from "@/lib/api"
 import { toast } from "sonner"
 import { format } from "date-fns"
+import { toLocalDateTime } from "@/lib/utils"
 import { useRole } from "@/hooks/useRole"
 import LocationMap from "./LocationMap"
 
@@ -88,9 +89,7 @@ export default function ActivityDetailsCard({ activityId, children, onRefresh, d
 
     const isLateCancelRisk = React.useMemo(() => {
         if (!detail) return false
-        const start = new Date(detail.date)
-        const [hours, minutes] = detail.startTime.split(":").map(Number)
-        start.setHours(hours ?? 0, minutes ?? 0, 0, 0)
+        const start = toLocalDateTime(detail.date, detail.startTime)
         return start.getTime() - Date.now() < 24 * 60 * 60 * 1000
     }, [detail])
 

@@ -40,8 +40,8 @@ async function sendUpcomingReminders(): Promise<void> {
     const hours = parseInt(parts[0] ?? "0", 10);
     const minutes = parseInt(parts[1] ?? "0", 10);
     const activityStart = new Date(activity.date);
-    activityStart.setHours(hours, minutes, 0, 0);
-    const hoursUntil = (activityStart.getTime() - now.getTime()) / (1000 * 60 * 60);
+    const startDate = new Date(activityStart.getUTCFullYear(), activityStart.getUTCMonth(), activityStart.getUTCDate(), hours, minutes, 0, 0);
+    const hoursUntil = (startDate.getTime() - now.getTime()) / (1000 * 60 * 60);
     return hoursUntil >= 23 && hoursUntil <= 25;
   });
 
@@ -96,8 +96,8 @@ async function sendAttendanceReminders(): Promise<void> {
     if (activity.participants.length === 0) continue;
 
     const endParts = activity.endTime.split(":").map(Number);
-    const activityEnd = new Date(activity.date);
-    activityEnd.setHours(endParts[0] ?? 0, endParts[1] ?? 0, 0, 0);
+    const d = new Date(activity.date);
+    const activityEnd = new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), endParts[0] ?? 0, endParts[1] ?? 0, 0, 0);
     const minutesSinceEnd =
       (now.getTime() - activityEnd.getTime()) / (1000 * 60);
 

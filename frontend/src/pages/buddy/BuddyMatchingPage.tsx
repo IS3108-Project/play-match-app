@@ -30,7 +30,7 @@ import {
 import ActivityDetailsCard from "@/components/activity/ActivityDetailsCard"
 import { Swiper, SwiperSlide } from "swiper/react"
 import { EffectCards } from "swiper/modules"
-import { resolveProfileImage } from "@/lib/utils"
+import { resolveProfileImage, toLocalDate } from "@/lib/utils"
 // @ts-ignore - swiper CSS has no type declarations
 import "swiper/css"
 // @ts-ignore - swiper CSS has no type declarations
@@ -61,7 +61,7 @@ export default function BuddyMatchingPage() {
         const now = new Date()
         setMyActivities(
           activitiesRes.data.filter(
-            (a) => new Date(a.date) >= now && a.slotsLeft > 0 && a.status === "ACTIVE"
+            (a) => toLocalDate(a.date) >= now && a.slotsLeft > 0 && a.status === "ACTIVE"
           )
         )
       } catch (error) {
@@ -109,7 +109,7 @@ export default function BuddyMatchingPage() {
       const now = new Date()
       setMyActivities(
         activitiesRes.data.filter(
-          (a) => new Date(a.date) >= now && a.slotsLeft > 0 && a.status === "ACTIVE"
+          (a) => toLocalDate(a.date) >= now && a.slotsLeft > 0 && a.status === "ACTIVE"
         )
       )
     } catch (error) {

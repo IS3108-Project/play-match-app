@@ -23,7 +23,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
-import { cn } from "@/lib/utils"
+import { cn, toLocalDate } from "@/lib/utils"
 import { communityApi, activityApi, type Activity } from "@/lib/api"
 
 export type CreatePostValues = {
@@ -80,7 +80,7 @@ export default function CreatePostDrawer({
             setPreviewUrl(null)
             activityApi.mine({ host: ["me"], time: ["upcoming"], limit: 50 })
                 .then((res) => setHostedActivities(
-                    res.data.filter((a) => a.status !== "CANCELLED" && new Date(a.date) > new Date())
+                    res.data.filter((a) => a.status !== "CANCELLED" && toLocalDate(a.date) > new Date())
                 ))
                 .catch(() => setHostedActivities([]))
         }

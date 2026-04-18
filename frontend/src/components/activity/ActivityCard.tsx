@@ -11,6 +11,7 @@ import ReportDrawer from "@/components/ReportDrawer";
 import { type Activity, activityApi } from "@/lib/api";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { toLocalDate } from "@/lib/utils";
 import { MapPin } from "lucide-react";
 import { useRole } from "@/hooks/useRole";
 import * as React from "react";
@@ -175,7 +176,7 @@ export default function ActivityCard({
             <div className="mt-2 space-y-2">
               {/* Row 1: Attendance (only after activity date) + Pending */}
               <div className="flex flex-wrap gap-2">
-                {new Date() > new Date(activity.date) && (
+                {new Date() > toLocalDate(activity.date) && (
                   <AttendanceDrawer
                     activityId={activity.id}
                     onRefresh={onRefresh}

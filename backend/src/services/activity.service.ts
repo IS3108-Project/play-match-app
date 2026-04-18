@@ -105,20 +105,18 @@ function getActivityStartDateTime(activity: {
   date: Date;
   startTime: string;
 }): Date {
-  const result = new Date(activity.date);
+  const d = new Date(activity.date);
   const [hours, minutes] = activity.startTime.split(":").map(Number);
-  result.setHours(hours ?? 0, minutes ?? 0, 0, 0);
-  return result;
+  return new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), hours ?? 0, minutes ?? 0, 0, 0);
 }
 
 function getActivityEndDateTime(activity: {
   date: Date;
   endTime: string;
 }): Date {
-  const result = new Date(activity.date);
+  const d = new Date(activity.date);
   const [hours, minutes] = activity.endTime.split(":").map(Number);
-  result.setHours(hours ?? 0, minutes ?? 0, 0, 0);
-  return result;
+  return new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), hours ?? 0, minutes ?? 0, 0, 0);
 }
 
 function isWithinLateCancellationWindow(activity: {
